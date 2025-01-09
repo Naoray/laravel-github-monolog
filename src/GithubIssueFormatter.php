@@ -2,22 +2,22 @@
 
 namespace Naoray\LaravelGithubMonolog;
 
-use Monolog\LogRecord;
-use Monolog\Formatter\FormatterInterface;
-use Monolog\Level;
 use Illuminate\Support\Str;
-use Throwable;
+use Monolog\Formatter\FormatterInterface;
+use Monolog\LogRecord;
 use ReflectionClass;
+use Throwable;
 
 class GithubIssueFormatter implements FormatterInterface
 {
     private const TITLE_MAX_LENGTH = 100;
+
     private const MAX_PREVIOUS_EXCEPTIONS = 3;
 
     /**
      * Formats a log record.
      *
-     * @param LogRecord $record A record to format
+     * @param  LogRecord  $record  A record to format
      * @return GithubIssueFormatted The formatted record
      */
     public function format(LogRecord $record): GithubIssueFormatted
@@ -36,7 +36,7 @@ class GithubIssueFormatter implements FormatterInterface
     /**
      * Formats a set of log records.
      *
-     * @param array<LogRecord> $records A set of records to format
+     * @param  array<LogRecord>  $records  A set of records to format
      * @return array<GithubIssueFormatted> The formatted set of records
      */
     public function formatBatch(array $records): array
@@ -51,17 +51,17 @@ class GithubIssueFormatter implements FormatterInterface
     {
         if ($exception) {
             $trace = $exception->getTrace();
-            $firstFrame = !empty($trace) ? $trace[0] : null;
+            $firstFrame = ! empty($trace) ? $trace[0] : null;
 
             return md5(implode(':', [
                 get_class($exception),
                 $exception->getFile(),
                 $exception->getLine(),
-                $firstFrame ? ($firstFrame['file'] ?? '') . ':' . ($firstFrame['line'] ?? '') : ''
+                $firstFrame ? ($firstFrame['file'] ?? '').':'.($firstFrame['line'] ?? '') : '',
             ]));
         }
 
-        return md5($record->message . json_encode($record->context));
+        return md5($record->message.json_encode($record->context));
     }
 
     /**
@@ -107,7 +107,7 @@ class GithubIssueFormatter implements FormatterInterface
     {
         $body = "**Log Level:** {$record->level->getName()}\n\n";
 
-        if (!empty($record->message)) {
+        if (! empty($record->message)) {
             $body .= "**Message:**\n{$record->message}\n\n";
         }
 
@@ -116,12 +116,12 @@ class GithubIssueFormatter implements FormatterInterface
             $body .= $this->renderExceptionDetails($details);
             $previousExceptions = $this->formatPreviousExceptions($exception);
             $body .= $this->renderPreviousExceptions($previousExceptions);
-        } elseif (!empty($record->context)) {
-            $body .= "**Context:**\n```json\n" . json_encode($record->context, JSON_PRETTY_PRINT) . "\n```\n\n";
+        } elseif (! empty($record->context)) {
+            $body .= "**Context:**\n```json\n".json_encode($record->context, JSON_PRETTY_PRINT)."\n```\n\n";
         }
 
-        if (!empty($record->extra)) {
-            $body .= "**Extra Data:**\n```json\n" . json_encode($record->extra, JSON_PRETTY_PRINT) . "\n```\n";
+        if (! empty($record->extra)) {
+            $body .= "**Extra Data:**\n```json\n".json_encode($record->extra, JSON_PRETTY_PRINT)."\n```\n";
         }
 
         $body .= "\n\n<!-- Signature: {$signature} -->";
@@ -133,7 +133,7 @@ class GithubIssueFormatter implements FormatterInterface
     {
         $details = [];
 
-        if (!$isPrevious) {
+        if (! $isPrevious) {
             $details['message'] = $exception->getMessage();
             $details['stack_trace'] = $exception->getTraceAsString();
         } else {
@@ -147,7 +147,7 @@ class GithubIssueFormatter implements FormatterInterface
     private function formatPreviousExceptions(Throwable $exception): array
     {
         $previous = $exception->getPrevious();
-        if (!$previous) {
+        if (! $previous) {
             return [];
         }
 
@@ -157,7 +157,7 @@ class GithubIssueFormatter implements FormatterInterface
             $exceptions[] = [
                 'count' => $count,
                 'type' => get_class($previous),
-                'details' => $this->formatExceptionDetails($previous, true)
+                'details' => $this->formatExceptionDetails($previous, true),
             ];
             $previous = $previous->getPrevious();
             $count++;
@@ -211,14 +211,14 @@ class GithubIssueFormatter implements FormatterInterface
     /**
      * Formats a log record for a comment on an existing issue.
      *
-     * @param LogRecord $record A record to format
+     * @param  LogRecord  $record  A record to format
      * @return string The formatted comment
      */
     public function formatComment(LogRecord $record, ?Throwable $exception): string
     {
         $body = "**New Occurrence:**\n\n";
 
-        if (!empty($record->message)) {
+        if (! empty($record->message)) {
             $body .= "**Message:**\n{$record->message}\n\n";
         }
 
@@ -227,12 +227,12 @@ class GithubIssueFormatter implements FormatterInterface
             $body .= $this->renderExceptionDetails($details, true);
             $previousExceptions = $this->formatPreviousExceptions($exception);
             $body .= $this->renderPreviousExceptions($previousExceptions, true);
-        } elseif (!empty($record->context)) {
-            $body .= "**Context:**\n```json\n" . json_encode($record->context, JSON_PRETTY_PRINT) . "\n```\n\n";
+        } elseif (! empty($record->context)) {
+            $body .= "**Context:**\n```json\n".json_encode($record->context, JSON_PRETTY_PRINT)."\n```\n\n";
         }
 
-        if (!empty($record->extra)) {
-            $body .= "**Extra Data:**\n```json\n" . json_encode($record->extra, JSON_PRETTY_PRINT) . "\n```\n";
+        if (! empty($record->extra)) {
+            $body .= "**Extra Data:**\n```json\n".json_encode($record->extra, JSON_PRETTY_PRINT)."\n```\n";
         }
 
         return $body;

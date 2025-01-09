@@ -23,7 +23,7 @@ class GithubIssueHandlerFactory
             bubble: Arr::get($config, 'bubble', true)
         );
 
-        $handler->setFormatter(new GithubIssueFormatter());
+        $handler->setFormatter(new GithubIssueFormatter);
 
         return new Logger('github', [$handler]);
     }

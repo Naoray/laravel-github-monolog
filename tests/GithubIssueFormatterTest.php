@@ -2,13 +2,13 @@
 
 use Monolog\Level;
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\GithubIssueFormatter;
 use Naoray\LaravelGithubMonolog\GithubIssueFormatted;
+use Naoray\LaravelGithubMonolog\GithubIssueFormatter;
 
 test('it formats basic log records', function () {
-    $formatter = new GithubIssueFormatter();
+    $formatter = new GithubIssueFormatter;
     $record = new LogRecord(
-        datetime: new DateTimeImmutable(),
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test error message',
@@ -26,10 +26,10 @@ test('it formats basic log records', function () {
 });
 
 test('it formats exceptions with file and line information', function () {
-    $formatter = new GithubIssueFormatter();
+    $formatter = new GithubIssueFormatter;
     $exception = new RuntimeException('Test exception');
     $record = new LogRecord(
-        datetime: new DateTimeImmutable(),
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Error occurred',
@@ -48,10 +48,10 @@ test('it formats exceptions with file and line information', function () {
 });
 
 test('it truncates long titles', function () {
-    $formatter = new GithubIssueFormatter();
+    $formatter = new GithubIssueFormatter;
     $longMessage = str_repeat('a', 90);
     $record = new LogRecord(
-        datetime: new DateTimeImmutable(),
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: $longMessage,
@@ -65,9 +65,9 @@ test('it truncates long titles', function () {
 });
 
 test('it includes context data in formatted output', function () {
-    $formatter = new GithubIssueFormatter();
+    $formatter = new GithubIssueFormatter;
     $record = new LogRecord(
-        datetime: new DateTimeImmutable(),
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
@@ -83,11 +83,11 @@ test('it includes context data in formatted output', function () {
 });
 
 test('it generates consistent signatures for similar errors', function () {
-    $formatter = new GithubIssueFormatter();
+    $formatter = new GithubIssueFormatter;
 
     // Create a single exception and format it twice
     $exception = new RuntimeException('Test exception');
-    $datetime = new DateTimeImmutable();
+    $datetime = new DateTimeImmutable;
     $record = new LogRecord(
         datetime: $datetime,
         channel: 'test',
@@ -105,11 +105,11 @@ test('it generates consistent signatures for similar errors', function () {
 });
 
 test('it generates different signatures for different errors', function () {
-    $formatter = new GithubIssueFormatter();
+    $formatter = new GithubIssueFormatter;
 
     $exception1 = new RuntimeException('First error');
     $exception2 = new RuntimeException('Different error');
-    $datetime = new DateTimeImmutable();
+    $datetime = new DateTimeImmutable;
 
     $record1 = new LogRecord(
         datetime: $datetime,

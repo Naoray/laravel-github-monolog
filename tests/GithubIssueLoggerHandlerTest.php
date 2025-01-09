@@ -13,13 +13,13 @@ beforeEach(function () {
         token: 'fake-token',
         labels: ['bug'],
         level: Level::Error
-    ))->setFormatter(new GithubIssueFormatter());
+    ))->setFormatter(new GithubIssueFormatter);
 });
 
 function createLogRecord(string $message = 'Test error', array $context = [], Level $level = Level::Error): LogRecord
 {
     return new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'test',
         level: $level,
         message: $message,
@@ -31,6 +31,7 @@ function createLogRecord(string $message = 'Test error', array $context = [], Le
 function createFormattedRecord(GithubIssueLoggerHandler $handler, string $message = 'Test error', array $context = [], Level $level = Level::Error): LogRecord
 {
     $baseRecord = createLogRecord($message, $context, $level);
+
     return new LogRecord(
         datetime: $baseRecord->datetime,
         channel: $baseRecord->channel,
@@ -61,8 +62,8 @@ test('it adds comment to existing issue when signature matches', function () {
     Http::fake([
         'github.com/search/issues*' => Http::response([
             'items' => [
-                ['number' => 123]
-            ]
+                ['number' => 123],
+            ],
         ]),
         'github.com/repos/test/repo/issues/123/comments' => Http::response([], 201),
     ]);
@@ -80,7 +81,7 @@ test('it throws exception when github api fails', function () {
         'github.com/search/issues*' => Http::response(['message' => 'Bad credentials'], 401),
     ]);
 
-    expect(fn() => $this->handler->handle(createFormattedRecord($this->handler)))
+    expect(fn () => $this->handler->handle(createFormattedRecord($this->handler)))
         ->toThrow(\RuntimeException::class, 'Failed to search GitHub issues');
 });
 
@@ -95,7 +96,7 @@ test('it merges default label with custom labels', function () {
         token: 'fake-token',
         labels: ['custom-label', 'another-label'],
         level: Level::Error
-    ))->setFormatter(new GithubIssueFormatter());
+    ))->setFormatter(new GithubIssueFormatter);
 
     $handler->handle(createFormattedRecord($handler));
 
@@ -172,7 +173,7 @@ test('it includes extra data in issue body', function () {
     ]);
 
     $record = new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test error',
@@ -213,7 +214,7 @@ test('it fails gracefully when creating issue fails', function () {
 
     $record = createFormattedRecord($this->handler);
 
-    expect(fn() => $this->handler->handle($record))
+    expect(fn () => $this->handler->handle($record))
         ->toThrow(\RuntimeException::class, 'Failed to create GitHub issue');
 });
 
@@ -239,7 +240,7 @@ test('it limits the number of previous exceptions', function () {
     $this->handler->handle($record);
 
     Http::assertSent(function (Request $request) {
-        if (!str_contains($request->url(), '/repos/test/repo/issues')) {
+        if (! str_contains($request->url(), '/repos/test/repo/issues')) {
             return false;
         }
 

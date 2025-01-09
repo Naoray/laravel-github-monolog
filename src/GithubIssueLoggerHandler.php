@@ -2,25 +2,27 @@
 
 namespace Naoray\LaravelGithubMonolog;
 
-use Monolog\LogRecord;
 use Illuminate\Support\Facades\Http;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Level;
+use Monolog\LogRecord;
 
 class GithubIssueLoggerHandler extends AbstractProcessingHandler
 {
     private string $repo;
+
     private string $token;
+
     private array $labels;
 
     private const DEFAULT_LABEL = 'github-issue-logger';
 
     /**
-     * @param string $repo  The GitHub repository in "owner/repo" format
-     * @param string $token Your GitHub Personal Access Token
-     * @param array $labels Labels to be applied to GitHub issues (default: ['github-issue-logger'])
-     * @param int|string|Level $level Log level (default: DEBUG)
-     * @param bool $bubble Whether the messages that are handled can bubble up the stack
+     * @param  string  $repo  The GitHub repository in "owner/repo" format
+     * @param  string  $token  Your GitHub Personal Access Token
+     * @param  array  $labels  Labels to be applied to GitHub issues (default: ['github-issue-logger'])
+     * @param  int|string|Level  $level  Log level (default: DEBUG)
+     * @param  bool  $bubble  Whether the messages that are handled can bubble up the stack
      */
     public function __construct(
         string $repo,
@@ -41,7 +43,7 @@ class GithubIssueLoggerHandler extends AbstractProcessingHandler
      */
     protected function write(LogRecord $record): void
     {
-        if (!$record->formatted instanceof GithubIssueFormatted) {
+        if (! $record->formatted instanceof GithubIssueFormatted) {
             throw new \RuntimeException('Record must be formatted with GithubIssueFormatter');
         }
 
@@ -50,6 +52,7 @@ class GithubIssueLoggerHandler extends AbstractProcessingHandler
 
         if ($existingIssue) {
             $this->commentOnIssue($existingIssue['number'], $formatted);
+
             return;
         }
 
@@ -62,12 +65,12 @@ class GithubIssueLoggerHandler extends AbstractProcessingHandler
     private function findExistingIssue(string $signature): ?array
     {
         $response = Http::withToken($this->token)
-            ->get("https://api.github.com/search/issues", [
-                'q' => "repo:{$this->repo} is:issue is:open label:" . static::DEFAULT_LABEL . " \"Signature: {$signature}\"",
+            ->get('https://api.github.com/search/issues', [
+                'q' => "repo:{$this->repo} is:issue is:open label:".static::DEFAULT_LABEL." \"Signature: {$signature}\"",
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to search GitHub issues: ' . $response->body());
+            throw new \RuntimeException('Failed to search GitHub issues: '.$response->body());
         }
 
         return $response->json('items.0', null);
@@ -84,7 +87,7 @@ class GithubIssueLoggerHandler extends AbstractProcessingHandler
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to comment on GitHub issue: ' . $response->body());
+            throw new \RuntimeException('Failed to comment on GitHub issue: '.$response->body());
         }
     }
 
@@ -101,7 +104,7 @@ class GithubIssueLoggerHandler extends AbstractProcessingHandler
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to create GitHub issue: ' . $response->body());
+            throw new \RuntimeException('Failed to create GitHub issue: '.$response->body());
         }
     }
 }

@@ -13,7 +13,7 @@ test('it creates handler with correct configuration', function () {
         'labels' => ['bug', 'automated'],
     ];
 
-    $factory = new GithubIssueHandlerFactory();
+    $factory = new GithubIssueHandlerFactory;
     $handler = $factory($config);
 
     expect($handler)
@@ -25,12 +25,12 @@ test('it creates handler with correct configuration', function () {
 });
 
 test('it throws exception for missing required config', function () {
-    $factory = new GithubIssueHandlerFactory();
+    $factory = new GithubIssueHandlerFactory;
 
-    expect(fn() => $factory([]))
+    expect(fn () => $factory([]))
         ->toThrow(InvalidArgumentException::class, 'GitHub repository is required');
 
-    expect(fn() => $factory(['repo' => 'test/repo']))
+    expect(fn () => $factory(['repo' => 'test/repo']))
         ->toThrow(InvalidArgumentException::class, 'GitHub token is required');
 });
 
@@ -40,7 +40,7 @@ test('it uses default values for optional config', function () {
         'token' => 'fake-token',
     ];
 
-    $factory = new GithubIssueHandlerFactory();
+    $factory = new GithubIssueHandlerFactory;
     $handler = $factory($config);
 
     expect($handler)
@@ -57,7 +57,7 @@ test('it accepts custom log level', function () {
         'level' => Level::Debug->value,
     ];
 
-    $factory = new GithubIssueHandlerFactory();
+    $factory = new GithubIssueHandlerFactory;
     $handler = $factory($config);
 
     expect($handler->getLevel())->toBe(Level::Debug);
