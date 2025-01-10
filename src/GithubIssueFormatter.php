@@ -14,6 +14,10 @@ class GithubIssueFormatter implements FormatterInterface
 
     private const MAX_PREVIOUS_EXCEPTIONS = 3;
 
+    private const VENDOR_FRAME_PLACEHOLDER = '<details><summary>    &lt;vendor frame&gt;</summary>
+        {frames}
+</details>';
+
     /**
      * Formats a log record.
      *
@@ -57,11 +61,11 @@ class GithubIssueFormatter implements FormatterInterface
                 get_class($exception),
                 $exception->getFile(),
                 $exception->getLine(),
-                $firstFrame ? ($firstFrame['file'] ?? '').':'.($firstFrame['line'] ?? '') : '',
+                $firstFrame ? ($firstFrame['file'] ?? '') . ':' . ($firstFrame['line'] ?? '') : '',
             ]));
         }
 
-        return md5($record->message.json_encode($record->context));
+        return md5($record->message . json_encode($record->context));
     }
 
     /**
@@ -86,7 +90,7 @@ class GithubIssueFormatter implements FormatterInterface
     {
         if ($exception) {
             $exceptionClass = (new ReflectionClass($exception))->getShortName();
-            $file = basename($exception->getFile());
+            $file = Str::replace(base_path() . '/', '', $exception->getFile());
 
             return Str::of('[{level}] {class} in {file}:{line} - {message}')
                 ->replace('{level}', $record->level->getName())
@@ -103,9 +107,9 @@ class GithubIssueFormatter implements FormatterInterface
             ->toString();
     }
 
-    private function formatBody(LogRecord $record, string $signature, ?Throwable $exception): string
+    private function formatContent(LogRecord $record, ?Throwable $exception): string
     {
-        $body = "**Log Level:** {$record->level->getName()}\n\n";
+        $body = '';
 
         if (! empty($record->message)) {
             $body .= "**Message:**\n{$record->message}\n\n";
@@ -117,31 +121,68 @@ class GithubIssueFormatter implements FormatterInterface
             $previousExceptions = $this->formatPreviousExceptions($exception);
             $body .= $this->renderPreviousExceptions($previousExceptions);
         } elseif (! empty($record->context)) {
-            $body .= "**Context:**\n```json\n".json_encode($record->context, JSON_PRETTY_PRINT)."\n```\n\n";
+            $body .= "**Context:**\n```json\n" . json_encode($record->context, JSON_PRETTY_PRINT) . "\n```\n\n";
         }
 
         if (! empty($record->extra)) {
-            $body .= "**Extra Data:**\n```json\n".json_encode($record->extra, JSON_PRETTY_PRINT)."\n```\n";
+            $body .= "**Extra Data:**\n```json\n" . json_encode($record->extra, JSON_PRETTY_PRINT) . "\n```\n";
         }
-
-        $body .= "\n\n<!-- Signature: {$signature} -->";
 
         return $body;
     }
 
+    private function formatBody(LogRecord $record, string $signature, ?Throwable $exception): string
+    {
+        $body = "<details>\n<summary>Initial Issue Details</summary>\n\n";
+        $body .= "**Log Level:** {$record->level->getName()}\n\n";
+        $body .= $this->formatContent($record, $exception);
+        $body .= "</details>\n\n<!-- Signature: {$signature} -->";
+
+        return $body;
+    }
+
+    private function cleanStackTrace(string $stackTrace): string
+    {
+        return collect(explode("\n", $stackTrace))
+            ->filter(fn($line) => ! empty(trim($line)))
+            ->map(function ($line) {
+                // Extract frame number and content
+                if (! Str::match('/^#\d+\s+/', $line)) {
+                    return $line;
+                }
+
+                $frameNumber = Str::match('/^(#\d+)/', $line);
+                $frame = Str::match('/^#\d+\s+(.+?)(?:\(\d+\))?$/', $line);
+
+                if (empty($frame)) {
+                    return $line;
+                }
+
+                // Replace base path with relative path
+                $frame = Str::replace(base_path() . '/', '', $frame);
+
+                return $frameNumber . ' ' . $frame;
+            })
+            ->groupBy(function ($frame) {
+                return Str::contains($frame, '/vendor/') ? 'vendor' : 'app';
+            })
+            ->map(function ($frames, $type) {
+                if ($type === 'vendor') {
+                    $indentedFrames = $frames->map(fn($frame) => "        $frame")->implode("\n");
+                    return [Str::replace('{frames}', $indentedFrames, self::VENDOR_FRAME_PLACEHOLDER)];
+                }
+                return $frames;
+            })
+            ->flatten()
+            ->implode("\n");
+    }
+
     private function formatExceptionDetails(Throwable $exception, bool $isPrevious = false): array
     {
-        $details = [];
-
-        if (! $isPrevious) {
-            $details['message'] = $exception->getMessage();
-            $details['stack_trace'] = $exception->getTraceAsString();
-        } else {
-            $details['message'] = $exception->getMessage();
-            $details['stack_trace'] = $exception->getTraceAsString();
-        }
-
-        return $details;
+        return [
+            'message' => $exception->getMessage(),
+            'stack_trace' => $this->cleanStackTrace($exception->getTraceAsString()),
+        ];
     }
 
     private function formatPreviousExceptions(Throwable $exception): array
@@ -151,59 +192,53 @@ class GithubIssueFormatter implements FormatterInterface
             return [];
         }
 
-        $exceptions = [];
-        $count = 1;
-        while ($previous && $count <= self::MAX_PREVIOUS_EXCEPTIONS) {
-            $exceptions[] = [
-                'count' => $count,
-                'type' => get_class($previous),
-                'details' => $this->formatExceptionDetails($previous, true),
-            ];
-            $previous = $previous->getPrevious();
-            $count++;
-        }
+        return collect()
+            ->range(1, self::MAX_PREVIOUS_EXCEPTIONS)
+            ->map(function ($count) use (&$previous) {
+                if (! $previous) {
+                    return null;
+                }
 
-        return $exceptions;
+                $current = $previous;
+                $previous = $previous->getPrevious();
+
+                return [
+                    'count' => $count,
+                    'type' => get_class($current),
+                    'details' => $this->formatExceptionDetails($current, true),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 
-    private function renderExceptionDetails(array $details, bool $isComment = false): string
+    private function renderExceptionDetails(array $details): string
     {
         $content = "**Message:**\n```\n{$details['message']}\n```\n\n";
-
-        if ($isComment) {
-            $content .= "<details>\n<summary>Stack Trace</summary>\n\n```\n{$details['stack_trace']}\n```\n</details>\n\n";
-        } else {
-            $content .= "**Stack Trace:**\n```\n{$details['stack_trace']}\n```\n\n";
-        }
-
+        $content .= "**Stack Trace:**\n```php\n{$details['stack_trace']}\n```\n\n";
         return $content;
     }
 
-    private function renderPreviousExceptions(array $exceptions, bool $isComment = false): string
+    private function renderPreviousExceptions(array $exceptions): string
     {
         if (empty($exceptions)) {
             return '';
         }
 
-        if ($isComment) {
-            $content = "<details>\n<summary>Previous Exceptions</summary>\n\n";
-        } else {
-            $content = "## Previous Exceptions\n\n";
-        }
+        $content = "<details>\n<summary>Previous Exceptions</summary>\n\n";
 
         foreach ($exceptions as $exception) {
             $content .= "### Previous Exception #{$exception['count']}\n";
             $content .= "**Type:** {$exception['type']}\n\n";
-            $content .= $this->renderExceptionDetails($exception['details'], $isComment);
+            $content .= $this->renderExceptionDetails($exception['details']);
         }
 
         if (count($exceptions) === self::MAX_PREVIOUS_EXCEPTIONS) {
             $content .= "\n> Note: Additional previous exceptions were truncated\n";
         }
 
-        if ($isComment) {
-            $content .= "</details>\n\n";
-        }
+        $content .= "</details>\n\n";
 
         return $content;
     }
@@ -217,23 +252,8 @@ class GithubIssueFormatter implements FormatterInterface
     public function formatComment(LogRecord $record, ?Throwable $exception): string
     {
         $body = "**New Occurrence:**\n\n";
-
-        if (! empty($record->message)) {
-            $body .= "**Message:**\n{$record->message}\n\n";
-        }
-
-        if ($exception) {
-            $details = $this->formatExceptionDetails($exception);
-            $body .= $this->renderExceptionDetails($details, true);
-            $previousExceptions = $this->formatPreviousExceptions($exception);
-            $body .= $this->renderPreviousExceptions($previousExceptions, true);
-        } elseif (! empty($record->context)) {
-            $body .= "**Context:**\n```json\n".json_encode($record->context, JSON_PRETTY_PRINT)."\n```\n\n";
-        }
-
-        if (! empty($record->extra)) {
-            $body .= "**Extra Data:**\n```json\n".json_encode($record->extra, JSON_PRETTY_PRINT)."\n```\n";
-        }
+        $body .= "**Log Level:** {$record->level->getName()}\n\n";
+        $body .= $this->formatContent($record, $exception);
 
         return $body;
     }

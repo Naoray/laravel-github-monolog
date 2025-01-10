@@ -1,5 +1,7 @@
 # Laravel GitHub Issue Logger
 
+![issue raised](https://github.com/user-attachments/assets/c003d3c7-41ca-437b-9eea-fc8feef24719)
+
 A Laravel package that automatically creates GitHub issues from your application logs. Perfect for smaller projects where full-featured logging services like Sentry or Bugsnag might be overkill, but you still want to track bugs effectively.
 
 ## Features
