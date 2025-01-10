@@ -61,11 +61,11 @@ class GithubIssueFormatter implements FormatterInterface
                 get_class($exception),
                 $exception->getFile(),
                 $exception->getLine(),
-                $firstFrame ? ($firstFrame['file'] ?? '') . ':' . ($firstFrame['line'] ?? '') : '',
+                $firstFrame ? ($firstFrame['file'] ?? '').':'.($firstFrame['line'] ?? '') : '',
             ]));
         }
 
-        return md5($record->message . json_encode($record->context));
+        return md5($record->message.json_encode($record->context));
     }
 
     /**
@@ -90,7 +90,7 @@ class GithubIssueFormatter implements FormatterInterface
     {
         if ($exception) {
             $exceptionClass = (new ReflectionClass($exception))->getShortName();
-            $file = Str::replace(base_path() . '/', '', $exception->getFile());
+            $file = Str::replace(base_path().'/', '', $exception->getFile());
 
             return Str::of('[{level}] {class} in {file}:{line} - {message}')
                 ->replace('{level}', $record->level->getName())
@@ -121,11 +121,11 @@ class GithubIssueFormatter implements FormatterInterface
             $previousExceptions = $this->formatPreviousExceptions($exception);
             $body .= $this->renderPreviousExceptions($previousExceptions);
         } elseif (! empty($record->context)) {
-            $body .= "**Context:**\n```json\n" . json_encode($record->context, JSON_PRETTY_PRINT) . "\n```\n\n";
+            $body .= "**Context:**\n```json\n".json_encode($record->context, JSON_PRETTY_PRINT)."\n```\n\n";
         }
 
         if (! empty($record->extra)) {
-            $body .= "**Extra Data:**\n```json\n" . json_encode($record->extra, JSON_PRETTY_PRINT) . "\n```\n";
+            $body .= "**Extra Data:**\n```json\n".json_encode($record->extra, JSON_PRETTY_PRINT)."\n```\n";
         }
 
         return $body;
@@ -144,7 +144,7 @@ class GithubIssueFormatter implements FormatterInterface
     private function cleanStackTrace(string $stackTrace): string
     {
         $frames = collect(explode("\n", $stackTrace))
-            ->filter(fn($line) => ! empty(trim($line)))
+            ->filter(fn ($line) => ! empty(trim($line)))
             ->map(function ($line) {
                 // Not a stack frame line, return as is
                 if (! Str::isMatch('/#[0-9]+ /', $line)) {
@@ -166,7 +166,7 @@ class GithubIssueFormatter implements FormatterInterface
                 $vendorFrames->push($frame);
             } else {
                 if ($vendorFrames->isNotEmpty()) {
-                    $indentedFrames = $vendorFrames->map(fn($frame) => "    $frame")->implode("\n");
+                    $indentedFrames = $vendorFrames->map(fn ($frame) => "    $frame")->implode("\n");
                     $result->push(Str::replace('{frames}', $indentedFrames, self::VENDOR_FRAME_PLACEHOLDER));
                     $vendorFrames = collect();
                 }
@@ -176,7 +176,7 @@ class GithubIssueFormatter implements FormatterInterface
 
         // Add any remaining vendor frames
         if ($vendorFrames->isNotEmpty()) {
-            $indentedFrames = $vendorFrames->map(fn($frame) => "    $frame")->implode("\n");
+            $indentedFrames = $vendorFrames->map(fn ($frame) => "    $frame")->implode("\n");
             $result->push(Str::replace('{frames}', $indentedFrames, self::VENDOR_FRAME_PLACEHOLDER));
         }
 
