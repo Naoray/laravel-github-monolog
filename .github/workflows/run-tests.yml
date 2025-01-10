@@ -23,9 +23,10 @@ jobs:
         include:
           - laravel: 11.*
             testbench: 9.*
+            dependencies: ""
           - laravel: 10.*
             testbench: 8.*
-            dependencies: "guzzlehttp/guzzle"
+            dependencies: "guzzlehttp/guzzle:^7.8"
 
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }} - ${{ matrix.os }}
 
@@ -48,8 +49,8 @@ jobs:
       - name: Install dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
-          if [ ! -z "${{ matrix.dependencies }}" ]; then
-            composer require "${{ matrix.dependencies }}" --no-interaction --no-update
+          if [[ -n "${{ matrix.dependencies }}" ]]; then
+            composer require ${{ matrix.dependencies }} --no-interaction --no-update
           fi
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction
 
