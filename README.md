@@ -2,6 +2,13 @@
 
 A Laravel package that automatically creates GitHub issues from your application logs. Perfect for smaller projects where full-featured logging services like Sentry or Bugsnag might be overkill, but you still want to track bugs effectively.
 
+## Features
+
+- 😊 Automatically creates GitHub issues from log entries
+- 🔍 Groups similar errors into the same issue
+- 💬 Adds comments to existing issues when the same error occurs again
+- 🏷️ Customizable labels for better organization
+
 ## Showcase
 
 When an error occurs in your application, a new GitHub issue is automatically created with detailed error information and stack trace:
@@ -15,13 +22,6 @@ The issue appears in your repository with all the detailed information about the
 If the same error occurs again, instead of creating a duplicate, a new comment is automatically added to track the occurrence:
 
 <img src="https://github.com/user-attachments/assets/c76fd583-63a9-49b8-a7fb-a6dcf2c00ee6" width="800" alt="comment added">
-
-## Features
-
-- 😊 Automatically creates GitHub issues from log entries
-- 🔍 Groups similar errors into the same issue
-- 💬 Adds comments to existing issues when the same error occurs again
-- 🏷️ Customizable labels for better organization
 
 ## Installation
 
