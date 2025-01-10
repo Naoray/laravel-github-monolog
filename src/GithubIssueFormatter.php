@@ -2,7 +2,9 @@
 
 namespace Naoray\LaravelGithubMonolog;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Illuminate\Support\Stringable;
 use Monolog\Formatter\FormatterInterface;
 use Monolog\LogRecord;
 use ReflectionClass;
@@ -14,9 +16,7 @@ class GithubIssueFormatter implements FormatterInterface
 
     private const MAX_PREVIOUS_EXCEPTIONS = 3;
 
-    private const VENDOR_FRAME_PLACEHOLDER = '<details><summary>    &lt;vendor frame&gt;</summary>
-        {frames}
-</details>';
+    private const VENDOR_FRAME_PLACEHOLDER = '[Vendor frames]';
 
     /**
      * Formats a log record.
@@ -53,19 +53,19 @@ class GithubIssueFormatter implements FormatterInterface
      */
     private function generateSignature(LogRecord $record, ?Throwable $exception): string
     {
-        if ($exception) {
-            $trace = $exception->getTrace();
-            $firstFrame = ! empty($trace) ? $trace[0] : null;
-
-            return md5(implode(':', [
-                get_class($exception),
-                $exception->getFile(),
-                $exception->getLine(),
-                $firstFrame ? ($firstFrame['file'] ?? '').':'.($firstFrame['line'] ?? '') : '',
-            ]));
+        if (!$exception) {
+            return md5($record->message . json_encode($record->context));
         }
 
-        return md5($record->message.json_encode($record->context));
+        $trace = $exception->getTrace();
+        $firstFrame = ! empty($trace) ? $trace[0] : null;
+
+        return md5(implode(':', [
+            $exception::class,
+            $exception->getFile(),
+            $exception->getLine(),
+            $firstFrame ? ($firstFrame['file'] ?? '') . ':' . ($firstFrame['line'] ?? '') : '',
+        ]));
     }
 
     /**
@@ -88,107 +88,144 @@ class GithubIssueFormatter implements FormatterInterface
 
     private function formatTitle(LogRecord $record, ?Throwable $exception = null): string
     {
-        if ($exception) {
-            $exceptionClass = (new ReflectionClass($exception))->getShortName();
-            $file = Str::replace(base_path().'/', '', $exception->getFile());
-
-            return Str::of('[{level}] {class} in {file}:{line} - {message}')
+        if (!$exception) {
+            return Str::of('[{level}] {message}')
                 ->replace('{level}', $record->level->getName())
-                ->replace('{class}', $exceptionClass)
-                ->replace('{file}', $file)
-                ->replace('{line}', (string) $exception->getLine())
-                ->replace('{message}', Str::limit($exception->getMessage(), self::TITLE_MAX_LENGTH))
+                ->replace('{message}', Str::limit($record->message, self::TITLE_MAX_LENGTH))
                 ->toString();
         }
 
-        return Str::of('[{level}] {message}')
+        $exceptionClass = (new ReflectionClass($exception))->getShortName();
+        $file = Str::replace(base_path(), '', $exception->getFile());
+
+        return Str::of('[{level}] {class} in {file}:{line} - {message}')
             ->replace('{level}', $record->level->getName())
-            ->replace('{message}', Str::limit($record->message, self::TITLE_MAX_LENGTH))
+            ->replace('{class}', $exceptionClass)
+            ->replace('{file}', $file)
+            ->replace('{line}', (string) $exception->getLine())
+            ->replace('{message}', Str::limit($exception->getMessage(), self::TITLE_MAX_LENGTH))
             ->toString();
     }
 
     private function formatContent(LogRecord $record, ?Throwable $exception): string
     {
-        $body = '';
-
-        if (! empty($record->message)) {
-            $body .= "**Message:**\n{$record->message}\n\n";
-        }
-
-        if ($exception) {
-            $details = $this->formatExceptionDetails($exception);
-            $body .= $this->renderExceptionDetails($details);
-            $previousExceptions = $this->formatPreviousExceptions($exception);
-            $body .= $this->renderPreviousExceptions($previousExceptions);
-        } elseif (! empty($record->context)) {
-            $body .= "**Context:**\n```json\n".json_encode($record->context, JSON_PRETTY_PRINT)."\n```\n\n";
-        }
-
-        if (! empty($record->extra)) {
-            $body .= "**Extra Data:**\n```json\n".json_encode($record->extra, JSON_PRETTY_PRINT)."\n```\n";
-        }
-
-        return $body;
+        return Str::of('')
+            ->when($record->message, fn($str, $message) => $str->append("**Message:**\n{$message}\n\n"))
+            ->when(
+                $exception,
+                function (Stringable $str, Throwable $exception) {
+                    return $str->append(
+                        $this->renderExceptionDetails($this->formatExceptionDetails($exception)),
+                        $this->renderPreviousExceptions($this->formatPreviousExceptions($exception))
+                    );
+                }
+            )
+            ->when(!$exception && !empty($record->context), fn($str, $context) => $str->append("**Context:**\n```json\n{$context}\n```\n\n"))
+            ->when(!empty($record->extra), fn($str, $extra) => $str->append("**Extra Data:**\n```json\n{$extra}\n```\n"))
+            ->toString();
     }
 
     private function formatBody(LogRecord $record, string $signature, ?Throwable $exception): string
     {
-        $body = "<details>\n<summary>Initial Issue Details</summary>\n\n";
-        $body .= "**Log Level:** {$record->level->getName()}\n\n";
-        $body .= $this->formatContent($record, $exception);
-        $body .= "</details>\n\n<!-- Signature: {$signature} -->";
-
-        return $body;
+        return Str::of("\n<summary>Initial Issue Details</summary>\n\n")
+            ->append("**Log Level:** {$record->level->getName()}\n\n")
+            ->append($this->formatContent($record, $exception))
+            ->append("\n\n<!-- Signature: {$signature} -->")
+            ->toString();
     }
 
+    /**
+     * Shamelessly stolen from Solo by @aarondfrancis
+     *
+     * See: https://github.com/aarondfrancis/solo/blob/main/src/Commands/EnhancedTailCommand.php
+     */
     private function cleanStackTrace(string $stackTrace): string
     {
-        $frames = collect(explode("\n", $stackTrace))
-            ->filter(fn ($line) => ! empty(trim($line)))
+        return collect(explode("\n", $stackTrace))
+            ->filter(fn($line) => ! empty(trim($line)))
             ->map(function ($line) {
+                if (trim($line) === '"}') {
+                    return '';
+                }
+
+                if (str_contains($line, '{"exception":"[object] ')) {
+                    return $this->formatInitialException($line);
+                }
+
                 // Not a stack frame line, return as is
                 if (! Str::isMatch('/#[0-9]+ /', $line)) {
                     return $line;
                 }
 
                 // Make the line shorter by removing the base path
-                return str_replace(base_path(), '', $line);
-            })
-            ->values();
+                $line = str_replace(base_path(), '', $line);
 
-        $result = collect();
-        $vendorFrames = collect();
-
-        foreach ($frames as $frame) {
-            $isVendorFrame = Str::contains($frame, '/vendor/') && ! Str::isMatch("/BoundMethod\.php\([0-9]+\):/", $frame);
-
-            if ($isVendorFrame) {
-                $vendorFrames->push($frame);
-            } else {
-                if ($vendorFrames->isNotEmpty()) {
-                    $indentedFrames = $vendorFrames->map(fn ($frame) => "    $frame")->implode("\n");
-                    $result->push(Str::replace('{frames}', $indentedFrames, self::VENDOR_FRAME_PLACEHOLDER));
-                    $vendorFrames = collect();
+                if (str_contains((string) $line, '/vendor/') && !Str::isMatch("/BoundMethod\.php\([0-9]+\): App/", $line)) {
+                    return self::VENDOR_FRAME_PLACEHOLDER;
                 }
-                $result->push($frame);
-            }
-        }
 
-        // Add any remaining vendor frames
-        if ($vendorFrames->isNotEmpty()) {
-            $indentedFrames = $vendorFrames->map(fn ($frame) => "    $frame")->implode("\n");
-            $result->push(Str::replace('{frames}', $indentedFrames, self::VENDOR_FRAME_PLACEHOLDER));
-        }
-
-        return $result->implode("\n");
+                return $line;
+            })
+            ->pipe($this->modifyWrappedLines(...))
+            ->join("\n");
     }
 
-    private function formatExceptionDetails(Throwable $exception, bool $isPrevious = false): array
+    public function formatInitialException($line): array
     {
+        [$message, $exception] = explode('{"exception":"[object] ', $line);
+
+        return [
+            $message,
+            $exception,
+        ];
+    }
+
+    protected function modifyWrappedLines(Collection $lines): Collection
+    {
+        $hasVendorFrame = false;
+
+        // After all the lines have been wrapped, we look through them
+        // to collapse consecutive vendor frames into a single line.
+        return $lines->filter(function ($line) use (&$hasVendorFrame) {
+            $isVendorFrame = str_contains($line, '[Vendor frames]');
+
+            if ($isVendorFrame) {
+                // Skip the line if a vendor frame has already been added.
+                if ($hasVendorFrame) {
+                    return false;
+                }
+                // Otherwise, mark that a vendor frame has been added.
+                $hasVendorFrame = true;
+            } else {
+                // Reset the flag if the current line is not a vendor frame.
+                $hasVendorFrame = false;
+            }
+
+            return true;
+        });
+    }
+
+    private function formatExceptionDetails(Throwable $exception): array
+    {
+        $header = sprintf(
+            "[%s] %s: %s at %s:%d",
+            $this->getCurrentDateTime(),
+            (new ReflectionClass($exception))->getShortName(),
+            $exception->getMessage(),
+            str_replace(base_path(), '', $exception->getFile()),
+            $exception->getLine()
+        );
+
         return [
             'message' => $exception->getMessage(),
-            'stack_trace' => $this->cleanStackTrace($exception->getTraceAsString()),
+            'stack_trace' => $header . "\n[stacktrace]\n" . $this->cleanStackTrace($exception->getTraceAsString()),
+            'full_stack_trace' => $header . "\n[stacktrace]\n" . $exception->getTraceAsString(),
         ];
+    }
+
+    private function getCurrentDateTime(): string
+    {
+        return now()->format('Y-m-d H:i:s');
     }
 
     private function formatPreviousExceptions(Throwable $exception): array
@@ -222,7 +259,13 @@ class GithubIssueFormatter implements FormatterInterface
     private function renderExceptionDetails(array $details): string
     {
         $content = sprintf("**Message:**\n```\n%s\n```\n\n", $details['message']);
-        $content .= sprintf("**Stack Trace:**\n%s\n\n", $details['stack_trace']);
+        $content .= sprintf("**Simplified Stack Trace:**\n```php\n%s\n```\n\n", $details['stack_trace']);
+
+        // Add the complete stack trace in details tag
+        $content .= "**Complete Stack Trace:**\n";
+        $content .= "<details>\n<summary>View full trace</summary>\n\n";
+        $content .= sprintf("```php\n%s\n```\n", str_replace(base_path(), '', $details['full_stack_trace'] ?? $details['stack_trace']));
+        $content .= "</details>\n\n";
 
         return $content;
     }
