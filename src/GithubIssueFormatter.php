@@ -57,11 +57,11 @@ class GithubIssueFormatter implements FormatterInterface
                 get_class($exception),
                 $exception->getFile(),
                 $exception->getLine(),
-                $firstFrame ? ($firstFrame['file'] ?? '') . ':' . ($firstFrame['line'] ?? '') : '',
+                $firstFrame ? ($firstFrame['file'] ?? '').':'.($firstFrame['line'] ?? '') : '',
             ]));
         }
 
-        return md5($record->message . json_encode($record->context));
+        return md5($record->message.json_encode($record->context));
     }
 
     /**
@@ -117,11 +117,11 @@ class GithubIssueFormatter implements FormatterInterface
             $previousExceptions = $this->formatPreviousExceptions($exception);
             $body .= $this->renderPreviousExceptions($previousExceptions);
         } elseif (! empty($record->context)) {
-            $body .= "**Context:**\n```json\n" . json_encode($record->context, JSON_PRETTY_PRINT) . "\n```\n\n";
+            $body .= "**Context:**\n```json\n".json_encode($record->context, JSON_PRETTY_PRINT)."\n```\n\n";
         }
 
         if (! empty($record->extra)) {
-            $body .= "**Extra Data:**\n```json\n" . json_encode($record->extra, JSON_PRETTY_PRINT) . "\n```\n";
+            $body .= "**Extra Data:**\n```json\n".json_encode($record->extra, JSON_PRETTY_PRINT)."\n```\n";
         }
 
         $body .= "\n\n<!-- Signature: {$signature} -->";
@@ -228,11 +228,11 @@ class GithubIssueFormatter implements FormatterInterface
             $previousExceptions = $this->formatPreviousExceptions($exception);
             $body .= $this->renderPreviousExceptions($previousExceptions, true);
         } elseif (! empty($record->context)) {
-            $body .= "**Context:**\n```json\n" . json_encode($record->context, JSON_PRETTY_PRINT) . "\n```\n\n";
+            $body .= "**Context:**\n```json\n".json_encode($record->context, JSON_PRETTY_PRINT)."\n```\n\n";
         }
 
         if (! empty($record->extra)) {
-            $body .= "**Extra Data:**\n```json\n" . json_encode($record->extra, JSON_PRETTY_PRINT) . "\n```\n";
+            $body .= "**Extra Data:**\n```json\n".json_encode($record->extra, JSON_PRETTY_PRINT)."\n```\n";
         }
 
         return $body;
