@@ -127,8 +127,7 @@ class GithubIssueFormatter implements FormatterInterface
 
     private function formatBody(LogRecord $record, string $signature, ?Throwable $exception): string
     {
-        return Str::of("\n<summary>Initial Issue Details</summary>\n\n")
-            ->append("**Log Level:** {$record->level->getName()}\n\n")
+        return Str::of("**Log Level:** {$record->level->getName()}\n\n")
             ->append($this->formatContent($record, $exception))
             ->append("\n\n<!-- Signature: {$signature} -->")
             ->toString();
@@ -258,8 +257,7 @@ class GithubIssueFormatter implements FormatterInterface
 
     private function renderExceptionDetails(array $details): string
     {
-        $content = sprintf("**Message:**\n```\n%s\n```\n\n", $details['message']);
-        $content .= sprintf("**Simplified Stack Trace:**\n```php\n%s\n```\n\n", $details['stack_trace']);
+        $content = sprintf("**Simplified Stack Trace:**\n```php\n%s\n```\n\n", $details['stack_trace']);
 
         // Add the complete stack trace in details tag
         $content .= "**Complete Stack Trace:**\n";
@@ -301,7 +299,7 @@ class GithubIssueFormatter implements FormatterInterface
      */
     public function formatComment(LogRecord $record, ?Throwable $exception): string
     {
-        $body = "**New Occurrence:**\n\n";
+        $body = "# New Occurrence\n\n";
         $body .= "**Log Level:** {$record->level->getName()}\n\n";
         $body .= $this->formatContent($record, $exception);
 

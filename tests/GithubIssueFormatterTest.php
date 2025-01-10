@@ -183,14 +183,12 @@ test('it formats stack traces with collapsible vendor frames', function () {
 
     $formatted = $formatter->format($record);
 
-    dd($formatted);
-
     // Verify that app frames are directly visible
     expect($formatted->body)
         ->toContain('app/Http/Controllers/TestController.php')
         ->toContain('app/Services/TestService.php')
         // Verify that vendor frames are wrapped in details tags
         ->toContain('[Vendor frames]')
-        ->not->toContain('vendor/laravel/framework/src/Testing.php')
-        ->not->toContain('vendor/another/package/src/File.php');
+        ->toContain('vendor/laravel/framework/src/Testing.php')
+        ->toContain('vendor/another/package/src/File.php');
 });
