@@ -186,8 +186,8 @@ test('it includes extra data in issue body', function () {
 
     Http::assertSent(function ($request) {
         return $request->url() === 'https://api.github.com/repos/test/repo/issues' &&
-            str_contains($request['body'], '"server":"production"') &&
-            str_contains($request['body'], '"user_id":123');
+            str_contains($request['body'], '"server": "production"') &&
+            str_contains($request['body'], '"user_id": 123');
     });
 });
 
