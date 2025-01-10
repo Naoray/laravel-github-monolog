@@ -1,5 +1,10 @@
 # Laravel GitHub Issue Logger
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/naoray/laravel-github-monolog.svg?style=flat-square)](https://packagist.org/packages/naoray/laravel-github-monolog)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/naoray/laravel-github-monolog/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/naoray/laravel-github-monolog/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/naoray/laravel-github-monolog/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/naoray/laravel-github-monolog/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/naoray/laravel-github-monolog.svg?style=flat-square)](https://packagist.org/packages/naoray/laravel-github-monolog)
+
 A Laravel package that automatically creates GitHub issues from your application logs. Perfect for smaller projects where full-featured logging services like Sentry or Bugsnag might be overkill, but you still want to track bugs effectively.
 
 ## Features
