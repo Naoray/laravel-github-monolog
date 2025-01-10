@@ -135,3 +135,60 @@ test('it generates different signatures for different errors', function () {
     // Different errors should have different signatures
     expect($formatted1->signature)->not->toBe($formatted2->signature);
 });
+
+test('it formats stack traces with collapsible vendor frames', function () {
+    $formatter = new GithubIssueFormatter;
+
+    $exception = new Exception('Test exception');
+    $reflection = new ReflectionClass($exception);
+    $traceProperty = $reflection->getProperty('trace');
+    $traceProperty->setAccessible(true);
+
+    // Set a custom stack trace with both vendor and application frames
+    $traceProperty->setValue($exception, [
+        [
+            'file' => base_path('app/Http/Controllers/TestController.php'),
+            'line' => 25,
+            'function' => 'testMethod',
+            'class' => 'TestController',
+        ],
+        [
+            'file' => base_path('vendor/laravel/framework/src/Testing.php'),
+            'line' => 50,
+            'function' => 'vendorMethod',
+            'class' => 'VendorClass',
+        ],
+        [
+            'file' => base_path('vendor/another/package/src/File.php'),
+            'line' => 100,
+            'function' => 'anotherVendorMethod',
+            'class' => 'AnotherVendorClass',
+        ],
+        [
+            'file' => base_path('app/Services/TestService.php'),
+            'line' => 30,
+            'function' => 'serviceMethod',
+            'class' => 'TestService',
+        ],
+    ]);
+
+    $record = new LogRecord(
+        datetime: new DateTimeImmutable,
+        channel: 'test',
+        level: Level::Error,
+        message: 'Error occurred',
+        context: ['exception' => $exception],
+        extra: []
+    );
+
+    $formatted = $formatter->format($record);
+
+    // Verify that app frames are directly visible
+    expect($formatted->body)
+        ->toContain('app/Http/Controllers/TestController.php')
+        ->toContain('app/Services/TestService.php')
+        // Verify that vendor frames are wrapped in details tags
+        ->toContain('<details><summary>    &lt;vendor frame&gt;</summary>')
+        ->toContain('vendor/laravel/framework/src/Testing.php')
+        ->toContain('vendor/another/package/src/File.php');
+});
