@@ -18,10 +18,10 @@ If the same error occurs again, instead of creating a duplicate, a new comment i
 
 ## Features
 
-😊 Automatically creates GitHub issues from log entries&#8203;
-🔍 Groups similar errors into the same issue&#8203;
-💬 Adds comments to existing issues when the same error occurs again&#8203;
-🏷️ Customizable labels for better organization&#8203;
+- 😊 Automatically creates GitHub issues from log entries
+- 🔍 Groups similar errors into the same issue
+- 💬 Adds comments to existing issues when the same error occurs again
+- 🏷️ Customizable labels for better organization
 
 ## Installation
 
