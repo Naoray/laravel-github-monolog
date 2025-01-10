@@ -2,6 +2,8 @@
 
 A Laravel package that automatically creates GitHub issues from your application logs. Perfect for smaller projects where full-featured logging services like Sentry or Bugsnag might be overkill, but you still want to track bugs effectively.
 
+## Showcase
+
 When an error occurs in your application, a new GitHub issue is automatically created with detailed error information and stack trace:
 
 <img src="https://github.com/user-attachments/assets/bd1a7e9b-e1f3-43ed-b779-14fbaa974916" width="800" alt="issue raised">
