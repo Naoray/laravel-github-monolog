@@ -1,5 +1,0 @@
-parameters:
-	ignoreErrors:
-		-
-			message: '#Parameter \$handler of function createFormattedRecord expects Naoray\\LaravelGithubMonolog\\GithubIssueLoggerHandler, Monolog\\Handler\\HandlerInterface given\.#'
-			path: tests/GithubIssueLoggerHandlerTest.php

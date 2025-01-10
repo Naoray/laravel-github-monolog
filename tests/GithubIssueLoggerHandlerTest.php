@@ -1,14 +1,11 @@
 <?php
 
-namespace Naoray\GithubMonolog\Tests;
-
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Monolog\Level;
 use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\GithubIssueFormatter;
 use Naoray\LaravelGithubMonolog\GithubIssueLoggerHandler;
-use RuntimeException;
 
 beforeEach(function () {
     $this->handler = (new GithubIssueLoggerHandler(
@@ -52,7 +49,6 @@ test('it creates a new issue when no matching issue exists', function () {
         'github.com/repos/test/repo/issues' => Http::response(['number' => 1], 201),
     ]);
 
-    /** @phpstan-ignore-next-line */
     $this->handler->handle(createFormattedRecord($this->handler));
 
     Http::assertSent(function ($request) {
@@ -82,7 +78,7 @@ test('it adds comment to existing issue when signature matches', function () {
 
 test('it throws exception when github api fails', function () {
     Http::fake([
-        'github.com/search/issues*' => Http::response([], 500),
+        'github.com/search/issues*' => Http::response(['message' => 'Bad credentials'], 401),
     ]);
 
     expect(fn () => $this->handler->handle(createFormattedRecord($this->handler)))
@@ -102,7 +98,6 @@ test('it merges default label with custom labels', function () {
         level: Level::Error
     ))->setFormatter(new GithubIssueFormatter);
 
-    /** @phpstan-ignore-next-line */
     $handler->handle(createFormattedRecord($handler));
 
     Http::assertSent(function ($request) {
@@ -214,7 +209,7 @@ test('it creates unique signatures for different errors', function () {
 test('it fails gracefully when creating issue fails', function () {
     Http::fake([
         'github.com/search/issues*' => Http::response(['items' => []]),
-        'github.com/repos/test/repo/issues' => Http::response([], 500),
+        'github.com/repos/test/repo/issues' => Http::response(['message' => 'Validation Failed'], 422),
     ]);
 
     $record = createFormattedRecord($this->handler);
