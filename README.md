@@ -4,7 +4,7 @@ A Laravel package that automatically creates GitHub issues from your application
 
 When an error occurs in your application, a new GitHub issue is automatically created with detailed error information and stack trace:
 
-<img src="https://github.com/user-attachments/assets/2fa83b7a-3020-45d9-b669-3e7e17134024" width="800" alt="issue raised">
+<img src="https://github.com/user-attachments/assets/bd1a7e9b-e1f3-43ed-b779-14fbaa974916" width="800" alt="issue raised">
 
 The issue appears in your repository with all the detailed information about the error:
 
