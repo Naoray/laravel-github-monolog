@@ -1,11 +1,12 @@
 <?php
 
 use Monolog\Level;
+use Monolog\Logger;
 use Naoray\LaravelGithubMonolog\GithubIssueFormatter;
 use Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory;
 use Naoray\LaravelGithubMonolog\GithubIssueLoggerHandler;
 
-test('it creates handler with correct configuration', function () {
+test('it creates logger with correct configuration', function () {
     $config = [
         'repo' => 'test/repo',
         'token' => 'fake-token',
@@ -16,21 +17,20 @@ test('it creates handler with correct configuration', function () {
     $factory = new GithubIssueHandlerFactory;
     $handler = $factory($config);
 
-    expect($handler)
-        ->toBeInstanceOf(GithubIssueLoggerHandler::class)
-        ->and($handler->getFormatter())
-        ->toBeInstanceOf(GithubIssueFormatter::class)
-        ->and($handler->getLevel())
-        ->toBe(Level::Error);
+    expect($logger)
+        ->toBeInstanceOf(Logger::class)
+        ->and($logger->getName())->toBe('github')
+        ->and($logger->getHandlers()[0])
+        ->toBeInstanceOf(GithubIssueLoggerHandler::class);
 });
 
 test('it throws exception for missing required config', function () {
     $factory = new GithubIssueHandlerFactory;
 
-    expect(fn () => $factory([]))
+    expect(fn() => $factory([]))
         ->toThrow(InvalidArgumentException::class, 'GitHub repository is required');
 
-    expect(fn () => $factory(['repo' => 'test/repo']))
+    expect(fn() => $factory(['repo' => 'test/repo']))
         ->toThrow(InvalidArgumentException::class, 'GitHub token is required');
 });
 
