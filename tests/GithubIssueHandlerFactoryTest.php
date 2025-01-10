@@ -1,10 +1,28 @@
 <?php
 
+use Monolog\Handler\DeduplicationHandler;
 use Monolog\Level;
 use Monolog\Logger;
 use Naoray\LaravelGithubMonolog\GithubIssueFormatter;
 use Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory;
 use Naoray\LaravelGithubMonolog\GithubIssueLoggerHandler;
+use ReflectionProperty;
+
+function getWrappedHandler(DeduplicationHandler $handler): GithubIssueLoggerHandler
+{
+    $reflection = new ReflectionProperty($handler, 'handler');
+    $reflection->setAccessible(true);
+
+    return $reflection->getValue($handler);
+}
+
+function getDeduplicationStore(DeduplicationHandler $handler): string
+{
+    $reflection = new ReflectionProperty($handler, 'deduplicationStore');
+    $reflection->setAccessible(true);
+
+    return $reflection->getValue($handler);
+}
 
 test('it creates logger with correct configuration', function () {
     $config = [
@@ -21,7 +39,13 @@ test('it creates logger with correct configuration', function () {
         ->toBeInstanceOf(Logger::class)
         ->and($logger->getName())->toBe('github')
         ->and($logger->getHandlers()[0])
-        ->toBeInstanceOf(GithubIssueLoggerHandler::class);
+        ->toBeInstanceOf(DeduplicationHandler::class);
+
+    /** @var DeduplicationHandler $deduplicationHandler */
+    $deduplicationHandler = $logger->getHandlers()[0];
+    $handler = getWrappedHandler($deduplicationHandler);
+
+    expect($handler)->toBeInstanceOf(GithubIssueLoggerHandler::class);
 });
 
 test('it throws exception for missing required config', function () {
@@ -42,14 +66,20 @@ test('it uses default values for optional config', function () {
 
     $factory = new GithubIssueHandlerFactory;
     $logger = $factory($config);
-    /** @var GithubIssueLoggerHandler $handler */
-    $handler = $logger->getHandlers()[0];
+
+    /** @var DeduplicationHandler $deduplicationHandler */
+    $deduplicationHandler = $logger->getHandlers()[0];
+    $handler = getWrappedHandler($deduplicationHandler);
 
     expect($handler)
         ->toBeInstanceOf(GithubIssueLoggerHandler::class)
         ->and($handler->getLevel())->toBe(Level::Error)
         ->and($handler->getBubble())->toBeTrue()
         ->and($handler->getFormatter())->toBeInstanceOf(GithubIssueFormatter::class);
+
+    // Verify default deduplication store path
+    expect(getDeduplicationStore($deduplicationHandler))
+        ->toBe(storage_path('logs/github-issues-dedup.log'));
 });
 
 test('it accepts custom log level', function () {
@@ -61,8 +91,34 @@ test('it accepts custom log level', function () {
 
     $factory = new GithubIssueHandlerFactory;
     $logger = $factory($config);
-    /** @var GithubIssueLoggerHandler $handler */
-    $handler = $logger->getHandlers()[0];
+
+    /** @var DeduplicationHandler $deduplicationHandler */
+    $deduplicationHandler = $logger->getHandlers()[0];
+    $handler = getWrappedHandler($deduplicationHandler);
 
     expect($handler->getLevel())->toBe(Level::Debug);
+});
+
+test('it allows custom deduplication configuration', function () {
+    $config = [
+        'repo' => 'test/repo',
+        'token' => 'fake-token',
+        'deduplication' => [
+            'store' => '/custom/path/dedup.log',
+            'time' => 120,
+        ],
+    ];
+
+    $factory = new GithubIssueHandlerFactory;
+    $logger = $factory($config);
+
+    /** @var DeduplicationHandler $deduplicationHandler */
+    $deduplicationHandler = $logger->getHandlers()[0];
+
+    expect(getDeduplicationStore($deduplicationHandler))
+        ->toBe('/custom/path/dedup.log');
+
+    $reflection = new ReflectionProperty($deduplicationHandler, 'time');
+    $reflection->setAccessible(true);
+    expect($reflection->getValue($deduplicationHandler))->toBe(120);
 });

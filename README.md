@@ -4,14 +4,16 @@ A Laravel package that automatically creates GitHub issues from your application
 
 ## Features
 
-- 😊 Automatically creates GitHub issues from log entries
-- 🔍 Groups similar errors into the same issue
-- 💬 Adds comments to existing issues when the same error occurs again
-- 🏷️ Customizable labels for better organization
+- ✨ Automatically creates GitHub issues from log entries
+- 🔍 Intelligently groups similar errors into single issues
+- 💬 Adds comments to existing issues for recurring errors
+- 🏷️ Supports customizable labels for efficient organization
+- 🎯 Smart deduplication to prevent issue spam
+- ⚡️ Buffered logging for better performance
 
 ## Showcase
 
-When an error occurs in your application, a new GitHub issue is automatically created with detailed error information and stack trace:
+When an error occurs in your application, a GitHub issue is automatically created with comprehensive error information and stack trace:
 
 <img src="https://github.com/user-attachments/assets/bd1a7e9b-e1f3-43ed-b779-14fbaa974916" width="800" alt="issue raised">
 
@@ -40,12 +42,19 @@ Add the GitHub logging channel to your `config/logging.php`:
     // ... other channels ...
 
     'github' => [
+        // Required configuration
         'driver' => 'custom',
         'via' => \Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory::class,
-        'level' => env('LOG_LEVEL', 'error'),
         'repo' => env('GITHUB_REPO'),    // Format: "username/repository"
         'token' => env('GITHUB_TOKEN'),  // Your GitHub Personal Access Token
-        'labels' => ['bug'],            // Optional: Additional labels for issues
+
+        // Optional configuration
+        'level' => env('LOG_LEVEL', 'error'),
+        'labels' => ['bug'],
+        'deduplication' => [
+            'store' => storage_path('logs/github-issues-dedup.log'),  // Custom path for deduplication storage
+            'time' => 60,  // Time in seconds to consider logs as duplicates
+        ],
     ],
 ]
 ```
@@ -57,21 +66,25 @@ GITHUB_REPO=username/repository
 GITHUB_TOKEN=your-github-personal-access-token
 ```
 
+You can use the `github` log channel as your default `LOG_CHANNEL` or add it as part of your stack in `LOG_STACK`.
+
 ### Getting a GitHub Token
 
 To obtain a Personal Access Token:
 
 1. Go to [Generate a new token](https://github.com/settings/tokens/new?description=Laravel%20GitHub%20Issue%20Logger&scopes=repo) (this link pre-selects the required scopes)
-2. Review the pre-selected scopes (you should see `repo` checked)
+2. Review the pre-selected scopes (the `repo` scope should be checked)
 3. Click "Generate token"
-4. Copy the token immediately (you won't be able to see it again!)
+4. Copy the token immediately (you won't be able to access it again after leaving the page)
 5. Add it to your `.env` file as `GITHUB_TOKEN`
 
-> **Note**: The token needs the `repo` scope to create issues in both public and private repositories.
+> **Note**: The token requires the `repo` scope to create issues in both public and private repositories.
 
 ## Usage
 
-Use it like any other Laravel logging channel:
+Whenever an exception is thrown it will be logged as an issue to your repository.
+
+You can also use it like any other Laravel logging channel:
 
 ```php
 // Single channel
@@ -81,7 +94,21 @@ Log::channel('github')->error('Something went wrong!');
 Log::stack(['daily', 'github'])->error('Something went wrong!');
 ```
 
-Each unique error will create a new GitHub issue. If the same error occurs again, it will be added as a comment to the existing issue instead of creating a duplicate.
+### Deduplication
+
+The package includes smart deduplication to prevent your repository from being flooded with duplicate issues:
+
+1. **Time-based Deduplication**: Similar errors within the configured time window (default: 60 seconds) are considered duplicates
+2. **Intelligent Grouping**: Uses error signatures to group similar errors, even if the exact details differ
+3. **Automatic Storage**: Deduplication data is automatically stored in your Laravel logs directory
+4. **Configurable**: Customize both the storage location and deduplication time window
+
+For example, if your application encounters the same error multiple times in quick succession:
+- First occurrence: Creates a new GitHub issue
+- Subsequent occurrences within the deduplication window: No new issues created
+- After the deduplication window: Creates a new issue or adds a comment to the existing one
+
+This helps keep your GitHub issues organized and prevents notification spam during error storms.
 
 ## Testing
 
