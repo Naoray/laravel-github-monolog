@@ -11,8 +11,12 @@ class GithubIssueHandlerFactory
 {
     public function __invoke(array $config): Logger
     {
-        if (Arr::has($config, ['repo', 'token'])) {
-            throw new InvalidArgumentException('GitHub repository and token are required');
+        if (! Arr::has($config, 'repo')) {
+            throw new InvalidArgumentException('GitHub repository is required');
+        }
+
+        if (! Arr::has($config, 'token')) {
+            throw new InvalidArgumentException('GitHub token is required');
         }
 
         $handler = new GithubIssueLoggerHandler(

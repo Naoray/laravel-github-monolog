@@ -1,5 +1,6 @@
 <?php
 
+use Monolog\Handler\HandlerInterface;
 use Monolog\Level;
 use Monolog\Logger;
 use Naoray\LaravelGithubMonolog\GithubIssueFormatter;
@@ -15,7 +16,7 @@ test('it creates logger with correct configuration', function () {
     ];
 
     $factory = new GithubIssueHandlerFactory;
-    $handler = $factory($config);
+    $logger = $factory($config);
 
     expect($logger)
         ->toBeInstanceOf(Logger::class)
@@ -27,10 +28,10 @@ test('it creates logger with correct configuration', function () {
 test('it throws exception for missing required config', function () {
     $factory = new GithubIssueHandlerFactory;
 
-    expect(fn () => $factory([]))
+    expect(fn() => $factory([]))
         ->toThrow(InvalidArgumentException::class, 'GitHub repository is required');
 
-    expect(fn () => $factory(['repo' => 'test/repo']))
+    expect(fn() => $factory(['repo' => 'test/repo']))
         ->toThrow(InvalidArgumentException::class, 'GitHub token is required');
 });
 
@@ -41,7 +42,9 @@ test('it uses default values for optional config', function () {
     ];
 
     $factory = new GithubIssueHandlerFactory;
-    $handler = $factory($config);
+    $logger = $factory($config);
+    /** @var GithubIssueLoggerHandler $handler */
+    $handler = $logger->getHandlers()[0];
 
     expect($handler)
         ->toBeInstanceOf(GithubIssueLoggerHandler::class)
@@ -58,7 +61,9 @@ test('it accepts custom log level', function () {
     ];
 
     $factory = new GithubIssueHandlerFactory;
-    $handler = $factory($config);
+    $logger = $factory($config);
+    /** @var GithubIssueLoggerHandler $handler */
+    $handler = $logger->getHandlers()[0];
 
     expect($handler->getLevel())->toBe(Level::Debug);
 });
