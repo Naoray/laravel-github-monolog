@@ -66,11 +66,11 @@ class GithubIssueLoggerHandler extends AbstractProcessingHandler
     {
         $response = Http::withToken($this->token)
             ->get('https://api.github.com/search/issues', [
-                'q' => "repo:{$this->repo} is:issue is:open label:".static::DEFAULT_LABEL." \"Signature: {$signature}\"",
+                'q' => "repo:{$this->repo} is:issue is:open label:" . self::DEFAULT_LABEL . " \"Signature: {$signature}\"",
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to search GitHub issues: '.$response->body());
+            throw new \RuntimeException('Failed to search GitHub issues: ' . $response->body());
         }
 
         return $response->json('items.0', null);
@@ -87,7 +87,7 @@ class GithubIssueLoggerHandler extends AbstractProcessingHandler
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to comment on GitHub issue: '.$response->body());
+            throw new \RuntimeException('Failed to comment on GitHub issue: ' . $response->body());
         }
     }
 
@@ -104,7 +104,7 @@ class GithubIssueLoggerHandler extends AbstractProcessingHandler
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to create GitHub issue: '.$response->body());
+            throw new \RuntimeException('Failed to create GitHub issue: ' . $response->body());
         }
     }
 }
