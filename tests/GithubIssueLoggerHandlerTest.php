@@ -85,7 +85,7 @@ test('it throws exception when github api fails', function () {
         'github.com/search/issues*' => Http::response([], 500),
     ]);
 
-    expect(fn() => $this->handler->handle(createFormattedRecord($this->handler)))
+    expect(fn () => $this->handler->handle(createFormattedRecord($this->handler)))
         ->toThrow(\RuntimeException::class, 'Failed to search GitHub issues');
 });
 
@@ -219,7 +219,7 @@ test('it fails gracefully when creating issue fails', function () {
 
     $record = createFormattedRecord($this->handler);
 
-    expect(fn() => $this->handler->handle($record))
+    expect(fn () => $this->handler->handle($record))
         ->toThrow(\RuntimeException::class, 'Failed to create GitHub issue');
 });
 
