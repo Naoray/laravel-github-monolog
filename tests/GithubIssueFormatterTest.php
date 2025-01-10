@@ -78,8 +78,8 @@ test('it includes context data in formatted output', function () {
     $formatted = $formatter->format($record);
 
     expect($formatted->body)
-        ->toContain('"user_id": 123')
-        ->toContain('"action": "login"');
+        ->toContain('"user_id":123')
+        ->toContain('"action":"login"');
 });
 
 test('it generates consistent signatures for similar errors', function () {

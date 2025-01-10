@@ -247,7 +247,7 @@ class GithubIssueFormatter implements FormatterInterface
                 return [
                     'count' => $count,
                     'type' => get_class($current),
-                    'details' => $this->formatExceptionDetails($current, true),
+                    'details' => $this->formatExceptionDetails($current),
                 ];
             })
             ->filter()
