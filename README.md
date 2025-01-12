@@ -7,6 +7,12 @@
 
 A Laravel package that automatically creates GitHub issues from your application logs. Perfect for smaller projects where full-featured logging services like Sentry or Bugsnag might be overkill, but you still want to track bugs effectively.
 
+## Requirements
+
+- PHP ^8.3
+- Laravel ^11.0
+- Monolog ^3.6
+
 ## Features
 
 - ✨ Automatically creates GitHub issues from log entries

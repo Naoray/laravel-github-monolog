@@ -65,7 +65,6 @@ test('deduplicates records with same signature', function () {
     // Verify deduplication store contains both unique signatures
     $this->handler->close();
     $contents = file_get_contents($this->deduplicationStore);
-    dd($contents);
     expect($contents)
         ->toContain($this->signatureGenerator->generate($record1))
         ->toContain($this->signatureGenerator->generate($record3));
