@@ -5,12 +5,12 @@ use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\DefaultSignatureGenerator;
 
 beforeEach(function () {
-    $this->generator = new DefaultSignatureGenerator();
+    $this->generator = new DefaultSignatureGenerator;
 });
 
 test('generates signature from message', function () {
     $record = new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
@@ -23,7 +23,7 @@ test('generates signature from message', function () {
 
     // Same message and context should generate same signature
     $record2 = new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'different-channel',
         level: Level::Warning,
         message: 'Test message',
@@ -35,7 +35,7 @@ test('generates signature from message', function () {
 
     // Different message should generate different signature
     $record3 = new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Different message',
@@ -49,7 +49,7 @@ test('generates signature from message', function () {
 test('generates signature from exception', function () {
     $exception = new \Exception('Test exception');
     $record = new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
@@ -62,7 +62,7 @@ test('generates signature from exception', function () {
 
     // Same exception should generate same signature
     $record2 = new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'different-channel',
         level: Level::Warning,
         message: 'Different message',
@@ -75,7 +75,7 @@ test('generates signature from exception', function () {
     // Different exception should generate different signature
     $differentException = new \Exception('Different exception');
     $record3 = new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',

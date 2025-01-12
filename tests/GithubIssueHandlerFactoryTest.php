@@ -50,10 +50,10 @@ test('it creates logger with correct configuration', function () {
 test('it throws exception for missing required config', function () {
     $factory = new GithubIssueHandlerFactory;
 
-    expect(fn() => $factory([]))
+    expect(fn () => $factory([]))
         ->toThrow(InvalidArgumentException::class, 'GitHub repository is required');
 
-    expect(fn() => $factory(['repo' => 'test/repo']))
+    expect(fn () => $factory(['repo' => 'test/repo']))
         ->toThrow(InvalidArgumentException::class, 'GitHub token is required');
 });
 

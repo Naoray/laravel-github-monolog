@@ -7,10 +7,10 @@ use Naoray\LaravelGithubMonolog\DefaultSignatureGenerator;
 use Naoray\LaravelGithubMonolog\Handlers\SignatureDeduplicationHandler;
 
 beforeEach(function () {
-    $this->deduplicationStore = sys_get_temp_dir() . '/test-dedup-' . uniqid() . '.log';
-    $this->signatureGenerator = new DefaultSignatureGenerator();
+    $this->deduplicationStore = sys_get_temp_dir().'/test-dedup-'.uniqid().'.log';
+    $this->signatureGenerator = new DefaultSignatureGenerator;
     $this->handler = new SignatureDeduplicationHandler(
-        new NullHandler(),
+        new NullHandler,
         $this->deduplicationStore,
         Level::Debug,
         time: 60,
@@ -26,7 +26,7 @@ afterEach(function () {
 
 test('deduplicates records with same signature', function () {
     $record1 = new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
@@ -41,7 +41,7 @@ test('deduplicates records with same signature', function () {
 
     // Same signature should be deduplicated
     $record2 = new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'different-channel',
         level: Level::Error,
         message: 'Test message',
@@ -53,7 +53,7 @@ test('deduplicates records with same signature', function () {
 
     // Different signature should not be deduplicated
     $record3 = new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Different message',
@@ -72,7 +72,7 @@ test('deduplicates records with same signature', function () {
 
 test('deduplication respects time window', function () {
     $record = new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
@@ -82,7 +82,7 @@ test('deduplication respects time window', function () {
 
     // Create handler with 1 second time window
     $handler = new SignatureDeduplicationHandler(
-        new NullHandler(),
+        new NullHandler,
         $this->deduplicationStore,
         Level::Debug,
         time: 1,

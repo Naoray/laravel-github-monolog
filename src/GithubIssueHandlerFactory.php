@@ -8,8 +8,8 @@ use InvalidArgumentException;
 use Monolog\Level;
 use Monolog\Logger;
 use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
-use Naoray\LaravelGithubMonolog\Handlers\SignatureDeduplicationHandler;
 use Naoray\LaravelGithubMonolog\Handlers\IssueLogHandler;
+use Naoray\LaravelGithubMonolog\Handlers\SignatureDeduplicationHandler;
 
 class GithubIssueHandlerFactory
 {

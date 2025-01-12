@@ -11,8 +11,11 @@ use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatted;
 class IssueLogHandler extends AbstractProcessingHandler
 {
     private string $repo;
+
     private string $token;
+
     private array $labels;
+
     private const DEFAULT_LABEL = 'github-issue-logger';
 
     /**
@@ -64,11 +67,11 @@ class IssueLogHandler extends AbstractProcessingHandler
     {
         $response = Http::withToken($this->token)
             ->get('https://api.github.com/search/issues', [
-                'q' => "repo:{$this->repo} is:issue is:open label:" . self::DEFAULT_LABEL . " \"Signature: {$signature}\"",
+                'q' => "repo:{$this->repo} is:issue is:open label:".self::DEFAULT_LABEL." \"Signature: {$signature}\"",
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to search GitHub issues: ' . $response->body());
+            throw new \RuntimeException('Failed to search GitHub issues: '.$response->body());
         }
 
         return $response->json('items.0', null);
@@ -85,7 +88,7 @@ class IssueLogHandler extends AbstractProcessingHandler
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to comment on GitHub issue: ' . $response->body());
+            throw new \RuntimeException('Failed to comment on GitHub issue: '.$response->body());
         }
     }
 
@@ -102,7 +105,7 @@ class IssueLogHandler extends AbstractProcessingHandler
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to create GitHub issue: ' . $response->body());
+            throw new \RuntimeException('Failed to create GitHub issue: '.$response->body());
         }
     }
 }

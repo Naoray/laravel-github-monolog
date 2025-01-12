@@ -15,7 +15,7 @@ class DefaultSignatureGenerator implements SignatureGenerator
     {
         $exception = $record->context['exception'] ?? null;
 
-        if (!$exception instanceof Throwable) {
+        if (! $exception instanceof Throwable) {
             return $this->generateFromMessage($record);
         }
 
@@ -27,7 +27,7 @@ class DefaultSignatureGenerator implements SignatureGenerator
      */
     private function generateFromMessage(LogRecord $record): string
     {
-        return md5($record->message . json_encode($record->context));
+        return md5($record->message.json_encode($record->context));
     }
 
     /**
@@ -36,13 +36,13 @@ class DefaultSignatureGenerator implements SignatureGenerator
     private function generateFromException(Throwable $exception): string
     {
         $trace = $exception->getTrace();
-        $firstFrame = !empty($trace) ? $trace[0] : null;
+        $firstFrame = ! empty($trace) ? $trace[0] : null;
 
         return md5(implode(':', [
             $exception::class,
             $exception->getFile(),
             $exception->getLine(),
-            $firstFrame ? ($firstFrame['file'] ?? '') . ':' . ($firstFrame['line'] ?? '') : '',
+            $firstFrame ? ($firstFrame['file'] ?? '').':'.($firstFrame['line'] ?? '') : '',
         ]));
     }
 }
