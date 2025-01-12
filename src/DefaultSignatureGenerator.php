@@ -27,7 +27,7 @@ class DefaultSignatureGenerator implements SignatureGenerator
      */
     private function generateFromMessage(LogRecord $record): string
     {
-        return md5($record->message . json_encode($record->context));
+        return md5($record->message.json_encode($record->context));
     }
 
     /**
@@ -42,7 +42,7 @@ class DefaultSignatureGenerator implements SignatureGenerator
             $exception::class,
             $exception->getFile(),
             $exception->getLine(),
-            $firstFrame ? ($firstFrame['file'] ?? '') . ':' . ($firstFrame['line'] ?? '') : '',
+            $firstFrame ? ($firstFrame['file'] ?? '').':'.($firstFrame['line'] ?? '') : '',
         ]));
     }
 }
