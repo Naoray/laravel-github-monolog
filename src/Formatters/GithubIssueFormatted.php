@@ -1,6 +1,6 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog;
+namespace Naoray\LaravelGithubMonolog\Formatters;
 
 class GithubIssueFormatted
 {

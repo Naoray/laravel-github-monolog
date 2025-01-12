@@ -3,12 +3,11 @@
 use Monolog\Handler\DeduplicationHandler;
 use Monolog\Level;
 use Monolog\Logger;
-use Naoray\LaravelGithubMonolog\GithubIssueFormatter;
+use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
 use Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory;
-use Naoray\LaravelGithubMonolog\GithubIssueLoggerHandler;
-use ReflectionProperty;
+use Naoray\LaravelGithubMonolog\Handlers\IssueLogHandler;
 
-function getWrappedHandler(DeduplicationHandler $handler): GithubIssueLoggerHandler
+function getWrappedHandler(DeduplicationHandler $handler): IssueLogHandler
 {
     $reflection = new ReflectionProperty($handler, 'handler');
     $reflection->setAccessible(true);
@@ -45,16 +44,16 @@ test('it creates logger with correct configuration', function () {
     $deduplicationHandler = $logger->getHandlers()[0];
     $handler = getWrappedHandler($deduplicationHandler);
 
-    expect($handler)->toBeInstanceOf(GithubIssueLoggerHandler::class);
+    expect($handler)->toBeInstanceOf(IssueLogHandler::class);
 });
 
 test('it throws exception for missing required config', function () {
     $factory = new GithubIssueHandlerFactory;
 
-    expect(fn () => $factory([]))
+    expect(fn() => $factory([]))
         ->toThrow(InvalidArgumentException::class, 'GitHub repository is required');
 
-    expect(fn () => $factory(['repo' => 'test/repo']))
+    expect(fn() => $factory(['repo' => 'test/repo']))
         ->toThrow(InvalidArgumentException::class, 'GitHub token is required');
 });
 
@@ -72,7 +71,7 @@ test('it uses default values for optional config', function () {
     $handler = getWrappedHandler($deduplicationHandler);
 
     expect($handler)
-        ->toBeInstanceOf(GithubIssueLoggerHandler::class)
+        ->toBeInstanceOf(IssueLogHandler::class)
         ->and($handler->getLevel())->toBe(Level::Error)
         ->and($handler->getBubble())->toBeTrue()
         ->and($handler->getFormatter())->toBeInstanceOf(GithubIssueFormatter::class);

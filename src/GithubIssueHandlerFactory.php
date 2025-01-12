@@ -5,9 +5,11 @@ namespace Naoray\LaravelGithubMonolog;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\File;
 use InvalidArgumentException;
-use Monolog\Handler\DeduplicationHandler;
 use Monolog\Level;
 use Monolog\Logger;
+use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
+use Naoray\LaravelGithubMonolog\Handlers\SignatureDeduplicationHandler;
+use Naoray\LaravelGithubMonolog\Handlers\IssueLogHandler;
 
 class GithubIssueHandlerFactory
 {
@@ -32,9 +34,9 @@ class GithubIssueHandlerFactory
         }
     }
 
-    protected function createBaseHandler(array $config): GithubIssueLoggerHandler
+    protected function createBaseHandler(array $config): IssueLogHandler
     {
-        $handler = new GithubIssueLoggerHandler(
+        $handler = new IssueLogHandler(
             repo: $config['repo'],
             token: $config['token'],
             labels: $config['labels'] ?? [],
@@ -47,9 +49,9 @@ class GithubIssueHandlerFactory
         return $handler;
     }
 
-    protected function wrapWithDeduplication(GithubIssueLoggerHandler $handler, array $config): DeduplicationHandler
+    protected function wrapWithDeduplication(IssueLogHandler $handler, array $config): SignatureDeduplicationHandler
     {
-        return new DeduplicationHandler(
+        return new SignatureDeduplicationHandler(
             $handler,
             deduplicationStore: $this->getDeduplicationStore($config),
             deduplicationLevel: Arr::get($config, 'level', Level::Error),

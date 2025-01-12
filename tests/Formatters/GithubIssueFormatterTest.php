@@ -2,8 +2,8 @@
 
 use Monolog\Level;
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\GithubIssueFormatted;
-use Naoray\LaravelGithubMonolog\GithubIssueFormatter;
+use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatted;
+use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
 
 test('it formats basic log records', function () {
     $formatter = new GithubIssueFormatter;
