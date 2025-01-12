@@ -22,7 +22,7 @@ class SignatureDeduplicationHandler extends DeduplicationHandler
         ?SignatureGenerator $signatureGenerator = null,
     ) {
         parent::__construct($handler, $deduplicationStore, $deduplicationLevel, $time, $bubble);
-        $this->signatureGenerator = $signatureGenerator ?? new DefaultSignatureGenerator();
+        $this->signatureGenerator = $signatureGenerator ?? new DefaultSignatureGenerator;
     }
 
     /**
@@ -49,6 +49,6 @@ class SignatureDeduplicationHandler extends DeduplicationHandler
      */
     protected function buildDeduplicationStoreEntry(LogRecord $record): string
     {
-        return $record->datetime->getTimestamp() . ':' . $this->signatureGenerator->generate($record);
+        return $record->datetime->getTimestamp().':'.$this->signatureGenerator->generate($record);
     }
 }
