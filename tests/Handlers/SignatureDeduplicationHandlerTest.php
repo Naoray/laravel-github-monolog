@@ -64,8 +64,12 @@ test('deduplicates records with same signature', function () {
 
     // Verify deduplication store contains both unique signatures
     $this->handler->close();
-    $contents = file_get_contents($this->deduplicationStore);
-    expect($contents)
+    $lines = file($this->deduplicationStore, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        throw new \RuntimeException("Failed to read deduplication store file");
+    }
+    $signatures = array_map(fn($line) => explode(':', $line, 2)[1], $lines);
+    expect($signatures)
         ->toContain($this->signatureGenerator->generate($record1))
         ->toContain($this->signatureGenerator->generate($record3));
 });
@@ -103,7 +107,11 @@ test('deduplication respects time window', function () {
     $handler->close();
 
     // Verify deduplication store contains only the most recent entry
-    $contents = file_get_contents($this->deduplicationStore);
+    $lines = file($this->deduplicationStore, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        throw new \RuntimeException("Failed to read deduplication store file");
+    }
+    $signatures = array_map(fn($line) => explode(':', $line, 2)[1], $lines);
     $signature = $this->signatureGenerator->generate($record);
-    expect(substr_count($contents, $signature))->toBe(1);
+    expect(array_count_values($signatures)[$signature])->toBe(1);
 });
