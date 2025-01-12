@@ -71,7 +71,7 @@ test('it includes context data in formatted output', function () {
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
-        context: ['user_id' => 123, 'action' => 'login'],
+        context: ['user_id' => 123, 'action' => 'login', 'exception' => new RuntimeException('Test exception')],
         extra: []
     );
 
