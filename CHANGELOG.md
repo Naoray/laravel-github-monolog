@@ -2,6 +2,12 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v2.0.0 - 2025-01-12
+
+- drop support for Laravel 10 / Monolog < 3.6.0
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v1.1.0...v2.0.0
+
 ## v1.1.0 - 2025-01-12
 
 - Use our own `SignatureDeduplicationHandler` to properly handle duplicated issues before submitting them to the `IssueLogHandler`
