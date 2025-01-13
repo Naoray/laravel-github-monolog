@@ -62,27 +62,28 @@ class GithubIssueHandlerFactory
     {
         return new DeduplicationHandler(
             handler: $handler,
-            store: $this->createDeduplicationStore($config),
+            store: $this->createStore($config),
             signatureGenerator: $this->signatureGenerator,
             level: Arr::get($config, 'level', Level::Error),
             bubble: true,
             bufferLimit: Arr::get($config, 'buffer.limit', 0),
-            flushOnOverflow: Arr::get($config, 'buffer.flushOnOverflow', true)
+            flushOnOverflow: Arr::get($config, 'buffer.flush_on_overflow', true)
         );
     }
 
-    protected function createDeduplicationStore(array $config): StoreInterface
+    protected function createStore(array $config): StoreInterface
     {
         $deduplication = Arr::get($config, 'deduplication', []);
         $driver = Arr::get($deduplication, 'driver', 'file');
         $time = $this->getDeduplicationTime($config);
         $prefix = Arr::get($deduplication, 'prefix', 'github-monolog:');
         $connection = Arr::get($deduplication, 'connection', 'default');
+        $path = Arr::get($deduplication, 'path', storage_path('logs/github-monolog-deduplication.log'));
 
         return match ($driver) {
             'redis' => new RedisStore(prefix: $prefix, time: $time, connection: $connection),
-            'database' => new DatabaseStore(prefix: $prefix, time: $time, connection: $connection),
-            default => new FileStore(path: Arr::get($deduplication, 'path', storage_path('logs/github-monolog-deduplication.log')), prefix: $prefix, time: $time),
+            'database' => new DatabaseStore(time: $time, connection: $connection),
+            default => new FileStore(path: $path, time: $time),
         };
     }
 

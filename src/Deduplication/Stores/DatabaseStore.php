@@ -10,16 +10,14 @@ use Monolog\LogRecord;
 class DatabaseStore extends AbstractStore
 {
     private string $table;
-
     private string $connection;
 
     public function __construct(
         string $connection = 'default',
         string $table = 'github_monolog_deduplication',
-        string $prefix = 'github-monolog:',
         int $time = 60
     ) {
-        parent::__construct($prefix, $time);
+        parent::__construct($time);
 
         $this->connection = $connection === 'default' ? config('database.default') : $connection;
         $this->table = $table;
@@ -31,7 +29,6 @@ class DatabaseStore extends AbstractStore
     {
         return DB::connection($this->connection)
             ->table($this->table)
-            ->where('prefix', $this->prefix)
             ->where('created_at', '>=', $this->getTimestampValidity())
             ->get()
             ->map(fn($row) => $this->buildEntry($row->signature, $row->created_at))
@@ -43,7 +40,6 @@ class DatabaseStore extends AbstractStore
         DB::connection($this->connection)
             ->table($this->table)
             ->insert([
-                'prefix' => $this->prefix,
                 'signature' => $signature,
                 'created_at' => $this->getTimestamp(),
             ]);
@@ -53,7 +49,6 @@ class DatabaseStore extends AbstractStore
     {
         DB::connection($this->connection)
             ->table($this->table)
-            ->where('prefix', $this->prefix)
             ->where('created_at', '<', $this->getTimestampValidity())
             ->delete();
     }
@@ -63,11 +58,10 @@ class DatabaseStore extends AbstractStore
         if (! Schema::connection($this->connection)->hasTable($this->table)) {
             Schema::connection($this->connection)->create($this->table, function (Blueprint $table) {
                 $table->id();
-                $table->string('prefix')->index();
                 $table->string('signature');
                 $table->integer('created_at')->index();
 
-                $table->index(['prefix', 'signature', 'created_at']);
+                $table->index(['signature', 'created_at']);
             });
         }
     }

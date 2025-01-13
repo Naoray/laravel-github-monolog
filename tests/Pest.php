@@ -21,21 +21,19 @@ function createLogRecord(string $message = 'Test', array $context = [], Level $l
     );
 }
 
-function createDatabaseStore(string $prefix = 'test:', int $time = 60): DatabaseStore
+function createDatabaseStore(int $time = 60): DatabaseStore
 {
     return new DatabaseStore(
         connection: 'sqlite',
         table: 'github_monolog_deduplication',
-        prefix: $prefix,
         time: $time
     );
 }
 
-function createFileStore(string $prefix = 'test:', int $time = 60): FileStore
+function createFileStore(int $time = 60): FileStore
 {
     return new FileStore(
         path: test()->testPath,
-        prefix: $prefix,
         time: $time
     );
 }

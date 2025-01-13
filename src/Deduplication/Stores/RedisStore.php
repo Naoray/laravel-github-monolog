@@ -8,14 +8,16 @@ use Monolog\LogRecord;
 class RedisStore extends AbstractStore
 {
     private string $connection;
+    private string $prefix;
 
     public function __construct(
         string $connection = 'default',
         string $prefix = 'github-monolog:',
         int $time = 60
     ) {
-        parent::__construct($prefix, $time);
+        parent::__construct($time);
         $this->connection = $connection;
+        $this->prefix = $prefix;
     }
 
     private function redis()

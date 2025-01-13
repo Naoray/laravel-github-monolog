@@ -10,10 +10,9 @@ class FileStore extends AbstractStore
 {
     public function __construct(
         protected string $path,
-        string $prefix = 'github-monolog:',
         int $time = 60
     ) {
-        parent::__construct($prefix, $time);
+        parent::__construct($time);
 
         File::ensureDirectoryExists(dirname($this->path));
     }

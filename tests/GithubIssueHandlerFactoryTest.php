@@ -72,13 +72,12 @@ test('it throws exception when required config is missing', function () {
 });
 
 test('it configures buffer settings correctly', function () {
-    $logger = ($this->factory)([
-        ...$this->config,
-        'buffer' => [
-            'limit' => 50,
-            'flushOnOverflow' => false,
-        ],
-    ]);
+    $this->config['buffer'] = [
+        'limit' => 50,
+        'flush_on_overflow' => false,
+    ];
+
+    $logger = ($this->factory)($this->config);
 
     /** @var DeduplicationHandler $handler */
     $handler = $logger->getHandlers()[0];
@@ -108,13 +107,12 @@ test('it can use file store driver', function () {
 });
 
 test('it can use redis store driver', function () {
-    $logger = ($this->factory)([
-        ...$this->config,
-        'deduplication' => [
-            'driver' => 'redis',
-            'connection' => 'cache',
-        ],
-    ]);
+    $this->config['deduplication'] = [
+        'driver' => 'redis',
+        'connection' => 'default',
+    ];
+
+    $logger = ($this->factory)($this->config);
 
     /** @var DeduplicationHandler $handler */
     $handler = $logger->getHandlers()[0];
@@ -127,16 +125,14 @@ test('it can use database store driver', function () {
     config()->set('database.connections.sqlite', [
         'driver' => 'sqlite',
         'database' => ':memory:',
-        'prefix' => '',
     ]);
 
-    $logger = ($this->factory)([
-        ...$this->config,
-        'deduplication' => [
-            'driver' => 'database',
-            'connection' => 'sqlite',
-        ],
-    ]);
+    $this->config['deduplication'] = [
+        'driver' => 'database',
+        'connection' => 'sqlite',
+    ];
+
+    $logger = ($this->factory)($this->config);
 
     /** @var DeduplicationHandler $handler */
     $handler = $logger->getHandlers()[0];

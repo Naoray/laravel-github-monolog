@@ -8,7 +8,6 @@ use Monolog\LogRecord;
 abstract class AbstractStore implements StoreInterface
 {
     public function __construct(
-        protected string $prefix = 'github-monolog:',
         protected int $time = 60
     ) {}
 
