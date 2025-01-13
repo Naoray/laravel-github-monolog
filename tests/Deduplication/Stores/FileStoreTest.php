@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\File;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
+
 use function Pest\Laravel\travel;
 
 beforeEach(function () {

@@ -25,7 +25,7 @@ class FileStore extends AbstractStore
 
         return Str::of(File::get($this->path))
             ->explode(PHP_EOL)
-            ->filter(fn($entry) => $entry && str_contains($entry, ':') && is_numeric(explode(':', $entry, 2)[0]))
+            ->filter(fn ($entry) => $entry && str_contains($entry, ':') && is_numeric(explode(':', $entry, 2)[0]))
             ->toArray();
     }
 
@@ -36,7 +36,7 @@ class FileStore extends AbstractStore
 
         File::put(
             $this->path,
-            ($content ? $content . PHP_EOL : '') . $entry
+            ($content ? $content.PHP_EOL : '').$entry
         );
     }
 
@@ -45,7 +45,8 @@ class FileStore extends AbstractStore
         $valid = collect($this->get())
             ->filter(function ($entry) {
                 [$timestamp] = explode(':', $entry, 2);
-                return is_numeric($timestamp) && !$this->isExpired((int) $timestamp);
+
+                return is_numeric($timestamp) && ! $this->isExpired((int) $timestamp);
             })
             ->join(PHP_EOL);
 

@@ -1,14 +1,15 @@
 <?php
 
 use Monolog\Handler\TestHandler;
-use function Pest\Laravel\travel;
 use Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler;
-use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
 use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
+
+use function Pest\Laravel\travel;
 
 beforeEach(function () {
     $this->testHandler = new TestHandler;
-    $this->tempFile = sys_get_temp_dir() . '/dedup-test-' . uniqid() . '.log';
+    $this->tempFile = sys_get_temp_dir().'/dedup-test-'.uniqid().'.log';
 });
 
 afterEach(function () {
@@ -20,7 +21,7 @@ test('deduplication respects time window', function () {
     $handler = new DeduplicationHandler(
         handler: $this->testHandler,
         store: $store,
-        signatureGenerator: new DefaultSignatureGenerator(),
+        signatureGenerator: new DefaultSignatureGenerator,
     );
 
     $record = createLogRecord();
@@ -41,7 +42,7 @@ test('deduplicates records with same signature', function () {
     $handler = new DeduplicationHandler(
         handler: $this->testHandler,
         store: $store,
-        signatureGenerator: new DefaultSignatureGenerator()
+        signatureGenerator: new DefaultSignatureGenerator
     );
 
     $record = createLogRecord();
@@ -57,7 +58,7 @@ test('different messages create different signatures', function () {
     $handler = new DeduplicationHandler(
         handler: $this->testHandler,
         store: $store,
-        signatureGenerator: new DefaultSignatureGenerator()
+        signatureGenerator: new DefaultSignatureGenerator
     );
 
     $record1 = createLogRecord('First message');

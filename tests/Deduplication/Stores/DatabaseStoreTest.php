@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\DatabaseStore;
+
 use function Pest\Laravel\travel;
 
 beforeEach(function () {

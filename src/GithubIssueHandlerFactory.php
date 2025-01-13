@@ -6,14 +6,14 @@ use Illuminate\Support\Arr;
 use InvalidArgumentException;
 use Monolog\Level;
 use Monolog\Logger;
+use Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler;
 use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
+use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\DatabaseStore;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\RedisStore;
-use Naoray\LaravelGithubMonolog\Issues\Formatter;
-use Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler;
-use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\StoreInterface;
+use Naoray\LaravelGithubMonolog\Issues\Formatter;
 use Naoray\LaravelGithubMonolog\Issues\Handler;
 
 class GithubIssueHandlerFactory
@@ -49,7 +49,7 @@ class GithubIssueHandlerFactory
             bubble: Arr::get($config, 'bubble', true)
         );
 
-        $handler->setFormatter(new Formatter());
+        $handler->setFormatter(new Formatter);
 
         return $handler;
     }
@@ -65,7 +65,7 @@ class GithubIssueHandlerFactory
         }
 
         /** @var SignatureGeneratorInterface $signatureGenerator */
-        $signatureGenerator = new $signatureGeneratorClass();
+        $signatureGenerator = new $signatureGeneratorClass;
 
         return new DeduplicationHandler(
             handler: $handler,

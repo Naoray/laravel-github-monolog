@@ -10,6 +10,7 @@ use Monolog\LogRecord;
 class DatabaseStore extends AbstractStore
 {
     private string $table;
+
     private string $connection;
 
     public function __construct(
@@ -31,7 +32,7 @@ class DatabaseStore extends AbstractStore
             ->table($this->table)
             ->where('created_at', '>=', $this->getTimestampValidity())
             ->get()
-            ->map(fn($row) => $this->buildEntry($row->signature, $row->created_at))
+            ->map(fn ($row) => $this->buildEntry($row->signature, $row->created_at))
             ->all();
     }
 

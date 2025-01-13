@@ -8,6 +8,7 @@ use Monolog\LogRecord;
 class RedisStore extends AbstractStore
 {
     private string $connection;
+
     private string $prefix;
 
     public function __construct(
@@ -28,7 +29,7 @@ class RedisStore extends AbstractStore
     // Key Management
     public function getKey(): string
     {
-        return $this->prefix . 'dedup';
+        return $this->prefix.'dedup';
     }
 
     // Storage Operations
@@ -49,7 +50,7 @@ class RedisStore extends AbstractStore
         );
 
         return array_map(
-            fn($entry, $score) => $this->buildEntry($entry, (int) $score),
+            fn ($entry, $score) => $this->buildEntry($entry, (int) $score),
             array_keys($entries),
             array_values($entries)
         );

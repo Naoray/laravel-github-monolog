@@ -6,7 +6,7 @@ use Naoray\LaravelGithubMonolog\Issues\Formatted;
 use Naoray\LaravelGithubMonolog\Issues\Formatter;
 
 test('it formats basic log records', function () {
-    $formatter = new Formatter();
+    $formatter = new Formatter;
     $record = new LogRecord(
         datetime: new DateTimeImmutable,
         channel: 'test',
@@ -26,7 +26,7 @@ test('it formats basic log records', function () {
 });
 
 test('it formats exceptions with file and line information', function () {
-    $formatter = new Formatter();
+    $formatter = new Formatter;
     $exception = new RuntimeException('Test exception');
     $record = new LogRecord(
         datetime: new DateTimeImmutable,
@@ -48,7 +48,7 @@ test('it formats exceptions with file and line information', function () {
 });
 
 test('it truncates long titles', function () {
-    $formatter = new Formatter();
+    $formatter = new Formatter;
     $longMessage = str_repeat('a', 90);
     $record = new LogRecord(
         datetime: new DateTimeImmutable,
@@ -65,7 +65,7 @@ test('it truncates long titles', function () {
 });
 
 test('it includes context data in formatted output', function () {
-    $formatter = new Formatter();
+    $formatter = new Formatter;
     $record = new LogRecord(
         datetime: new DateTimeImmutable,
         channel: 'test',
@@ -83,7 +83,7 @@ test('it includes context data in formatted output', function () {
 });
 
 test('it formats stack traces with collapsible vendor frames', function () {
-    $formatter = new Formatter();
+    $formatter = new Formatter;
 
     $exception = new Exception('Test exception');
     $reflection = new ReflectionClass($exception);

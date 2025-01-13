@@ -3,7 +3,6 @@
 namespace Naoray\LaravelGithubMonolog\Deduplication;
 
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
 use Throwable;
 
 class DefaultSignatureGenerator implements SignatureGeneratorInterface
@@ -27,7 +26,7 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
      */
     private function generateFromMessage(LogRecord $record): string
     {
-        return md5($record->message . json_encode($record->context));
+        return md5($record->message.json_encode($record->context));
     }
 
     /**
@@ -42,7 +41,7 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
             $exception::class,
             $exception->getFile(),
             $exception->getLine(),
-            $firstFrame ? ($firstFrame['file'] ?? '') . ':' . ($firstFrame['line'] ?? '') : '',
+            $firstFrame ? ($firstFrame['file'] ?? '').':'.($firstFrame['line'] ?? '') : '',
         ]));
     }
 }

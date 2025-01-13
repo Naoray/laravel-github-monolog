@@ -2,10 +2,10 @@
 
 use Monolog\Level;
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\Tests\TestCase;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\DatabaseStore;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\RedisStore;
+use Naoray\LaravelGithubMonolog\Tests\TestCase;
 
 uses(TestCase::class)->in(__DIR__);
 

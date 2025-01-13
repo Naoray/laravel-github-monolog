@@ -1,9 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Redis;
-use Monolog\Level;
-use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\RedisStore;
+
 use function Pest\Laravel\travel;
 
 beforeEach(function () {

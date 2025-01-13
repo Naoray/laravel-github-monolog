@@ -13,7 +13,7 @@ abstract class AbstractStore implements StoreInterface
 
     protected function buildEntry(string $signature, int $timestamp): string
     {
-        return $timestamp . ':' . $signature;
+        return $timestamp.':'.$signature;
     }
 
     public function isDuplicate(LogRecord $record, string $signature): bool

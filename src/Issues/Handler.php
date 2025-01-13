@@ -38,7 +38,7 @@ class Handler extends AbstractProcessingHandler
     protected function write(LogRecord $record): void
     {
         if (! $record->formatted instanceof Formatted) {
-            throw new \RuntimeException('Record must be formatted with ' . Formatted::class);
+            throw new \RuntimeException('Record must be formatted with '.Formatted::class);
         }
 
         $formatted = $record->formatted;
@@ -64,11 +64,11 @@ class Handler extends AbstractProcessingHandler
 
         $response = Http::withToken($this->token)
             ->get('https://api.github.com/search/issues', [
-                'q' => "repo:{$this->repo} is:issue is:open label:" . self::DEFAULT_LABEL . " \"Signature: {$record->extra['github_issue_signature']}\"",
+                'q' => "repo:{$this->repo} is:issue is:open label:".self::DEFAULT_LABEL." \"Signature: {$record->extra['github_issue_signature']}\"",
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to search GitHub issues: ' . $response->body());
+            throw new \RuntimeException('Failed to search GitHub issues: '.$response->body());
         }
 
         return $response->json('items.0', null);
@@ -85,7 +85,7 @@ class Handler extends AbstractProcessingHandler
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to comment on GitHub issue: ' . $response->body());
+            throw new \RuntimeException('Failed to comment on GitHub issue: '.$response->body());
         }
     }
 
@@ -102,7 +102,7 @@ class Handler extends AbstractProcessingHandler
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to create GitHub issue: ' . $response->body());
+            throw new \RuntimeException('Failed to create GitHub issue: '.$response->body());
         }
     }
 }

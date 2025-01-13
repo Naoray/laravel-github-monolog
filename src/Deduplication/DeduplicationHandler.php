@@ -52,7 +52,7 @@ class DeduplicationHandler extends BufferHandler
                 return $record;
             })
             ->filter()
-            ->pipe(fn(Collection $records) => $this->handler->handleBatch($records->toArray()));
+            ->pipe(fn (Collection $records) => $this->handler->handleBatch($records->toArray()));
 
         $this->clear();
     }

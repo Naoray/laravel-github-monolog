@@ -18,14 +18,15 @@ function createHandler(): Handler
         bubble: true
     );
 
-    $handler->setFormatter(new Formatter());
+    $handler->setFormatter(new Formatter);
+
     return $handler;
 }
 
 function createRecord(): LogRecord
 {
     return new LogRecord(
-        datetime: new \DateTimeImmutable(),
+        datetime: new \DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
@@ -93,7 +94,7 @@ test('it throws exception when issue search fails', function () {
         'github.com/search/issues*' => Http::response(['error' => 'Failed'], 500),
     ]);
 
-    expect(fn() => $handler->handle($record))
+    expect(fn () => $handler->handle($record))
         ->toThrow('Failed to search GitHub issues');
 });
 
@@ -106,7 +107,7 @@ test('it throws exception when issue creation fails', function () {
         'github.com/repos/test/repo/issues' => Http::response(['error' => 'Failed'], 500),
     ]);
 
-    expect(fn() => $handler->handle($record))
+    expect(fn () => $handler->handle($record))
         ->toThrow('Failed to create GitHub issue');
 });
 
@@ -119,6 +120,6 @@ test('it throws exception when comment creation fails', function () {
         'github.com/repos/test/repo/issues/1/comments' => Http::response(['error' => 'Failed'], 500),
     ]);
 
-    expect(fn() => $handler->handle($record))
+    expect(fn () => $handler->handle($record))
         ->toThrow('Failed to comment on GitHub issue');
 });
