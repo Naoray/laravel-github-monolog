@@ -101,6 +101,7 @@ Consider other storage options in these Laravel-specific scenarios:
   - Running async queue jobs (file storage won't work across processes)
   - Using Laravel Horizon for queue management
   - Running multiple application instances behind a load balancer
+
   ```php
   'deduplication' => [
       'store' => 'redis',
@@ -113,6 +114,7 @@ Consider other storage options in these Laravel-specific scenarios:
   - Running queue jobs but Redis isn't available
   - Need to persist deduplication data across deployments
   - Want to query/debug deduplication history via database
+
   ```php
   'deduplication' => [
       'store' => 'database',
@@ -141,6 +143,33 @@ When buffering is active:
 - When limit is reached:
   - With `flush_on_overflow = true`: All records are flushed
   - With `flush_on_overflow = false`: Only the oldest record is removed
+
+#### Signature Generator
+
+Control how errors are grouped by customizing the signature generator. By default, the package uses a generator that creates signatures based on exception details or log message content.
+
+```php
+'github' => [
+    // ... basic config from above ...
+    'signature_generator' => \Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator::class,
+]
+```
+
+You can implement your own signature generator by implementing the `SignatureGeneratorInterface`:
+
+```php
+use Monolog\LogRecord;
+use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
+
+class CustomSignatureGenerator implements SignatureGeneratorInterface
+{
+    public function generate(LogRecord $record): string
+    {
+        // Your custom logic to generate a signature
+        return md5($record->message);
+    }
+}
+```
 
 ### Getting a GitHub Token
 

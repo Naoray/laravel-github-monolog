@@ -39,6 +39,9 @@ class DeduplicationHandler extends BufferHandler
             ->map(function (LogRecord $record) {
                 $signature = $this->signatureGenerator->generate($record);
 
+                // Create new record with signature in extra data
+                $record = $record->with(extra: ['github_issue_signature' => $signature] + $record->extra);
+
                 // If the record is a duplicate, we don't want to add it to the store
                 if ($this->store->isDuplicate($record, $signature)) {
                     return null;

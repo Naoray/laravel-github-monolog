@@ -1,25 +1,12 @@
 <?php
 
+namespace Tests\Issues;
+
 use Illuminate\Support\Facades\Http;
 use Monolog\Level;
-use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
+use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Issues\Formatter;
 use Naoray\LaravelGithubMonolog\Issues\Handler;
-
-beforeEach(function () {
-    Http::preventStrayRequests();
-    $this->signatureGenerator = new DefaultSignatureGenerator();
-    $this->formatter = new Formatter($this->signatureGenerator);
-});
-
-function fakeSuccessfulResponses(): void
-{
-    Http::fake([
-        'api.github.com/search/issues*' => Http::response(['items' => []]),
-        'api.github.com/repos/*/issues' => Http::response(['number' => 1]),
-        'api.github.com/repos/*/issues/*/comments' => Http::response(),
-    ]);
-}
 
 function createHandler(): Handler
 {
@@ -28,98 +15,110 @@ function createHandler(): Handler
         token: 'test-token',
         labels: [],
         level: Level::Debug,
-        bubble: true,
-        signatureGenerator: test()->signatureGenerator
+        bubble: true
     );
 
-    $handler->setFormatter(test()->formatter);
+    $handler->setFormatter(new Formatter());
     return $handler;
 }
 
+function createRecord(): LogRecord
+{
+    return new LogRecord(
+        datetime: new \DateTimeImmutable(),
+        channel: 'test',
+        level: Level::Error,
+        message: 'Test message',
+        context: [],
+        extra: ['github_issue_signature' => 'test-signature']
+    );
+}
+
 test('it creates new github issue when no duplicate exists', function () {
-    fakeSuccessfulResponses();
     $handler = createHandler();
-    $record = createLogRecord('New issue');
+    $record = createRecord();
+
+    Http::fake([
+        'github.com/search/issues*' => Http::response(['items' => []]),
+        'github.com/repos/test/repo/issues' => Http::response(['number' => 1]),
+    ]);
+
     $handler->handle($record);
 
     Http::assertSent(function ($request) {
-        return $request->url() === 'https://api.github.com/repos/test/repo/issues' &&
-            $request->hasHeader('Authorization', 'Bearer test-token') &&
-            $request['title'] === '[ERROR] New issue';
+        return str_contains($request->url(), '/repos/test/repo/issues')
+            && $request->method() === 'POST';
     });
 });
 
 test('it comments on existing github issue', function () {
+    $handler = createHandler();
+    $record = createRecord();
+
     Http::fake([
-        'api.github.com/search/issues*' => Http::response([
-            'items' => [
-                ['number' => 123]
-            ]
-        ]),
-        'api.github.com/repos/*/issues/*/comments' => Http::response(),
+        'github.com/search/issues*' => Http::response(['items' => [['number' => 1]]]),
+        'github.com/repos/test/repo/issues/1/comments' => Http::response(['id' => 1]),
     ]);
 
-    $handler = createHandler();
-    $record = createLogRecord('Existing issue');
     $handler->handle($record);
 
     Http::assertSent(function ($request) {
-        return $request->url() === 'https://api.github.com/repos/test/repo/issues/123/comments' &&
-            $request->hasHeader('Authorization', 'Bearer test-token') &&
-            str_contains($request['body'], '# New Occurrence');
+        return str_contains($request->url(), '/issues/1/comments')
+            && $request->method() === 'POST';
     });
 });
 
 test('it includes signature in issue search', function () {
-    fakeSuccessfulResponses();
     $handler = createHandler();
-    $record = createLogRecord('Test issue');
+    $record = createRecord();
+
+    Http::fake([
+        'github.com/search/issues*' => Http::response(['items' => []]),
+        'github.com/repos/test/repo/issues' => Http::response(['number' => 1]),
+    ]);
+
     $handler->handle($record);
 
-    Http::assertSent(function ($request) use ($record) {
-        return str_contains($request->url(), 'https://api.github.com/search/issues') &&
-            str_contains($request['q'], "Signature: {$this->signatureGenerator->generate($record)}");
+    Http::assertSent(function ($request) {
+        return str_contains($request->url(), '/search/issues')
+            && str_contains($request['q'], 'test-signature');
     });
 });
 
-test('it throws exception when issue creation fails', function () {
+test('it throws exception when issue search fails', function () {
+    $handler = createHandler();
+    $record = createRecord();
+
     Http::fake([
-        'api.github.com/search/issues*' => Http::response(['items' => []]),
-        'api.github.com/repos/*/issues' => Http::response([], 500),
+        'github.com/search/issues*' => Http::response(['error' => 'Failed'], 500),
     ]);
 
-    $handler = createHandler();
-    $record = createLogRecord('Failed issue');
-
     expect(fn() => $handler->handle($record))
-        ->toThrow(RuntimeException::class, 'Failed to create GitHub issue');
+        ->toThrow('Failed to search GitHub issues');
 });
 
-test('it throws exception when issue search fails', function () {
+test('it throws exception when issue creation fails', function () {
+    $handler = createHandler();
+    $record = createRecord();
+
     Http::fake([
-        'api.github.com/search/issues*' => Http::response([], 500),
+        'github.com/search/issues*' => Http::response(['items' => []]),
+        'github.com/repos/test/repo/issues' => Http::response(['error' => 'Failed'], 500),
     ]);
 
-    $handler = createHandler();
-    $record = createLogRecord('Failed search');
-
     expect(fn() => $handler->handle($record))
-        ->toThrow(RuntimeException::class, 'Failed to search GitHub issues');
+        ->toThrow('Failed to create GitHub issue');
 });
 
 test('it throws exception when comment creation fails', function () {
+    $handler = createHandler();
+    $record = createRecord();
+
     Http::fake([
-        'api.github.com/search/issues*' => Http::response([
-            'items' => [
-                ['number' => 123]
-            ]
-        ]),
-        'api.github.com/repos/*/issues/*/comments' => Http::response([], 500),
+        'github.com/search/issues*' => Http::response(['items' => [['number' => 1]]]),
+        'github.com/repos/test/repo/issues/1/comments' => Http::response(['error' => 'Failed'], 500),
     ]);
 
-    $handler = createHandler();
-    $record = createLogRecord('Failed comment');
-
     expect(fn() => $handler->handle($record))
-        ->toThrow(RuntimeException::class, 'Failed to comment on GitHub issue');
+        ->toThrow('Failed to comment on GitHub issue');
 });

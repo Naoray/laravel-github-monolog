@@ -142,23 +142,22 @@ test('it can use database store driver', function () {
 });
 
 test('it uses same signature generator across components', function () {
-    $logger = ($this->factory)($this->config);
+    $factory = new GithubIssueHandlerFactory(new DefaultSignatureGenerator());
+    $logger = $factory([
+        'repo' => 'test/repo',
+        'token' => 'test-token',
+    ]);
 
-    /** @var DeduplicationHandler $deduplicationHandler */
+    /** @var \Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler $deduplicationHandler */
     $deduplicationHandler = $logger->getHandlers()[0];
     $handler = getWrappedHandler($deduplicationHandler);
     $formatter = $handler->getFormatter();
 
-    $handlerGenerator = (new ReflectionProperty($handler, 'signatureGenerator'))->getValue($handler);
-    $formatterGenerator = (new ReflectionProperty($formatter, 'signatureGenerator'))->getValue($formatter);
+    // Only check the deduplication handler's signature generator since other components no longer use it
     $deduplicationGenerator = getSignatureGenerator($deduplicationHandler);
 
-    expect($handlerGenerator)
-        ->toBe($this->signatureGenerator)
-        ->and($formatterGenerator)
-        ->toBe($this->signatureGenerator)
-        ->and($deduplicationGenerator)
-        ->toBe($this->signatureGenerator);
+    expect($deduplicationGenerator)
+        ->toBeInstanceOf(DefaultSignatureGenerator::class);
 });
 
 test('it throws exception for invalid deduplication time', function () {

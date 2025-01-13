@@ -6,6 +6,7 @@ use Illuminate\Support\Arr;
 use InvalidArgumentException;
 use Monolog\Level;
 use Monolog\Logger;
+use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\DatabaseStore;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\RedisStore;
@@ -17,10 +18,6 @@ use Naoray\LaravelGithubMonolog\Issues\Handler;
 
 class GithubIssueHandlerFactory
 {
-    public function __construct(
-        private readonly SignatureGeneratorInterface $signatureGenerator,
-    ) {}
-
     public function __invoke(array $config): Logger
     {
         $this->validateConfig($config);
@@ -47,23 +44,33 @@ class GithubIssueHandlerFactory
         $handler = new Handler(
             repo: $config['repo'],
             token: $config['token'],
-            signatureGenerator: $this->signatureGenerator,
             labels: Arr::get($config, 'labels', []),
             level: Arr::get($config, 'level', Level::Error),
             bubble: Arr::get($config, 'bubble', true)
         );
 
-        $handler->setFormatter(new Formatter($this->signatureGenerator));
+        $handler->setFormatter(new Formatter());
 
         return $handler;
     }
 
     protected function wrapWithDeduplication(Handler $handler, array $config): DeduplicationHandler
     {
+        $signatureGeneratorClass = Arr::get($config, 'signature_generator', DefaultSignatureGenerator::class);
+
+        if (! is_subclass_of($signatureGeneratorClass, SignatureGeneratorInterface::class)) {
+            throw new InvalidArgumentException(
+                sprintf('Signature generator class [%s] must implement %s', $signatureGeneratorClass, SignatureGeneratorInterface::class)
+            );
+        }
+
+        /** @var SignatureGeneratorInterface $signatureGenerator */
+        $signatureGenerator = new $signatureGeneratorClass();
+
         return new DeduplicationHandler(
             handler: $handler,
             store: $this->createStore($config),
-            signatureGenerator: $this->signatureGenerator,
+            signatureGenerator: $signatureGenerator,
             level: Arr::get($config, 'level', Level::Error),
             bubble: true,
             bufferLimit: Arr::get($config, 'buffer.limit', 0),

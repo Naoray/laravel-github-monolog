@@ -4,17 +4,16 @@ use Monolog\Level;
 use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Issues\Formatted;
 use Naoray\LaravelGithubMonolog\Issues\Formatter;
-use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
 
 test('it formats basic log records', function () {
-    $formatter = new Formatter(new DefaultSignatureGenerator);
+    $formatter = new Formatter();
     $record = new LogRecord(
         datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test error message',
         context: [],
-        extra: []
+        extra: ['github_issue_signature' => 'test-signature']
     );
 
     $formatted = $formatter->format($record);
@@ -27,7 +26,7 @@ test('it formats basic log records', function () {
 });
 
 test('it formats exceptions with file and line information', function () {
-    $formatter = new Formatter(new DefaultSignatureGenerator);
+    $formatter = new Formatter();
     $exception = new RuntimeException('Test exception');
     $record = new LogRecord(
         datetime: new DateTimeImmutable,
@@ -35,7 +34,7 @@ test('it formats exceptions with file and line information', function () {
         level: Level::Error,
         message: 'Error occurred',
         context: ['exception' => $exception],
-        extra: []
+        extra: ['github_issue_signature' => 'test-signature']
     );
 
     $formatted = $formatter->format($record);
@@ -49,7 +48,7 @@ test('it formats exceptions with file and line information', function () {
 });
 
 test('it truncates long titles', function () {
-    $formatter = new Formatter(new DefaultSignatureGenerator);
+    $formatter = new Formatter();
     $longMessage = str_repeat('a', 90);
     $record = new LogRecord(
         datetime: new DateTimeImmutable,
@@ -57,7 +56,7 @@ test('it truncates long titles', function () {
         level: Level::Error,
         message: $longMessage,
         context: [],
-        extra: []
+        extra: ['github_issue_signature' => 'test-signature']
     );
 
     $formatted = $formatter->format($record);
@@ -66,14 +65,14 @@ test('it truncates long titles', function () {
 });
 
 test('it includes context data in formatted output', function () {
-    $formatter = new Formatter(new DefaultSignatureGenerator);
+    $formatter = new Formatter();
     $record = new LogRecord(
         datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
         context: ['user_id' => 123, 'action' => 'login', 'exception' => new RuntimeException('Test exception')],
-        extra: []
+        extra: ['github_issue_signature' => 'test-signature']
     );
 
     $formatted = $formatter->format($record);
@@ -84,7 +83,7 @@ test('it includes context data in formatted output', function () {
 });
 
 test('it formats stack traces with collapsible vendor frames', function () {
-    $formatter = new Formatter(new DefaultSignatureGenerator);
+    $formatter = new Formatter();
 
     $exception = new Exception('Test exception');
     $reflection = new ReflectionClass($exception);
@@ -125,7 +124,7 @@ test('it formats stack traces with collapsible vendor frames', function () {
         level: Level::Error,
         message: 'Error occurred',
         context: ['exception' => $exception],
-        extra: []
+        extra: ['github_issue_signature' => 'test-signature']
     );
 
     $formatted = $formatter->format($record);

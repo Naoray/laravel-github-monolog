@@ -8,7 +8,6 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Stringable;
 use Monolog\Formatter\FormatterInterface;
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
 use ReflectionClass;
 use Throwable;
 
@@ -20,10 +19,6 @@ class Formatter implements FormatterInterface
 
     private const VENDOR_FRAME_PLACEHOLDER = '[Vendor frames]';
 
-    public function __construct(
-        private readonly SignatureGeneratorInterface $signatureGenerator,
-    ) {}
-
     /**
      * Formats a log record.
      *
@@ -32,12 +27,15 @@ class Formatter implements FormatterInterface
      */
     public function format(LogRecord $record): Formatted
     {
+        if (! isset($record->extra['github_issue_signature'])) {
+            throw new \RuntimeException('Record is missing github_issue_signature in extra data. Make sure the DeduplicationHandler is configured correctly.');
+        }
+
         $exception = $this->getException($record);
-        $signature = $this->signatureGenerator->generate($record);
 
         return new Formatted(
             title: $this->formatTitle($record, $exception),
-            body: $this->formatBody($record, $signature, $exception),
+            body: $this->formatBody($record, $record->extra['github_issue_signature'], $exception),
             comment: $this->formatComment($record, $exception),
         );
     }

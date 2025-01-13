@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Http;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Level;
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
 
 class Handler extends AbstractProcessingHandler
 {
@@ -15,7 +14,6 @@ class Handler extends AbstractProcessingHandler
     /**
      * @param  string  $repo  The GitHub repository in "owner/repo" format
      * @param  string  $token  Your GitHub Personal Access Token
-     * @param  SignatureGeneratorInterface  $signatureGenerator  The signature generator to use
      * @param  array  $labels  Labels to be applied to GitHub issues (default: ['github-issue-logger'])
      * @param  int|string|Level  $level  Log level (default: ERROR)
      * @param  bool  $bubble  Whether the messages that are handled can bubble up the stack
@@ -23,7 +21,6 @@ class Handler extends AbstractProcessingHandler
     public function __construct(
         private string $repo,
         private string $token,
-        protected SignatureGeneratorInterface $signatureGenerator,
         protected array $labels = [],
         int|string|Level $level = Level::Error,
         bool $bubble = true,
@@ -61,9 +58,13 @@ class Handler extends AbstractProcessingHandler
      */
     private function findExistingIssue(LogRecord $record): ?array
     {
+        if (! isset($record->extra['github_issue_signature'])) {
+            throw new \RuntimeException('Record is missing github_issue_signature in extra data. Make sure the DeduplicationHandler is configured correctly.');
+        }
+
         $response = Http::withToken($this->token)
             ->get('https://api.github.com/search/issues', [
-                'q' => "repo:{$this->repo} is:issue is:open label:" . self::DEFAULT_LABEL . " \"Signature: {$this->signatureGenerator->generate($record)}\"",
+                'q' => "repo:{$this->repo} is:issue is:open label:" . self::DEFAULT_LABEL . " \"Signature: {$record->extra['github_issue_signature']}\"",
             ]);
 
         if ($response->failed()) {
@@ -80,7 +81,7 @@ class Handler extends AbstractProcessingHandler
     {
         $response = Http::withToken($this->token)
             ->post("https://api.github.com/repos/{$this->repo}/issues/{$issueNumber}/comments", [
-                'body' => $formatted->comment, // TODO: fix
+                'body' => $formatted->comment,
             ]);
 
         if ($response->failed()) {
