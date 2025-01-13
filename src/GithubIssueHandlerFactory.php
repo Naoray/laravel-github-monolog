@@ -3,12 +3,15 @@
 namespace Naoray\LaravelGithubMonolog;
 
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\File;
 use InvalidArgumentException;
 use Monolog\Level;
 use Monolog\Logger;
+use Naoray\LaravelGithubMonolog\DeduplicationStores\DatabaseDeduplicationStore;
+use Naoray\LaravelGithubMonolog\DeduplicationStores\DeduplicationStoreInterface;
+use Naoray\LaravelGithubMonolog\DeduplicationStores\RedisDeduplicationStore;
+use Naoray\LaravelGithubMonolog\DeduplicationStores\FileDeduplicationStore;
 use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
-use Naoray\LaravelGithubMonolog\Handlers\IssueLogHandler;
+use Naoray\LaravelGithubMonolog\Issues\Handler;
 use Naoray\LaravelGithubMonolog\Handlers\SignatureDeduplicationHandler;
 
 class GithubIssueHandlerFactory
@@ -34,9 +37,9 @@ class GithubIssueHandlerFactory
         }
     }
 
-    protected function createBaseHandler(array $config): IssueLogHandler
+    protected function createBaseHandler(array $config): Handler
     {
-        $handler = new IssueLogHandler(
+        $handler = new Handler(
             repo: $config['repo'],
             token: $config['token'],
             labels: $config['labels'] ?? [],
@@ -49,33 +52,48 @@ class GithubIssueHandlerFactory
         return $handler;
     }
 
-    protected function wrapWithDeduplication(IssueLogHandler $handler, array $config): SignatureDeduplicationHandler
+    protected function wrapWithDeduplication(Handler $handler, array $config): SignatureDeduplicationHandler
     {
         return new SignatureDeduplicationHandler(
             $handler,
-            deduplicationStore: $this->getDeduplicationStore($config),
-            deduplicationLevel: Arr::get($config, 'level', Level::Error),
+            store: $this->createDeduplicationStore($config),
+            level: Arr::get($config, 'level', Level::Error),
             time: $this->getDeduplicationTime($config),
             bubble: true
         );
     }
 
-    protected function getDeduplicationStore(array $config): string
+    protected function createDeduplicationStore(array $config): DeduplicationStoreInterface
     {
         $deduplication = Arr::get($config, 'deduplication', []);
+        $driver = Arr::get($deduplication, 'driver', 'redis');
+        $time = $this->getDeduplicationTime($config);
+        $prefix = Arr::get($deduplication, 'prefix', 'github-monolog:');
+        $connection = Arr::get($deduplication, 'connection', 'default');
 
-        if ($store = Arr::get($deduplication, 'store')) {
-            return $store;
-        }
-
-        $store = storage_path('logs/github-issues-dedup.log');
-        File::ensureDirectoryExists(dirname($store));
-
-        return $store;
+        return match ($driver) {
+            'redis' => new RedisDeduplicationStore(
+                connection: $connection,
+                prefix: $prefix,
+                time: $time
+            ),
+            'database' => new DatabaseDeduplicationStore(
+                connection: $connection,
+                table: Arr::get($deduplication, 'table', 'github_monolog_deduplication'),
+                prefix: $prefix,
+                time: $time
+            ),
+            'file' => new FileDeduplicationStore(
+                path: Arr::get($deduplication, 'path', storage_path('logs/github-monolog/deduplication.log')),
+                prefix: $prefix,
+                time: $time
+            ),
+            default => throw new InvalidArgumentException("Unsupported deduplication driver: {$driver}")
+        };
     }
 
     protected function getDeduplicationTime(array $config): int
     {
-        return (int) Arr::get($config, 'deduplication.time', 60);
+        return (int) Arr::get($config, 'deduplication.time', 300); // Default to 5 minutes
     }
 }

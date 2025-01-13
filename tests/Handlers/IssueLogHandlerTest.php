@@ -5,10 +5,10 @@ use Illuminate\Support\Facades\Http;
 use Monolog\Level;
 use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
-use Naoray\LaravelGithubMonolog\Handlers\IssueLogHandler;
+use Naoray\LaravelGithubMonolog\Issues\Handler;
 
 beforeEach(function () {
-    $this->handler = (new IssueLogHandler(
+    $this->handler = (new Handler(
         repo: 'test/repo',
         token: 'fake-token',
         labels: ['bug'],
@@ -28,7 +28,7 @@ function createLogRecord(string $message = 'Test error', array $context = [], Le
     );
 }
 
-function createFormattedRecord(IssueLogHandler $handler, string $message = 'Test error', array $context = [], Level $level = Level::Error): LogRecord
+function createFormattedRecord(Handler $handler, string $message = 'Test error', array $context = [], Level $level = Level::Error): LogRecord
 {
     $baseRecord = createLogRecord($message, $context, $level);
 
@@ -81,7 +81,7 @@ test('it throws exception when github api fails', function () {
         'github.com/search/issues*' => Http::response(['message' => 'Bad credentials'], 401),
     ]);
 
-    expect(fn () => $this->handler->handle(createFormattedRecord($this->handler)))
+    expect(fn() => $this->handler->handle(createFormattedRecord($this->handler)))
         ->toThrow(\RuntimeException::class, 'Failed to search GitHub issues');
 });
 
@@ -91,7 +91,7 @@ test('it merges default label with custom labels', function () {
         'github.com/repos/test/repo/issues' => Http::response(['number' => 1], 201),
     ]);
 
-    $handler = (new IssueLogHandler(
+    $handler = (new Handler(
         repo: 'test/repo',
         token: 'fake-token',
         labels: ['custom-label', 'another-label'],
@@ -214,7 +214,7 @@ test('it fails gracefully when creating issue fails', function () {
 
     $record = createFormattedRecord($this->handler);
 
-    expect(fn () => $this->handler->handle($record))
+    expect(fn() => $this->handler->handle($record))
         ->toThrow(\RuntimeException::class, 'Failed to create GitHub issue');
 });
 
