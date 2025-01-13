@@ -2,6 +2,13 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v2.1.1 - 2025-01-13
+
+- fix wrong array key being used for deduplication stores (before `driver`, now `store`)
+- fix table config not being passed on to `DatabaseStore`
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v2.1.0...v2.1.1
+
 ## v2.1.0 - 2025-01-13
 
 ### What's Changed
