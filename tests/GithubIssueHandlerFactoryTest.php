@@ -69,9 +69,9 @@ test('it configures handler correctly', function () {
 });
 
 test('it throws exception when required config is missing', function () {
-    expect(fn () => ($this->factory)([]))->toThrow(\InvalidArgumentException::class);
-    expect(fn () => ($this->factory)(['repo' => 'test/repo']))->toThrow(\InvalidArgumentException::class);
-    expect(fn () => ($this->factory)(['token' => 'test-token']))->toThrow(\InvalidArgumentException::class);
+    expect(fn() => ($this->factory)([]))->toThrow(\InvalidArgumentException::class);
+    expect(fn() => ($this->factory)(['repo' => 'test/repo']))->toThrow(\InvalidArgumentException::class);
+    expect(fn() => ($this->factory)(['token' => 'test-token']))->toThrow(\InvalidArgumentException::class);
 });
 
 test('it configures buffer settings correctly', function () {
@@ -92,12 +92,12 @@ test('it configures buffer settings correctly', function () {
 });
 
 test('it can use file store driver', function () {
-    $path = sys_get_temp_dir().'/dedup-test-'.uniqid().'.log';
+    $path = sys_get_temp_dir() . '/dedup-test-' . uniqid() . '.log';
 
     $logger = ($this->factory)([
         ...$this->config,
         'deduplication' => [
-            'driver' => 'file',
+            'store' => 'file',
             'path' => $path,
         ],
     ]);
@@ -111,7 +111,7 @@ test('it can use file store driver', function () {
 
 test('it can use redis store driver', function () {
     $this->config['deduplication'] = [
-        'driver' => 'redis',
+        'store' => 'redis',
         'connection' => 'default',
     ];
 
@@ -131,7 +131,7 @@ test('it can use database store driver', function () {
     ]);
 
     $this->config['deduplication'] = [
-        'driver' => 'database',
+        'store' => 'database',
         'connection' => 'sqlite',
     ];
 
@@ -164,14 +164,14 @@ test('it uses same signature generator across components', function () {
 });
 
 test('it throws exception for invalid deduplication time', function () {
-    expect(fn () => ($this->factory)([
+    expect(fn() => ($this->factory)([
         ...$this->config,
         'deduplication' => [
             'time' => -1,
         ],
     ]))->toThrow(\InvalidArgumentException::class, 'Deduplication time must be a positive integer');
 
-    expect(fn () => ($this->factory)([
+    expect(fn() => ($this->factory)([
         ...$this->config,
         'deduplication' => [
             'time' => 'invalid',

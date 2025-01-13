@@ -81,7 +81,7 @@ class GithubIssueHandlerFactory
     protected function createStore(array $config): StoreInterface
     {
         $deduplication = Arr::get($config, 'deduplication', []);
-        $driver = Arr::get($deduplication, 'driver', 'file');
+        $driver = Arr::get($deduplication, 'store', 'file');
         $time = $this->getDeduplicationTime($config);
         $prefix = Arr::get($deduplication, 'prefix', 'github-monolog:');
         $connection = Arr::get($deduplication, 'connection', 'default');
