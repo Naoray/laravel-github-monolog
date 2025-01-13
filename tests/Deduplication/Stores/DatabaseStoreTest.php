@@ -21,31 +21,9 @@ afterEach(function () {
     Schema::dropIfExists('custom_dedup');
 });
 
-function createStore(string $prefix = 'test:', int $time = 60): DatabaseStore
-{
-    return new DatabaseStore(
-        connection: 'sqlite',
-        table: 'github_monolog_deduplication',
-        prefix: $prefix,
-        time: $time
-    );
-}
-
-function createLogRecord(string $message = 'test', Level $level = Level::Error): LogRecord
-{
-    return new LogRecord(
-        datetime: new \DateTimeImmutable,
-        channel: 'test',
-        level: $level,
-        message: $message,
-        context: [],
-        extra: [],
-    );
-}
-
 // Base Store Tests
 test('it can add and retrieve entries', function () {
-    $store = createStore();
+    $store = createDatabaseStore();
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -56,7 +34,7 @@ test('it can add and retrieve entries', function () {
 });
 
 test('it removes expired entries', function () {
-    $store = createStore(time: 1);
+    $store = createDatabaseStore(time: 1);
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -66,7 +44,7 @@ test('it removes expired entries', function () {
 });
 
 test('it keeps valid entries', function () {
-    $store = createStore(time: 5);
+    $store = createDatabaseStore(time: 5);
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -76,7 +54,7 @@ test('it keeps valid entries', function () {
 });
 
 test('it handles multiple entries', function () {
-    $store = createStore();
+    $store = createDatabaseStore();
     $record1 = createLogRecord('test1');
     $record2 = createLogRecord('test2');
 
@@ -88,7 +66,7 @@ test('it handles multiple entries', function () {
 
 // DatabaseStore Specific Tests
 test('it creates table if not exists', function () {
-    createStore();
+    createDatabaseStore();
 
     expect(Schema::hasTable('github_monolog_deduplication'))->toBeTrue();
 });
@@ -109,7 +87,7 @@ test('it can use custom table', function () {
 });
 
 test('it cleans up expired entries from database', function () {
-    $store = createStore(time: 1);
+    $store = createDatabaseStore(time: 1);
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -122,8 +100,8 @@ test('it cleans up expired entries from database', function () {
 });
 
 test('it only returns entries for specific prefix', function () {
-    $store1 = createStore('prefix1:');
-    $store2 = createStore('prefix2:');
+    $store1 = createDatabaseStore('prefix1:');
+    $store2 = createDatabaseStore('prefix2:');
     $record = createLogRecord();
 
     $store1->add($record, 'signature1');

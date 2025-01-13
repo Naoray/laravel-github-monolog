@@ -1,6 +1,6 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog\Formatters;
+namespace Naoray\LaravelGithubMonolog\Issues;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -8,10 +8,11 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Stringable;
 use Monolog\Formatter\FormatterInterface;
 use Monolog\LogRecord;
+use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
 use ReflectionClass;
 use Throwable;
 
-class GithubIssueFormatter implements FormatterInterface
+class Formatter implements FormatterInterface
 {
     private const TITLE_MAX_LENGTH = 100;
 
@@ -19,19 +20,22 @@ class GithubIssueFormatter implements FormatterInterface
 
     private const VENDOR_FRAME_PLACEHOLDER = '[Vendor frames]';
 
+    public function __construct(
+        private readonly SignatureGeneratorInterface $signatureGenerator,
+    ) {}
+
     /**
      * Formats a log record.
      *
      * @param  LogRecord  $record  A record to format
-     * @return GithubIssueFormatted The formatted record
+     * @return Formatted The formatted record
      */
-    public function format(LogRecord $record): GithubIssueFormatted
+    public function format(LogRecord $record): Formatted
     {
         $exception = $this->getException($record);
-        $signature = $this->generateSignature($record, $exception);
+        $signature = $this->signatureGenerator->generate($record);
 
-        return new GithubIssueFormatted(
-            signature: $signature,
+        return new Formatted(
             title: $this->formatTitle($record, $exception),
             body: $this->formatBody($record, $signature, $exception),
             comment: $this->formatComment($record, $exception),
@@ -42,31 +46,11 @@ class GithubIssueFormatter implements FormatterInterface
      * Formats a set of log records.
      *
      * @param  array<LogRecord>  $records  A set of records to format
-     * @return array<GithubIssueFormatted> The formatted set of records
+     * @return array<Formatted> The formatted set of records
      */
     public function formatBatch(array $records): array
     {
         return array_map([$this, 'format'], $records);
-    }
-
-    /**
-     * Generate a unique signature for the log record
-     */
-    private function generateSignature(LogRecord $record, ?Throwable $exception): string
-    {
-        if (! $exception) {
-            return md5($record->message.json_encode($record->context));
-        }
-
-        $trace = $exception->getTrace();
-        $firstFrame = ! empty($trace) ? $trace[0] : null;
-
-        return md5(implode(':', [
-            $exception::class,
-            $exception->getFile(),
-            $exception->getLine(),
-            $firstFrame ? ($firstFrame['file'] ?? '').':'.($firstFrame['line'] ?? '') : '',
-        ]));
     }
 
     /**
@@ -111,7 +95,7 @@ class GithubIssueFormatter implements FormatterInterface
     private function formatContent(LogRecord $record, ?Throwable $exception): string
     {
         return Str::of('')
-            ->when($record->message, fn ($str, $message) => $str->append("**Message:**\n{$message}\n\n"))
+            ->when($record->message, fn($str, $message) => $str->append("**Message:**\n{$message}\n\n"))
             ->when(
                 $exception,
                 function (Stringable $str, Throwable $exception) {
@@ -121,8 +105,8 @@ class GithubIssueFormatter implements FormatterInterface
                     );
                 }
             )
-            ->when(! empty($record->context), fn ($str, $context) => $str->append("**Context:**\n```json\n".json_encode(Arr::except($record->context, ['exception']), JSON_PRETTY_PRINT)."\n```\n\n"))
-            ->when(! empty($record->extra), fn ($str, $extra) => $str->append("**Extra Data:**\n```json\n".json_encode($record->extra, JSON_PRETTY_PRINT)."\n```\n"))
+            ->when(! empty($record->context), fn($str, $context) => $str->append("**Context:**\n```json\n" . json_encode(Arr::except($record->context, ['exception']), JSON_PRETTY_PRINT) . "\n```\n\n"))
+            ->when(! empty($record->extra), fn($str, $extra) => $str->append("**Extra Data:**\n```json\n" . json_encode($record->extra, JSON_PRETTY_PRINT) . "\n```\n"))
             ->toString();
     }
 
@@ -142,7 +126,7 @@ class GithubIssueFormatter implements FormatterInterface
     private function cleanStackTrace(string $stackTrace): string
     {
         return collect(explode("\n", $stackTrace))
-            ->filter(fn ($line) => ! empty(trim($line)))
+            ->filter(fn($line) => ! empty(trim($line)))
             ->map(function ($line) {
                 if (trim($line) === '"}') {
                     return '';
@@ -218,8 +202,8 @@ class GithubIssueFormatter implements FormatterInterface
 
         return [
             'message' => $exception->getMessage(),
-            'stack_trace' => $header."\n[stacktrace]\n".$this->cleanStackTrace($exception->getTraceAsString()),
-            'full_stack_trace' => $header."\n[stacktrace]\n".$exception->getTraceAsString(),
+            'stack_trace' => $header . "\n[stacktrace]\n" . $this->cleanStackTrace($exception->getTraceAsString()),
+            'full_stack_trace' => $header . "\n[stacktrace]\n" . $exception->getTraceAsString(),
         ];
     }
 

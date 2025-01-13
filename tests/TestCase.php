@@ -1,6 +1,6 @@
 <?php
 
-namespace Naoray\GithubMonolog\Tests;
+namespace Naoray\LaravelGithubMonolog\Tests;
 
 use Orchestra\Testbench\TestCase as Orchestra;
 

@@ -16,34 +16,23 @@ afterEach(function () {
     @unlink($this->tempFile);
 });
 
-function createLogRecord(string $message = 'Test'): LogRecord
-{
-    return new LogRecord(
-        datetime: new \DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: $message,
-        context: [],
-        extra: [],
-    );
-}
-
 test('deduplication respects time window', function () {
-    $store = new FileStore($this->tempFile);
+    $store = new FileStore($this->tempFile, time: 1);
     $handler = new DeduplicationHandler(
         handler: $this->testHandler,
         store: $store,
         signatureGenerator: new DefaultSignatureGenerator(),
-        time: 1
     );
 
     $record = createLogRecord();
 
     $handler->handle($record);
+    $handler->flush();
     expect($this->testHandler->getRecords())->toHaveCount(1);
 
     sleep(2);
     $handler->handle($record);
+    $handler->flush();
     expect($this->testHandler->getRecords())->toHaveCount(2);
 });
 
@@ -59,7 +48,7 @@ test('deduplicates records with same signature', function () {
 
     $handler->handle($record);
     $handler->handle($record);
-
+    $handler->flush();
     expect($this->testHandler->getRecords())->toHaveCount(1);
 });
 
@@ -76,6 +65,6 @@ test('different messages create different signatures', function () {
 
     $handler->handle($record1);
     $handler->handle($record2);
-
+    $handler->flush();
     expect($this->testHandler->getRecords())->toHaveCount(2);
 });

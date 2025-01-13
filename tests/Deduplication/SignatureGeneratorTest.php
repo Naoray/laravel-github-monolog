@@ -2,7 +2,7 @@
 
 use Monolog\Level;
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\DefaultSignatureGenerator;
+use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
 
 beforeEach(function () {
     $this->generator = new DefaultSignatureGenerator;

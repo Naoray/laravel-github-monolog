@@ -10,28 +10,23 @@ use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
 
 class Handler extends AbstractProcessingHandler
 {
-    private string $repo;
-
-    private string $token;
-
-    private array $labels;
-
     private const DEFAULT_LABEL = 'github-issue-logger';
 
     /**
      * @param  string  $repo  The GitHub repository in "owner/repo" format
      * @param  string  $token  Your GitHub Personal Access Token
+     * @param  SignatureGeneratorInterface  $signatureGenerator  The signature generator to use
      * @param  array  $labels  Labels to be applied to GitHub issues (default: ['github-issue-logger'])
-     * @param  int|string|Level  $level  Log level (default: DEBUG)
+     * @param  int|string|Level  $level  Log level (default: ERROR)
      * @param  bool  $bubble  Whether the messages that are handled can bubble up the stack
      */
     public function __construct(
-        string $repo,
-        string $token,
-        array $labels,
-        $level,
-        bool $bubble,
-        private SignatureGeneratorInterface $signatureGenerator
+        private string $repo,
+        private string $token,
+        protected SignatureGeneratorInterface $signatureGenerator,
+        protected array $labels = [],
+        int|string|Level $level = Level::Error,
+        bool $bubble = true,
     ) {
         parent::__construct($level, $bubble);
 
@@ -46,7 +41,7 @@ class Handler extends AbstractProcessingHandler
     protected function write(LogRecord $record): void
     {
         if (! $record->formatted instanceof Formatted) {
-            throw new \RuntimeException('Record must be formatted with GithubIssueFormatter');
+            throw new \RuntimeException('Record must be formatted with ' . Formatted::class);
         }
 
         $formatted = $record->formatted;

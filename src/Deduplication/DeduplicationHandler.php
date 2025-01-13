@@ -16,15 +16,16 @@ class DeduplicationHandler extends BufferHandler
         protected StoreInterface $store,
         protected SignatureGeneratorInterface $signatureGenerator,
         int|string|Level $level = Level::Error,
-        protected int $time = 60,
+        int $bufferLimit = 0,
         bool $bubble = true,
+        bool $flushOnOverflow = false,
     ) {
         parent::__construct(
             handler: $handler,
-            bufferLimit: 0,
+            bufferLimit: $bufferLimit,
             level: $level,
             bubble: $bubble,
-            flushOnOverflow: false,
+            flushOnOverflow: $flushOnOverflow,
         );
     }
 
@@ -38,11 +39,12 @@ class DeduplicationHandler extends BufferHandler
             ->map(function (LogRecord $record) {
                 $signature = $this->signatureGenerator->generate($record);
 
+                // If the record is a duplicate, we don't want to add it to the store
                 if ($this->store->isDuplicate($record, $signature)) {
-                    $this->store->add($record, $signature);
-
                     return null;
                 }
+
+                $this->store->add($record, $signature);
 
                 return $record;
             })

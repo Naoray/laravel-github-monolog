@@ -14,30 +14,9 @@ afterEach(function () {
     File::delete($this->testPath);
 });
 
-function createStore(string $prefix = 'test:', int $time = 60): FileStore
-{
-    return new FileStore(
-        path: test()->testPath,
-        prefix: $prefix,
-        time: $time
-    );
-}
-
-function createLogRecord(string $message = 'test', Level $level = Level::Error): LogRecord
-{
-    return new LogRecord(
-        datetime: new \DateTimeImmutable,
-        channel: 'test',
-        level: $level,
-        message: $message,
-        context: [],
-        extra: [],
-    );
-}
-
 // Base Store Tests
 test('it can add and retrieve entries', function () {
-    $store = createStore();
+    $store = createFileStore();
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -48,7 +27,7 @@ test('it can add and retrieve entries', function () {
 });
 
 test('it removes expired entries', function () {
-    $store = createStore(time: 1);
+    $store = createFileStore(time: 1);
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -59,7 +38,7 @@ test('it removes expired entries', function () {
 });
 
 test('it keeps valid entries', function () {
-    $store = createStore(time: 5);
+    $store = createFileStore(time: 5);
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -69,7 +48,7 @@ test('it keeps valid entries', function () {
 });
 
 test('it handles multiple entries', function () {
-    $store = createStore();
+    $store = createFileStore();
     $record1 = createLogRecord('test1');
     $record2 = createLogRecord('test2');
 
@@ -91,8 +70,8 @@ test('it creates directory if not exists', function () {
 });
 
 test('it handles concurrent access', function () {
-    $store1 = createStore();
-    $store2 = createStore();
+    $store1 = createFileStore();
+    $store2 = createFileStore();
     $record = createLogRecord();
 
     $store1->add($record, 'signature1');
@@ -104,7 +83,7 @@ test('it handles concurrent access', function () {
 test('it handles corrupted file', function () {
     File::put(test()->testPath, 'invalid content');
 
-    $store = createStore();
+    $store = createFileStore();
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -115,7 +94,7 @@ test('it handles corrupted file', function () {
 });
 
 test('it handles file permissions', function () {
-    $store = createStore();
+    $store = createFileStore();
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -124,7 +103,7 @@ test('it handles file permissions', function () {
 });
 
 test('it maintains file integrity after cleanup', function () {
-    $store = createStore(time: 1);
+    $store = createFileStore(time: 1);
     $record = createLogRecord();
 
     $store->add($record, 'signature1');

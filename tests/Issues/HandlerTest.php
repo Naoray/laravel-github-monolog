@@ -1,113 +1,125 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog\Tests;
-
+use Illuminate\Support\Facades\Http;
 use Monolog\Level;
-use Monolog\Logger;
-use Naoray\LaravelGithubMonolog\DeduplicationStores\DatabaseDeduplicationStore;
-use Naoray\LaravelGithubMonolog\DeduplicationStores\RedisDeduplicationStore;
-use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
-use Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory;
-use Naoray\LaravelGithubMonolog\Handlers\SignatureDeduplicationHandler;
+use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
+use Naoray\LaravelGithubMonolog\Issues\Formatter;
 use Naoray\LaravelGithubMonolog\Issues\Handler;
-use Orchestra\Testbench\TestCase;
-use PHPUnit\Framework\Attributes\Test;
-use ReflectionProperty;
 
-class GithubIssueHandlerFactoryTest extends TestCase
+beforeEach(function () {
+    Http::preventStrayRequests();
+    $this->signatureGenerator = new DefaultSignatureGenerator();
+    $this->formatter = new Formatter($this->signatureGenerator);
+});
+
+function fakeSuccessfulResponses(): void
 {
-    private array $config = [
-        'repo' => 'test/repo',
-        'token' => 'test-token',
-    ];
-
-    #[Test]
-    public function it_creates_logger_with_correct_configuration(): void
-    {
-        $factory = new GithubIssueHandlerFactory;
-        $logger = $factory($this->config);
-
-        expect($logger)
-            ->toBeInstanceOf(Logger::class)
-            ->and($logger->getName())->toBe('github')
-            ->and($logger->getHandlers()[0])
-            ->toBeInstanceOf(SignatureDeduplicationHandler::class);
-
-        /** @var SignatureDeduplicationHandler $deduplicationHandler */
-        $deduplicationHandler = $logger->getHandlers()[0];
-        $handler = $this->getWrappedHandler($deduplicationHandler);
-
-        expect($handler)
-            ->toBeInstanceOf(Handler::class)
-            ->and($handler->getFormatter())
-            ->toBeInstanceOf(GithubIssueFormatter::class);
-    }
-
-    #[Test]
-    public function it_accepts_custom_log_level(): void
-    {
-        $factory = new GithubIssueHandlerFactory;
-        $logger = $factory([...$this->config, 'level' => Level::Info]);
-
-        /** @var SignatureDeduplicationHandler $handler */
-        $handler = $logger->getHandlers()[0];
-        expect($handler->getLevel())->toBe(Level::Info);
-    }
-
-    #[Test]
-    public function it_allows_custom_deduplication_configuration(): void
-    {
-        $factory = new GithubIssueHandlerFactory;
-        $logger = $factory([
-            ...$this->config,
-            'deduplication' => [
-                'driver' => 'database',
-                'table' => 'custom_dedup',
-                'time' => 300,
-            ],
-        ]);
-
-        /** @var SignatureDeduplicationHandler $handler */
-        $handler = $logger->getHandlers()[0];
-        $store = $this->getDeduplicationStore($handler);
-
-        expect($store)->toBeInstanceOf(DatabaseDeduplicationStore::class);
-    }
-
-    #[Test]
-    public function it_uses_default_values_for_optional_config(): void
-    {
-        $factory = new GithubIssueHandlerFactory;
-        $logger = $factory($this->config);
-
-        /** @var SignatureDeduplicationHandler $handler */
-        $handler = $logger->getHandlers()[0];
-        $store = $this->getDeduplicationStore($handler);
-
-        expect($store)->toBeInstanceOf(RedisDeduplicationStore::class);
-    }
-
-    #[Test]
-    public function it_throws_exception_for_missing_required_config(): void
-    {
-        $factory = new GithubIssueHandlerFactory;
-
-        expect(fn () => $factory([]))->toThrow(\InvalidArgumentException::class);
-        expect(fn () => $factory(['repo' => 'test/repo']))->toThrow(\InvalidArgumentException::class);
-        expect(fn () => $factory(['token' => 'test-token']))->toThrow(\InvalidArgumentException::class);
-    }
-
-    private function getWrappedHandler(SignatureDeduplicationHandler $handler): Handler
-    {
-        $reflection = new ReflectionProperty($handler, 'handler');
-
-        return $reflection->getValue($handler);
-    }
-
-    private function getDeduplicationStore(SignatureDeduplicationHandler $handler): mixed
-    {
-        $reflection = new ReflectionProperty($handler, 'store');
-
-        return $reflection->getValue($handler);
-    }
+    Http::fake([
+        'api.github.com/search/issues*' => Http::response(['items' => []]),
+        'api.github.com/repos/*/issues' => Http::response(['number' => 1]),
+        'api.github.com/repos/*/issues/*/comments' => Http::response(),
+    ]);
 }
+
+function createHandler(): Handler
+{
+    $handler = new Handler(
+        repo: 'test/repo',
+        token: 'test-token',
+        labels: [],
+        level: Level::Debug,
+        bubble: true,
+        signatureGenerator: test()->signatureGenerator
+    );
+
+    $handler->setFormatter(test()->formatter);
+    return $handler;
+}
+
+test('it creates new github issue when no duplicate exists', function () {
+    fakeSuccessfulResponses();
+    $handler = createHandler();
+    $record = createLogRecord('New issue');
+    $handler->handle($record);
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://api.github.com/repos/test/repo/issues' &&
+            $request->hasHeader('Authorization', 'Bearer test-token') &&
+            $request['title'] === '[ERROR] New issue';
+    });
+});
+
+test('it comments on existing github issue', function () {
+    Http::fake([
+        'api.github.com/search/issues*' => Http::response([
+            'items' => [
+                ['number' => 123]
+            ]
+        ]),
+        'api.github.com/repos/*/issues/*/comments' => Http::response(),
+    ]);
+
+    $handler = createHandler();
+    $record = createLogRecord('Existing issue');
+    $handler->handle($record);
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://api.github.com/repos/test/repo/issues/123/comments' &&
+            $request->hasHeader('Authorization', 'Bearer test-token') &&
+            str_contains($request['body'], '# New Occurrence');
+    });
+});
+
+test('it includes signature in issue search', function () {
+    fakeSuccessfulResponses();
+    $handler = createHandler();
+    $record = createLogRecord('Test issue');
+    $handler->handle($record);
+
+    Http::assertSent(function ($request) use ($record) {
+        return str_contains($request->url(), 'https://api.github.com/search/issues') &&
+            str_contains($request['q'], "Signature: {$this->signatureGenerator->generate($record)}");
+    });
+});
+
+test('it throws exception when issue creation fails', function () {
+    Http::fake([
+        'api.github.com/search/issues*' => Http::response(['items' => []]),
+        'api.github.com/repos/*/issues' => Http::response([], 500),
+    ]);
+
+    $handler = createHandler();
+    $record = createLogRecord('Failed issue');
+
+    expect(fn() => $handler->handle($record))
+        ->toThrow(RuntimeException::class, 'Failed to create GitHub issue');
+});
+
+test('it throws exception when issue search fails', function () {
+    Http::fake([
+        'api.github.com/search/issues*' => Http::response([], 500),
+    ]);
+
+    $handler = createHandler();
+    $record = createLogRecord('Failed search');
+
+    expect(fn() => $handler->handle($record))
+        ->toThrow(RuntimeException::class, 'Failed to search GitHub issues');
+});
+
+test('it throws exception when comment creation fails', function () {
+    Http::fake([
+        'api.github.com/search/issues*' => Http::response([
+            'items' => [
+                ['number' => 123]
+            ]
+        ]),
+        'api.github.com/repos/*/issues/*/comments' => Http::response([], 500),
+    ]);
+
+    $handler = createHandler();
+    $record = createLogRecord('Failed comment');
+
+    expect(fn() => $handler->handle($record))
+        ->toThrow(RuntimeException::class, 'Failed to comment on GitHub issue');
+});

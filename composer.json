@@ -42,7 +42,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Naoray\\GithubMonolog\\Tests\\": "tests/",
+      "Naoray\\LaravelGithubMonolog\\Tests\\": "tests/",
       "Workbench\\App\\": "workbench/app/"
     }
   },

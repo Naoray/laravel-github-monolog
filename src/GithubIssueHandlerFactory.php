@@ -6,12 +6,13 @@ use Illuminate\Support\Arr;
 use InvalidArgumentException;
 use Monolog\Level;
 use Monolog\Logger;
-use Naoray\LaravelGithubMonolog\DeduplicationStores\DatabaseDeduplicationStore;
-use Naoray\LaravelGithubMonolog\Deduplication\Store\DeduplicationStoreContract;
-use Naoray\LaravelGithubMonolog\DeduplicationStores\FileDeduplicationStore;
-use Naoray\LaravelGithubMonolog\DeduplicationStores\RedisDeduplicationStore;
-use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
-use Naoray\LaravelGithubMonolog\Handlers\SignatureDeduplicationHandler;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\DatabaseStore;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\RedisStore;
+use Naoray\LaravelGithubMonolog\Issues\Formatter;
+use Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler;
+use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\StoreInterface;
 use Naoray\LaravelGithubMonolog\Issues\Handler;
 
 class GithubIssueHandlerFactory
@@ -42,28 +43,31 @@ class GithubIssueHandlerFactory
         $handler = new Handler(
             repo: $config['repo'],
             token: $config['token'],
-            labels: $config['labels'] ?? [],
+            signatureGenerator: new DefaultSignatureGenerator,
+            labels: Arr::get($config, 'labels', []),
             level: Arr::get($config, 'level', Level::Error),
             bubble: Arr::get($config, 'bubble', true)
         );
 
-        $handler->setFormatter(new GithubIssueFormatter);
+        $handler->setFormatter(new Formatter(new DefaultSignatureGenerator));
 
         return $handler;
     }
 
-    protected function wrapWithDeduplication(Handler $handler, array $config): SignatureDeduplicationHandler
+    protected function wrapWithDeduplication(Handler $handler, array $config): DeduplicationHandler
     {
-        return new SignatureDeduplicationHandler(
-            $handler,
+        return new DeduplicationHandler(
+            handler: $handler,
             store: $this->createDeduplicationStore($config),
+            signatureGenerator: new DefaultSignatureGenerator,
             level: Arr::get($config, 'level', Level::Error),
-            time: $this->getDeduplicationTime($config),
-            bubble: true
+            bubble: true,
+            bufferLimit: Arr::get($config, 'buffer.limit', 0),
+            flushOnOverflow: Arr::get($config, 'buffer.flushOnOverflow', true)
         );
     }
 
-    protected function createDeduplicationStore(array $config): DeduplicationStoreContract
+    protected function createDeduplicationStore(array $config): StoreInterface
     {
         $deduplication = Arr::get($config, 'deduplication', []);
         $driver = Arr::get($deduplication, 'driver', 'redis');
@@ -72,23 +76,22 @@ class GithubIssueHandlerFactory
         $connection = Arr::get($deduplication, 'connection', 'default');
 
         return match ($driver) {
-            'redis' => new RedisDeduplicationStore(
+            'redis' => new RedisStore(
                 connection: $connection,
                 prefix: $prefix,
                 time: $time
             ),
-            'database' => new DatabaseDeduplicationStore(
+            'database' => new DatabaseStore(
                 connection: $connection,
                 table: Arr::get($deduplication, 'table', 'github_monolog_deduplication'),
                 prefix: $prefix,
                 time: $time
             ),
-            'file' => new FileDeduplicationStore(
+            default => new FileStore(
                 path: Arr::get($deduplication, 'path', storage_path('logs/github-monolog/deduplication.log')),
                 prefix: $prefix,
                 time: $time
-            ),
-            default => throw new InvalidArgumentException("Unsupported deduplication driver: {$driver}")
+            )
         };
     }
 

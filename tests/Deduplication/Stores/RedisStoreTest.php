@@ -34,30 +34,9 @@ afterEach(function () {
     Redis::connection('other')->del('test:dedup');
 });
 
-function createStore(string $prefix = 'test:', int $time = 60): RedisStore
-{
-    return new RedisStore(
-        connection: 'default',
-        prefix: $prefix,
-        time: $time
-    );
-}
-
-function createLogRecord(string $message = 'test', Level $level = Level::Error): LogRecord
-{
-    return new LogRecord(
-        datetime: new \DateTimeImmutable,
-        channel: 'test',
-        level: $level,
-        message: $message,
-        context: [],
-        extra: [],
-    );
-}
-
 // Base Store Tests
 test('it can add and retrieve entries', function () {
-    $store = createStore();
+    $store = createRedisStore();
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -68,7 +47,7 @@ test('it can add and retrieve entries', function () {
 });
 
 test('it removes expired entries', function () {
-    $store = createStore(time: 1);
+    $store = createRedisStore(time: 1);
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -80,7 +59,7 @@ test('it removes expired entries', function () {
 });
 
 test('it keeps valid entries', function () {
-    $store = createStore(time: 5);
+    $store = createRedisStore(time: 5);
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -90,7 +69,7 @@ test('it keeps valid entries', function () {
 });
 
 test('it handles multiple entries', function () {
-    $store = createStore();
+    $store = createRedisStore();
     $record1 = createLogRecord('test1');
     $record2 = createLogRecord('test2');
 
@@ -102,7 +81,7 @@ test('it handles multiple entries', function () {
 
 // Redis Store Specific Tests
 test('it uses correct redis key', function () {
-    $store = createStore('custom:');
+    $store = createRedisStore('custom:');
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
@@ -124,7 +103,7 @@ test('it can use different redis connection', function () {
 });
 
 test('it properly cleans up expired entries', function () {
-    $store = createStore(time: 1);
+    $store = createRedisStore(time: 1);
     $record = createLogRecord();
 
     // Add an entry that will expire
