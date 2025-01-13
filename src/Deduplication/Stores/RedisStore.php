@@ -33,7 +33,7 @@ class RedisStore extends AbstractStore
     public function add(LogRecord $record, string $signature): void
     {
         $this->redis()->zadd($this->getKey(), [
-            $signature => time(),
+            $signature => $this->getTimestamp(),
         ]);
     }
 
@@ -41,7 +41,7 @@ class RedisStore extends AbstractStore
     {
         $entries = $this->redis()->zrangebyscore(
             $this->getKey(),
-            time() - $this->time,
+            $this->getTimestampValidity(),
             '+inf',
             ['withscores' => true]
         );
@@ -55,6 +55,6 @@ class RedisStore extends AbstractStore
 
     public function cleanup(): void
     {
-        $this->redis()->zremrangebyscore($this->getKey(), '-inf', time() - $this->time);
+        $this->redis()->zremrangebyscore($this->getKey(), '-inf', $this->getTimestampValidity());
     }
 }

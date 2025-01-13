@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Schema;
 use Monolog\Level;
 use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\DatabaseStore;
+use function Pest\Laravel\travel;
 
 beforeEach(function () {
     // Ensure we're using SQLite for testing
@@ -38,7 +39,8 @@ test('it removes expired entries', function () {
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
-    sleep(2);
+
+    travel(2)->seconds();
 
     expect($store->get())->toBeEmpty();
 });
@@ -93,7 +95,8 @@ test('it cleans up expired entries from database', function () {
     $store->add($record, 'test-signature');
     expect(DB::table('github_monolog_deduplication')->get())->toHaveCount(1);
 
-    sleep(2);
+    travel(2)->seconds();
+
     $store->cleanup();
 
     expect(DB::table('github_monolog_deduplication')->get())->toBeEmpty();

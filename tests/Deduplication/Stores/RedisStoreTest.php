@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Redis;
 use Monolog\Level;
 use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\RedisStore;
+use function Pest\Laravel\travel;
 
 beforeEach(function () {
     // Configure Redis for testing
@@ -51,7 +52,8 @@ test('it removes expired entries', function () {
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
-    sleep(2);
+
+    travel(2)->seconds();
 
     $store->cleanup();
 
@@ -112,8 +114,7 @@ test('it properly cleans up expired entries', function () {
     // Verify it exists
     expect($store->get())->toHaveCount(1);
 
-    // Wait for expiration
-    sleep(2);
+    travel(2)->seconds();
 
     $store->cleanup();
 

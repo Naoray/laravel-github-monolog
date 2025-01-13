@@ -1,8 +1,7 @@
 <?php
 
 use Monolog\Handler\TestHandler;
-use Monolog\Level;
-use Monolog\LogRecord;
+use function Pest\Laravel\travel;
 use Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
 use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
@@ -30,7 +29,8 @@ test('deduplication respects time window', function () {
     $handler->flush();
     expect($this->testHandler->getRecords())->toHaveCount(1);
 
-    sleep(2);
+    travel(2)->seconds();
+
     $handler->handle($record);
     $handler->flush();
     expect($this->testHandler->getRecords())->toHaveCount(2);

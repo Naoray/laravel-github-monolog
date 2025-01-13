@@ -1,9 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\File;
-use Monolog\Level;
-use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
+use function Pest\Laravel\travel;
 
 beforeEach(function () {
     $this->testPath = storage_path('logs/test-dedup.log');
@@ -31,7 +30,8 @@ test('it removes expired entries', function () {
     $record = createLogRecord();
 
     $store->add($record, 'test-signature');
-    sleep(2);
+
+    travel(2)->seconds();
 
     $store->cleanup();
     expect($store->get())->toBeEmpty();
@@ -107,7 +107,7 @@ test('it maintains file integrity after cleanup', function () {
     $record = createLogRecord();
 
     $store->add($record, 'signature1');
-    sleep(2);
+    travel(2)->seconds();
     $store->add($record, 'signature2');
 
     $store->cleanup();

@@ -2,6 +2,7 @@
 
 namespace Naoray\LaravelGithubMonolog\Deduplication\Stores;
 
+use Illuminate\Support\Carbon;
 use Monolog\LogRecord;
 
 abstract class AbstractStore implements StoreInterface
@@ -18,14 +19,13 @@ abstract class AbstractStore implements StoreInterface
 
     public function isDuplicate(LogRecord $record, string $signature): bool
     {
-        $timestampValidity = time() - $this->time;
         $foundDuplicate = false;
 
         foreach ($this->get() as $entry) {
             [$timestamp, $storedSignature] = explode(':', $entry, 2);
             $timestamp = (int) $timestamp;
 
-            if ($timestamp <= $timestampValidity) {
+            if ($this->isExpired($timestamp)) {
                 continue;
             }
 
@@ -35,5 +35,20 @@ abstract class AbstractStore implements StoreInterface
         }
 
         return $foundDuplicate;
+    }
+
+    protected function isExpired(int $timestamp): bool
+    {
+        return $this->getTimestampValidity() > $timestamp;
+    }
+
+    protected function getTimestampValidity(): int
+    {
+        return $this->getTimestamp() - $this->time;
+    }
+
+    protected function getTimestamp(): int
+    {
+        return Carbon::now()->timestamp;
     }
 }

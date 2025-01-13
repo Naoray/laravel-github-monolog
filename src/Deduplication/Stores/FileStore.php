@@ -32,7 +32,7 @@ class FileStore extends AbstractStore
 
     public function add(LogRecord $record, string $signature): void
     {
-        $entry = $this->buildEntry($signature, time());
+        $entry = $this->buildEntry($signature, $this->getTimestamp());
         $content = File::exists($this->path) ? File::get($this->path) : '';
 
         File::put(
@@ -43,12 +43,10 @@ class FileStore extends AbstractStore
 
     public function cleanup(): void
     {
-        $timestampValidity = time() - $this->time;
-
         $valid = collect($this->get())
-            ->filter(function ($entry) use ($timestampValidity) {
+            ->filter(function ($entry) {
                 [$timestamp] = explode(':', $entry, 2);
-                return is_numeric($timestamp) && (int) $timestamp > $timestampValidity;
+                return is_numeric($timestamp) && !$this->isExpired($timestamp);
             })
             ->join(PHP_EOL);
 

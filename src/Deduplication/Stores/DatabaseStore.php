@@ -32,7 +32,7 @@ class DatabaseStore extends AbstractStore
         return DB::connection($this->connection)
             ->table($this->table)
             ->where('prefix', $this->prefix)
-            ->where('created_at', '>=', time() - $this->time)
+            ->where('created_at', '>=', $this->getTimestampValidity())
             ->get()
             ->map(fn($row) => $this->buildEntry($row->signature, $row->created_at))
             ->all();
@@ -45,7 +45,7 @@ class DatabaseStore extends AbstractStore
             ->insert([
                 'prefix' => $this->prefix,
                 'signature' => $signature,
-                'created_at' => time(),
+                'created_at' => $this->getTimestamp(),
             ]);
     }
 
@@ -54,7 +54,7 @@ class DatabaseStore extends AbstractStore
         DB::connection($this->connection)
             ->table($this->table)
             ->where('prefix', $this->prefix)
-            ->where('created_at', '<', time() - $this->time)
+            ->where('created_at', '<', $this->getTimestampValidity())
             ->delete();
     }
 
