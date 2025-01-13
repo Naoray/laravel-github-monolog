@@ -4,7 +4,9 @@
   "keywords": [
     "Krishan Koenig",
     "laravel",
-    "laravel-github-monolog"
+    "monolog",
+    "github",
+    "logging"
   ],
   "homepage": "https://github.com/naoray/laravel-github-monolog",
   "license": "MIT",
@@ -37,13 +39,12 @@
   },
   "autoload": {
     "psr-4": {
-      "Naoray\\LaravelGithubMonolog\\": "src/"
+      "Naoray\\LaravelGithubMonolog\\": "src"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Naoray\\GithubMonolog\\Tests\\": "tests/",
-      "Workbench\\App\\": "workbench/app/"
+      "Naoray\\LaravelGithubMonolog\\Tests\\": "tests"
     }
   },
   "scripts": {

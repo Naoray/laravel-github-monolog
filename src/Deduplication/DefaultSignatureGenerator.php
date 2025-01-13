@@ -1,12 +1,11 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog;
+namespace Naoray\LaravelGithubMonolog\Deduplication;
 
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\Contracts\SignatureGenerator;
 use Throwable;
 
-class DefaultSignatureGenerator implements SignatureGenerator
+class DefaultSignatureGenerator implements SignatureGeneratorInterface
 {
     /**
      * Generate a unique signature for the log record

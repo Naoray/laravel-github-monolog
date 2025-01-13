@@ -1,36 +1,29 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog\Handlers;
+namespace Naoray\LaravelGithubMonolog\Issues;
 
 use Illuminate\Support\Facades\Http;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Level;
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatted;
 
-class IssueLogHandler extends AbstractProcessingHandler
+class Handler extends AbstractProcessingHandler
 {
-    private string $repo;
-
-    private string $token;
-
-    private array $labels;
-
     private const DEFAULT_LABEL = 'github-issue-logger';
 
     /**
      * @param  string  $repo  The GitHub repository in "owner/repo" format
      * @param  string  $token  Your GitHub Personal Access Token
      * @param  array  $labels  Labels to be applied to GitHub issues (default: ['github-issue-logger'])
-     * @param  int|string|Level  $level  Log level (default: DEBUG)
+     * @param  int|string|Level  $level  Log level (default: ERROR)
      * @param  bool  $bubble  Whether the messages that are handled can bubble up the stack
      */
     public function __construct(
-        string $repo,
-        string $token,
-        array $labels = [],
-        $level = Level::Error,
-        bool $bubble = true
+        private string $repo,
+        private string $token,
+        protected array $labels = [],
+        int|string|Level $level = Level::Error,
+        bool $bubble = true,
     ) {
         parent::__construct($level, $bubble);
 
@@ -44,12 +37,12 @@ class IssueLogHandler extends AbstractProcessingHandler
      */
     protected function write(LogRecord $record): void
     {
-        if (! $record->formatted instanceof GithubIssueFormatted) {
-            throw new \RuntimeException('Record must be formatted with GithubIssueFormatter');
+        if (! $record->formatted instanceof Formatted) {
+            throw new \RuntimeException('Record must be formatted with '.Formatted::class);
         }
 
         $formatted = $record->formatted;
-        $existingIssue = $this->findExistingIssue($formatted->signature);
+        $existingIssue = $this->findExistingIssue($record);
 
         if ($existingIssue) {
             $this->commentOnIssue($existingIssue['number'], $formatted);
@@ -63,11 +56,15 @@ class IssueLogHandler extends AbstractProcessingHandler
     /**
      * Find an existing issue with the given signature
      */
-    private function findExistingIssue(string $signature): ?array
+    private function findExistingIssue(LogRecord $record): ?array
     {
+        if (! isset($record->extra['github_issue_signature'])) {
+            throw new \RuntimeException('Record is missing github_issue_signature in extra data. Make sure the DeduplicationHandler is configured correctly.');
+        }
+
         $response = Http::withToken($this->token)
             ->get('https://api.github.com/search/issues', [
-                'q' => "repo:{$this->repo} is:issue is:open label:".self::DEFAULT_LABEL." \"Signature: {$signature}\"",
+                'q' => "repo:{$this->repo} is:issue is:open label:".self::DEFAULT_LABEL." \"Signature: {$record->extra['github_issue_signature']}\"",
             ]);
 
         if ($response->failed()) {
@@ -80,7 +77,7 @@ class IssueLogHandler extends AbstractProcessingHandler
     /**
      * Add a comment to an existing issue
      */
-    private function commentOnIssue(int $issueNumber, GithubIssueFormatted $formatted): void
+    private function commentOnIssue(int $issueNumber, Formatted $formatted): void
     {
         $response = Http::withToken($this->token)
             ->post("https://api.github.com/repos/{$this->repo}/issues/{$issueNumber}/comments", [
@@ -95,7 +92,7 @@ class IssueLogHandler extends AbstractProcessingHandler
     /**
      * Create a new GitHub issue
      */
-    private function createIssue(GithubIssueFormatted $formatted): void
+    private function createIssue(Formatted $formatted): void
     {
         $response = Http::withToken($this->token)
             ->post("https://api.github.com/repos/{$this->repo}/issues", [

@@ -1,10 +1,10 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog\Contracts;
+namespace Naoray\LaravelGithubMonolog\Deduplication;
 
 use Monolog\LogRecord;
 
-interface SignatureGenerator
+interface SignatureGeneratorInterface
 {
     /**
      * Generate a unique signature for the log record

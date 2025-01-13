@@ -5,7 +5,7 @@
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/naoray/laravel-github-monolog/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/naoray/laravel-github-monolog/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/naoray/laravel-github-monolog.svg?style=flat-square)](https://packagist.org/packages/naoray/laravel-github-monolog)
 
-A Laravel package that automatically creates GitHub issues from your application logs. Perfect for smaller projects where full-featured logging services like Sentry or Bugsnag might be overkill, but you still want to track bugs effectively.
+Automatically create GitHub issues from your Laravel logs. Perfect for smaller projects without the need for full-featured logging services.
 
 ## Requirements
 
@@ -15,10 +15,10 @@ A Laravel package that automatically creates GitHub issues from your application
 
 ## Features
 
-- ✨ Automatically creates GitHub issues from log entries
-- 🔍 Intelligently groups similar errors into single issues
-- 💬 Adds comments to existing issues for recurring errors
-- 🏷️ Supports customizable labels for efficient organization
+- ✨ Automatically create GitHub issues from logs
+- 🔍 Group similar errors into single issues
+- 💬 Add comments to existing issues for recurring errors
+- 🏷️ Support customizable labels
 - 🎯 Smart deduplication to prevent issue spam
 - ⚡️ Buffered logging for better performance
 
@@ -38,7 +38,7 @@ If the same error occurs again, instead of creating a duplicate, a new comment i
 
 ## Installation
 
-Install the package via composer:
+Install with Composer:
 
 ```bash
 composer require naoray/laravel-github-monolog
@@ -46,7 +46,7 @@ composer require naoray/laravel-github-monolog
 
 ## Configuration
 
-Add the GitHub logging channel to your `config/logging.php`:
+Add the GitHub logging channel to `config/logging.php`:
 
 ```php
 'channels' => [
@@ -62,10 +62,6 @@ Add the GitHub logging channel to your `config/logging.php`:
         // Optional configuration
         'level' => env('LOG_LEVEL', 'error'),
         'labels' => ['bug'],
-        'deduplication' => [
-            'store' => storage_path('logs/github-issues-dedup.log'),  // Custom path for deduplication storage
-            'time' => 60,  // Time in seconds to consider logs as duplicates
-        ],
     ],
 ]
 ```
@@ -78,6 +74,102 @@ GITHUB_TOKEN=your-github-personal-access-token
 ```
 
 You can use the `github` log channel as your default `LOG_CHANNEL` or add it as part of your stack in `LOG_STACK`.
+
+### Advanced Configuration
+
+Deduplication and buffering are enabled by default to enhance logging. Customize these features to suit your needs.
+
+#### Deduplication
+
+Group similar errors to avoid duplicate issues. By default, the package uses file-based storage. Customize the storage and time window to fit your application.
+
+```php
+'github' => [
+    // ... basic config from above ...
+    'deduplication' => [
+        'store' => 'file',  // Default store
+        'time' => 60,       // Time window in seconds
+    ],
+]
+```
+
+##### Alternative Storage Options
+
+Consider other storage options in these Laravel-specific scenarios:
+
+- **Redis Store**: Use when:
+  - Running async queue jobs (file storage won't work across processes)
+  - Using Laravel Horizon for queue management
+  - Running multiple application instances behind a load balancer
+
+  ```php
+  'deduplication' => [
+      'store' => 'redis',
+      'prefix' => 'github-monolog:',
+      'connection' => 'default',  // Uses your Laravel Redis connection
+  ],
+  ```
+
+- **Database Store**: Use when:
+  - Running queue jobs but Redis isn't available
+  - Need to persist deduplication data across deployments
+  - Want to query/debug deduplication history via database
+
+  ```php
+  'deduplication' => [
+      'store' => 'database',
+      'table' => 'github_monolog_deduplication',
+      'connection' => null,  // Uses your default database connection
+  ],
+  ```
+
+#### Buffering
+
+Buffer logs to reduce GitHub API calls. Customize the buffer size and overflow behavior to optimize performance:
+
+```php
+'github' => [
+    // ... basic config from above ...
+    'buffer' => [
+        'limit' => 0,        // Maximum records in buffer (0 = unlimited, flush on shutdown)
+        'flush_on_overflow' => true,  // When limit is reached: true = flush all, false = remove oldest
+    ],
+]
+```
+
+When buffering is active:
+- Logs are collected in memory until flushed
+- Buffer is automatically flushed on application shutdown
+- When limit is reached:
+  - With `flush_on_overflow = true`: All records are flushed
+  - With `flush_on_overflow = false`: Only the oldest record is removed
+
+#### Signature Generator
+
+Control how errors are grouped by customizing the signature generator. By default, the package uses a generator that creates signatures based on exception details or log message content.
+
+```php
+'github' => [
+    // ... basic config from above ...
+    'signature_generator' => \Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator::class,
+]
+```
+
+You can implement your own signature generator by implementing the `SignatureGeneratorInterface`:
+
+```php
+use Monolog\LogRecord;
+use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
+
+class CustomSignatureGenerator implements SignatureGeneratorInterface
+{
+    public function generate(LogRecord $record): string
+    {
+        // Your custom logic to generate a signature
+        return md5($record->message);
+    }
+}
+```
 
 ### Getting a GitHub Token
 
@@ -104,22 +196,6 @@ Log::channel('github')->error('Something went wrong!');
 // Or as part of a stack
 Log::stack(['daily', 'github'])->error('Something went wrong!');
 ```
-
-### Deduplication
-
-The package includes smart deduplication to prevent your repository from being flooded with duplicate issues:
-
-1. **Time-based Deduplication**: Similar errors within the configured time window (default: 60 seconds) are considered duplicates
-2. **Intelligent Grouping**: Uses error signatures to group similar errors, even if the exact details differ
-3. **Automatic Storage**: Deduplication data is automatically stored in your Laravel logs directory
-4. **Configurable**: Customize both the storage location and deduplication time window
-
-For example, if your application encounters the same error multiple times in quick succession:
-- First occurrence: Creates a new GitHub issue
-- Subsequent occurrences within the deduplication window: No new issues created
-- After the deduplication window: Creates a new issue or adds a comment to the existing one
-
-This helps keep your GitHub issues organized and prevents notification spam during error storms.
 
 ## Testing
 

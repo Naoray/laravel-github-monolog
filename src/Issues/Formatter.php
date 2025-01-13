@@ -1,6 +1,6 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog\Formatters;
+namespace Naoray\LaravelGithubMonolog\Issues;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -11,7 +11,7 @@ use Monolog\LogRecord;
 use ReflectionClass;
 use Throwable;
 
-class GithubIssueFormatter implements FormatterInterface
+class Formatter implements FormatterInterface
 {
     private const TITLE_MAX_LENGTH = 100;
 
@@ -23,17 +23,19 @@ class GithubIssueFormatter implements FormatterInterface
      * Formats a log record.
      *
      * @param  LogRecord  $record  A record to format
-     * @return GithubIssueFormatted The formatted record
+     * @return Formatted The formatted record
      */
-    public function format(LogRecord $record): GithubIssueFormatted
+    public function format(LogRecord $record): Formatted
     {
-        $exception = $this->getException($record);
-        $signature = $this->generateSignature($record, $exception);
+        if (! isset($record->extra['github_issue_signature'])) {
+            throw new \RuntimeException('Record is missing github_issue_signature in extra data. Make sure the DeduplicationHandler is configured correctly.');
+        }
 
-        return new GithubIssueFormatted(
-            signature: $signature,
+        $exception = $this->getException($record);
+
+        return new Formatted(
             title: $this->formatTitle($record, $exception),
-            body: $this->formatBody($record, $signature, $exception),
+            body: $this->formatBody($record, $record->extra['github_issue_signature'], $exception),
             comment: $this->formatComment($record, $exception),
         );
     }
@@ -42,31 +44,11 @@ class GithubIssueFormatter implements FormatterInterface
      * Formats a set of log records.
      *
      * @param  array<LogRecord>  $records  A set of records to format
-     * @return array<GithubIssueFormatted> The formatted set of records
+     * @return array<Formatted> The formatted set of records
      */
     public function formatBatch(array $records): array
     {
         return array_map([$this, 'format'], $records);
-    }
-
-    /**
-     * Generate a unique signature for the log record
-     */
-    private function generateSignature(LogRecord $record, ?Throwable $exception): string
-    {
-        if (! $exception) {
-            return md5($record->message.json_encode($record->context));
-        }
-
-        $trace = $exception->getTrace();
-        $firstFrame = ! empty($trace) ? $trace[0] : null;
-
-        return md5(implode(':', [
-            $exception::class,
-            $exception->getFile(),
-            $exception->getLine(),
-            $firstFrame ? ($firstFrame['file'] ?? '').':'.($firstFrame['line'] ?? '') : '',
-        ]));
     }
 
     /**

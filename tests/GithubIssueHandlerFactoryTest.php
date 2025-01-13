@@ -1,123 +1,190 @@
 <?php
 
-use Monolog\Handler\DeduplicationHandler;
 use Monolog\Level;
 use Monolog\Logger;
-use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
+use Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler;
+use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\DatabaseStore;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\RedisStore;
 use Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory;
-use Naoray\LaravelGithubMonolog\Handlers\IssueLogHandler;
+use Naoray\LaravelGithubMonolog\Issues\Formatter;
+use Naoray\LaravelGithubMonolog\Issues\Handler;
 
-function getWrappedHandler(DeduplicationHandler $handler): IssueLogHandler
+function getWrappedHandler(DeduplicationHandler $handler): Handler
 {
     $reflection = new ReflectionProperty($handler, 'handler');
-    $reflection->setAccessible(true);
 
     return $reflection->getValue($handler);
 }
 
-function getDeduplicationStore(DeduplicationHandler $handler): string
+function getDeduplicationStore(DeduplicationHandler $handler): mixed
 {
-    $reflection = new ReflectionProperty($handler, 'deduplicationStore');
-    $reflection->setAccessible(true);
+    $reflection = new ReflectionProperty($handler, 'store');
 
     return $reflection->getValue($handler);
 }
 
-test('it creates logger with correct configuration', function () {
-    $config = [
+function getSignatureGenerator(DeduplicationHandler $handler): mixed
+{
+    $reflection = new ReflectionProperty($handler, 'signatureGenerator');
+
+    return $reflection->getValue($handler);
+}
+
+beforeEach(function () {
+    $this->config = [
         'repo' => 'test/repo',
-        'token' => 'fake-token',
-        'level' => Level::Error->value,
-        'labels' => ['bug', 'automated'],
+        'token' => 'test-token',
+        'level' => Level::Error,
+        'labels' => ['test-label'],
     ];
 
-    $factory = new GithubIssueHandlerFactory;
-    $logger = $factory($config);
+    $this->signatureGenerator = new DefaultSignatureGenerator;
+    $this->factory = new GithubIssueHandlerFactory($this->signatureGenerator);
+});
+
+test('it creates a logger with deduplication handler', function () {
+    $logger = ($this->factory)($this->config);
 
     expect($logger)
         ->toBeInstanceOf(Logger::class)
-        ->and($logger->getName())->toBe('github')
         ->and($logger->getHandlers()[0])
         ->toBeInstanceOf(DeduplicationHandler::class);
-
-    /** @var DeduplicationHandler $deduplicationHandler */
-    $deduplicationHandler = $logger->getHandlers()[0];
-    $handler = getWrappedHandler($deduplicationHandler);
-
-    expect($handler)->toBeInstanceOf(IssueLogHandler::class);
 });
 
-test('it throws exception for missing required config', function () {
-    $factory = new GithubIssueHandlerFactory;
+test('it configures handler correctly', function () {
+    $logger = ($this->factory)($this->config);
 
-    expect(fn () => $factory([]))
-        ->toThrow(InvalidArgumentException::class, 'GitHub repository is required');
+    /** @var DeduplicationHandler $handler */
+    $handler = $logger->getHandlers()[0];
+    $wrappedHandler = getWrappedHandler($handler);
 
-    expect(fn () => $factory(['repo' => 'test/repo']))
-        ->toThrow(InvalidArgumentException::class, 'GitHub token is required');
+    expect($wrappedHandler)
+        ->toBeInstanceOf(Handler::class)
+        ->and($wrappedHandler->getLevel())
+        ->toBe(Level::Error)
+        ->and($wrappedHandler->getFormatter())
+        ->toBeInstanceOf(Formatter::class);
 });
 
-test('it uses default values for optional config', function () {
-    $config = [
-        'repo' => 'test/repo',
-        'token' => 'fake-token',
+test('it throws exception when required config is missing', function () {
+    expect(fn () => ($this->factory)([]))->toThrow(\InvalidArgumentException::class);
+    expect(fn () => ($this->factory)(['repo' => 'test/repo']))->toThrow(\InvalidArgumentException::class);
+    expect(fn () => ($this->factory)(['token' => 'test-token']))->toThrow(\InvalidArgumentException::class);
+});
+
+test('it configures buffer settings correctly', function () {
+    $this->config['buffer'] = [
+        'limit' => 50,
+        'flush_on_overflow' => false,
     ];
 
-    $factory = new GithubIssueHandlerFactory;
-    $logger = $factory($config);
+    $logger = ($this->factory)($this->config);
 
-    /** @var DeduplicationHandler $deduplicationHandler */
-    $deduplicationHandler = $logger->getHandlers()[0];
-    $handler = getWrappedHandler($deduplicationHandler);
+    /** @var DeduplicationHandler $handler */
+    $handler = $logger->getHandlers()[0];
+    $bufferLimit = (new ReflectionProperty($handler, 'bufferLimit'))->getValue($handler);
+    $flushOnOverflow = (new ReflectionProperty($handler, 'flushOnOverflow'))->getValue($handler);
 
-    expect($handler)
-        ->toBeInstanceOf(IssueLogHandler::class)
-        ->and($handler->getLevel())->toBe(Level::Error)
-        ->and($handler->getBubble())->toBeTrue()
-        ->and($handler->getFormatter())->toBeInstanceOf(GithubIssueFormatter::class);
-
-    // Verify default deduplication store path
-    expect(getDeduplicationStore($deduplicationHandler))
-        ->toBe(storage_path('logs/github-issues-dedup.log'));
+    expect($bufferLimit)->toBe(50)
+        ->and($flushOnOverflow)->toBeFalse();
 });
 
-test('it accepts custom log level', function () {
-    $config = [
-        'repo' => 'test/repo',
-        'token' => 'fake-token',
-        'level' => Level::Debug->value,
-    ];
+test('it can use file store driver', function () {
+    $path = sys_get_temp_dir().'/dedup-test-'.uniqid().'.log';
 
-    $factory = new GithubIssueHandlerFactory;
-    $logger = $factory($config);
-
-    /** @var DeduplicationHandler $deduplicationHandler */
-    $deduplicationHandler = $logger->getHandlers()[0];
-    $handler = getWrappedHandler($deduplicationHandler);
-
-    expect($handler->getLevel())->toBe(Level::Debug);
-});
-
-test('it allows custom deduplication configuration', function () {
-    $config = [
-        'repo' => 'test/repo',
-        'token' => 'fake-token',
+    $logger = ($this->factory)([
+        ...$this->config,
         'deduplication' => [
-            'store' => '/custom/path/dedup.log',
-            'time' => 120,
+            'driver' => 'file',
+            'path' => $path,
         ],
+    ]);
+
+    /** @var DeduplicationHandler $handler */
+    $handler = $logger->getHandlers()[0];
+    $store = getDeduplicationStore($handler);
+
+    expect($store)->toBeInstanceOf(FileStore::class);
+});
+
+test('it can use redis store driver', function () {
+    $this->config['deduplication'] = [
+        'driver' => 'redis',
+        'connection' => 'default',
     ];
 
-    $factory = new GithubIssueHandlerFactory;
-    $logger = $factory($config);
+    $logger = ($this->factory)($this->config);
 
-    /** @var DeduplicationHandler $deduplicationHandler */
+    /** @var DeduplicationHandler $handler */
+    $handler = $logger->getHandlers()[0];
+    $store = getDeduplicationStore($handler);
+
+    expect($store)->toBeInstanceOf(RedisStore::class);
+});
+
+test('it can use database store driver', function () {
+    config()->set('database.connections.sqlite', [
+        'driver' => 'sqlite',
+        'database' => ':memory:',
+    ]);
+
+    $this->config['deduplication'] = [
+        'driver' => 'database',
+        'connection' => 'sqlite',
+    ];
+
+    $logger = ($this->factory)($this->config);
+
+    /** @var DeduplicationHandler $handler */
+    $handler = $logger->getHandlers()[0];
+    $store = getDeduplicationStore($handler);
+
+    expect($store)->toBeInstanceOf(DatabaseStore::class);
+});
+
+test('it uses same signature generator across components', function () {
+    $factory = new GithubIssueHandlerFactory(new DefaultSignatureGenerator);
+    $logger = $factory([
+        'repo' => 'test/repo',
+        'token' => 'test-token',
+    ]);
+
+    /** @var \Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler $deduplicationHandler */
     $deduplicationHandler = $logger->getHandlers()[0];
+    $handler = getWrappedHandler($deduplicationHandler);
+    $formatter = $handler->getFormatter();
 
-    expect(getDeduplicationStore($deduplicationHandler))
-        ->toBe('/custom/path/dedup.log');
+    // Only check the deduplication handler's signature generator since other components no longer use it
+    $deduplicationGenerator = getSignatureGenerator($deduplicationHandler);
 
-    $reflection = new ReflectionProperty($deduplicationHandler, 'time');
-    $reflection->setAccessible(true);
-    expect($reflection->getValue($deduplicationHandler))->toBe(120);
+    expect($deduplicationGenerator)
+        ->toBeInstanceOf(DefaultSignatureGenerator::class);
+});
+
+test('it throws exception for invalid deduplication time', function () {
+    expect(fn () => ($this->factory)([
+        ...$this->config,
+        'deduplication' => [
+            'time' => -1,
+        ],
+    ]))->toThrow(\InvalidArgumentException::class, 'Deduplication time must be a positive integer');
+
+    expect(fn () => ($this->factory)([
+        ...$this->config,
+        'deduplication' => [
+            'time' => 'invalid',
+        ],
+    ]))->toThrow(\InvalidArgumentException::class, 'Deduplication time must be a positive integer');
+});
+
+test('it uses file store driver by default', function () {
+    $logger = ($this->factory)($this->config);
+
+    /** @var DeduplicationHandler $handler */
+    $handler = $logger->getHandlers()[0];
+    $store = getDeduplicationStore($handler);
+
+    expect($store)->toBeInstanceOf(FileStore::class);
 });

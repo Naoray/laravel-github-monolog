@@ -1,11 +1,10 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog\Formatters;
+namespace Naoray\LaravelGithubMonolog\Issues;
 
-class GithubIssueFormatted
+class Formatted
 {
     public function __construct(
-        public readonly string $signature,
         public readonly string $title,
         public readonly string $body,
         public readonly string $comment,

@@ -3,13 +3,18 @@
 namespace Naoray\LaravelGithubMonolog;
 
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\File;
 use InvalidArgumentException;
 use Monolog\Level;
 use Monolog\Logger;
-use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
-use Naoray\LaravelGithubMonolog\Handlers\IssueLogHandler;
-use Naoray\LaravelGithubMonolog\Handlers\SignatureDeduplicationHandler;
+use Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler;
+use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
+use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\DatabaseStore;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\RedisStore;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\StoreInterface;
+use Naoray\LaravelGithubMonolog\Issues\Formatter;
+use Naoray\LaravelGithubMonolog\Issues\Handler;
 
 class GithubIssueHandlerFactory
 {
@@ -34,48 +39,69 @@ class GithubIssueHandlerFactory
         }
     }
 
-    protected function createBaseHandler(array $config): IssueLogHandler
+    protected function createBaseHandler(array $config): Handler
     {
-        $handler = new IssueLogHandler(
+        $handler = new Handler(
             repo: $config['repo'],
             token: $config['token'],
-            labels: $config['labels'] ?? [],
+            labels: Arr::get($config, 'labels', []),
             level: Arr::get($config, 'level', Level::Error),
             bubble: Arr::get($config, 'bubble', true)
         );
 
-        $handler->setFormatter(new GithubIssueFormatter);
+        $handler->setFormatter(new Formatter);
 
         return $handler;
     }
 
-    protected function wrapWithDeduplication(IssueLogHandler $handler, array $config): SignatureDeduplicationHandler
+    protected function wrapWithDeduplication(Handler $handler, array $config): DeduplicationHandler
     {
-        return new SignatureDeduplicationHandler(
-            $handler,
-            deduplicationStore: $this->getDeduplicationStore($config),
-            deduplicationLevel: Arr::get($config, 'level', Level::Error),
-            time: $this->getDeduplicationTime($config),
-            bubble: true
+        $signatureGeneratorClass = Arr::get($config, 'signature_generator', DefaultSignatureGenerator::class);
+
+        if (! is_subclass_of($signatureGeneratorClass, SignatureGeneratorInterface::class)) {
+            throw new InvalidArgumentException(
+                sprintf('Signature generator class [%s] must implement %s', $signatureGeneratorClass, SignatureGeneratorInterface::class)
+            );
+        }
+
+        /** @var SignatureGeneratorInterface $signatureGenerator */
+        $signatureGenerator = new $signatureGeneratorClass;
+
+        return new DeduplicationHandler(
+            handler: $handler,
+            store: $this->createStore($config),
+            signatureGenerator: $signatureGenerator,
+            level: Arr::get($config, 'level', Level::Error),
+            bubble: true,
+            bufferLimit: Arr::get($config, 'buffer.limit', 0),
+            flushOnOverflow: Arr::get($config, 'buffer.flush_on_overflow', true)
         );
     }
 
-    protected function getDeduplicationStore(array $config): string
+    protected function createStore(array $config): StoreInterface
     {
         $deduplication = Arr::get($config, 'deduplication', []);
+        $driver = Arr::get($deduplication, 'driver', 'file');
+        $time = $this->getDeduplicationTime($config);
+        $prefix = Arr::get($deduplication, 'prefix', 'github-monolog:');
+        $connection = Arr::get($deduplication, 'connection', 'default');
+        $path = Arr::get($deduplication, 'path', storage_path('logs/github-monolog-deduplication.log'));
 
-        if ($store = Arr::get($deduplication, 'store')) {
-            return $store;
-        }
-
-        $store = storage_path('logs/github-issues-dedup.log');
-        File::ensureDirectoryExists(dirname($store));
-
-        return $store;
+        return match ($driver) {
+            'redis' => new RedisStore(prefix: $prefix, time: $time, connection: $connection),
+            'database' => new DatabaseStore(time: $time, connection: $connection),
+            default => new FileStore(path: $path, time: $time),
+        };
     }
 
     protected function getDeduplicationTime(array $config): int
     {
-        return (int) Arr::get($config, 'deduplication.time', 60);
+        $time = Arr::get($config, 'deduplication.time', 60);
+
+        if (! is_numeric($time) || $time < 0) {
+            throw new InvalidArgumentException('Deduplication time must be a positive integer');
+        }
+
+        return (int) $time;
     }
 }
