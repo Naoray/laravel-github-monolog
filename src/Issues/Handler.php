@@ -45,7 +45,7 @@ class Handler extends AbstractProcessingHandler
      */
     protected function write(LogRecord $record): void
     {
-        if (! $record->formatted instanceof IssuesFormatted) {
+        if (! $record->formatted instanceof Formatted) {
             throw new \RuntimeException('Record must be formatted with GithubIssueFormatter');
         }
 

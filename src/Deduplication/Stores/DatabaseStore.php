@@ -1,13 +1,13 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog\DeduplicationStores;
+namespace Naoray\LaravelGithubMonolog\Deduplication\Stores;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Monolog\LogRecord;
 
-class DatabaseDeduplicationStore extends AbstractDeduplicationStore
+class DatabaseStore extends AbstractStore
 {
     private string $table;
 
@@ -35,7 +35,7 @@ class DatabaseDeduplicationStore extends AbstractDeduplicationStore
             ->table($this->table)
             ->where('prefix', $this->prefix)
             ->get()
-            ->map(fn ($row) => $this->formatEntry($row->signature, $row->created_at))
+            ->map(fn($row) => $this->formatEntry($row->signature, $row->created_at))
             ->all();
     }
 

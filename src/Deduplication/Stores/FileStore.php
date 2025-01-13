@@ -1,12 +1,12 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog\DeduplicationStores;
+namespace Naoray\LaravelGithubMonolog\Deduplication\Stores;
 
 use Illuminate\Support\Facades\File;
 use Monolog\LogRecord;
 use RuntimeException;
 
-class FileDeduplicationStore extends AbstractDeduplicationStore
+class FileStore extends AbstractStore
 {
     private string $path;
 
@@ -20,7 +20,8 @@ class FileDeduplicationStore extends AbstractDeduplicationStore
         parent::__construct($prefix, $time);
 
         $this->path = $path;
-        $this->ensureDirectoryExists();
+
+        File::ensureDirectoryExists(dirname($this->path));
     }
 
     public function get(): array
@@ -63,7 +64,7 @@ class FileDeduplicationStore extends AbstractDeduplicationStore
             $content = $this->readContent();
 
             $this->writeContent(
-                ($content ? $content.PHP_EOL : '').$entry
+                ($content ? $content . PHP_EOL : '') . $entry
             );
         } finally {
             $this->releaseLock();
@@ -125,14 +126,6 @@ class FileDeduplicationStore extends AbstractDeduplicationStore
         fseek($this->handle, 0);
         fwrite($this->handle, $content);
         fflush($this->handle);
-    }
-
-    private function ensureDirectoryExists(): void
-    {
-        $directory = dirname($this->path);
-        if (! File::exists($directory)) {
-            File::makeDirectory($directory, 0755, true);
-        }
     }
 
     public function __destruct()

@@ -2,17 +2,22 @@
 
 namespace Naoray\LaravelGithubMonolog\Handlers;
 
-use Monolog\Handler\AbstractProcessingHandler;
+use Illuminate\Support\Collection;
+use Monolog\Handler\BufferHandler;
 use Monolog\Handler\HandlerInterface;
 use Monolog\Level;
 use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Contracts\SignatureGenerator;
-use Naoray\LaravelGithubMonolog\DeduplicationStores\DeduplicationStoreInterface;
+use Naoray\LaravelGithubMonolog\Deduplication\Store\DeduplicationStoreContract;
+<<<<<<< HEAD
 use Naoray\LaravelGithubMonolog\DeduplicationStores\RedisDeduplicationStore;
 use Naoray\LaravelGithubMonolog\DefaultSignatureGenerator;
+=======
+>>>>>>> 4666cb4 (wip)
 
-class SignatureDeduplicationHandler extends AbstractProcessingHandler
+class DeduplicationHandler extends BufferHandler
 {
+<<<<<<< HEAD
     private SignatureGenerator $signatureGenerator;
 
     private HandlerInterface $handler;
@@ -21,46 +26,46 @@ class SignatureDeduplicationHandler extends AbstractProcessingHandler
 
     private int $time;
 
+=======
+>>>>>>> 4666cb4 (wip)
     public function __construct(
         HandlerInterface $handler,
-        ?DeduplicationStoreInterface $store = null,
+        protected DeduplicationStoreInterface $store,
         int|string|Level $level = Level::Error,
-        int $time = 60,
+        protected int $time = 60,
         bool $bubble = true,
-        ?SignatureGenerator $signatureGenerator = null,
+        protected SignatureGenerator $signatureGenerator,
     ) {
-        parent::__construct($level, $bubble);
-
-        $this->handler = $handler;
-        $this->time = $time;
-        $this->store = $store ?? new RedisDeduplicationStore(time: $time);
-        $this->signatureGenerator = $signatureGenerator ?? new DefaultSignatureGenerator;
+        parent::__construct(
+            handler: $handler,
+            bufferLimit: 0,
+            level: $level,
+            bubble: $bubble,
+            flushOnOverflow: false,
+        );
     }
 
-    protected function write(LogRecord $record): void
+    public function flush(): void
     {
-        $signature = $this->signatureGenerator->generate($record);
-
-        if ($this->isDuplicate($record, $signature)) {
+        if ($this->bufferSize === 0) {
             return;
         }
 
-        $this->store->add($record, $signature);
-        $this->handler->handle($record);
-    }
+        collect($this->buffer)
+            ->map(function (LogRecord $record) {
+                $signature = $this->signatureGenerator->generate($record);
 
-    protected function isDuplicate(LogRecord $record, string $signature): bool
-    {
-        $store = $this->store->get();
-        $timestampValidity = time() - $this->time;
+                if ($this->store->isDuplicate($record, $signature)) {
+                    $this->store->add($record, $signature);
 
-        foreach ($store as $entry) {
-            [$timestamp, $storedSignature] = explode(':', $entry, 2);
-            if ($storedSignature === $signature && (int) $timestamp > $timestampValidity) {
-                return true;
-            }
-        }
+                    return null;
+                }
 
-        return false;
+                return $record;
+            })
+            ->filter()
+            ->pipe(fn(Collection $records) => $this->handler->handleBatch($records->toArray()));
+
+        $this->clear();
     }
 }

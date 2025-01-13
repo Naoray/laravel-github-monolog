@@ -7,7 +7,7 @@ use InvalidArgumentException;
 use Monolog\Level;
 use Monolog\Logger;
 use Naoray\LaravelGithubMonolog\DeduplicationStores\DatabaseDeduplicationStore;
-use Naoray\LaravelGithubMonolog\DeduplicationStores\DeduplicationStoreInterface;
+use Naoray\LaravelGithubMonolog\Deduplication\Store\DeduplicationStoreContract;
 use Naoray\LaravelGithubMonolog\DeduplicationStores\FileDeduplicationStore;
 use Naoray\LaravelGithubMonolog\DeduplicationStores\RedisDeduplicationStore;
 use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
@@ -63,7 +63,7 @@ class GithubIssueHandlerFactory
         );
     }
 
-    protected function createDeduplicationStore(array $config): DeduplicationStoreInterface
+    protected function createDeduplicationStore(array $config): DeduplicationStoreContract
     {
         $deduplication = Arr::get($config, 'deduplication', []);
         $driver = Arr::get($deduplication, 'driver', 'redis');
