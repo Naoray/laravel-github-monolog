@@ -7,15 +7,18 @@ use Monolog\Handler\HandlerInterface;
 use Monolog\Level;
 use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Contracts\SignatureGenerator;
-use Naoray\LaravelGithubMonolog\DefaultSignatureGenerator;
 use Naoray\LaravelGithubMonolog\DeduplicationStores\DeduplicationStoreInterface;
 use Naoray\LaravelGithubMonolog\DeduplicationStores\RedisDeduplicationStore;
+use Naoray\LaravelGithubMonolog\DefaultSignatureGenerator;
 
 class SignatureDeduplicationHandler extends AbstractProcessingHandler
 {
     private SignatureGenerator $signatureGenerator;
+
     private HandlerInterface $handler;
+
     private DeduplicationStoreInterface $store;
+
     private int $time;
 
     public function __construct(

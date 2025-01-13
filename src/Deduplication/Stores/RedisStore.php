@@ -26,14 +26,14 @@ class RedisDeduplicationStore extends AbstractDeduplicationStore
     // Key Management
     public function getKey(): string
     {
-        return $this->prefix . 'dedup';
+        return $this->prefix.'dedup';
     }
 
     // Storage Operations
     public function add(LogRecord $record, string $signature): void
     {
         $this->redis()->zadd($this->getKey(), [
-            $signature => time()
+            $signature => time(),
         ]);
     }
 
@@ -51,7 +51,7 @@ class RedisDeduplicationStore extends AbstractDeduplicationStore
         );
 
         return array_map(
-            fn($entry, $score) => $this->formatEntry($entry, (int) $score),
+            fn ($entry, $score) => $this->formatEntry($entry, (int) $score),
             array_keys($entries),
             array_values($entries)
         );

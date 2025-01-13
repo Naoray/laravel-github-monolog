@@ -12,7 +12,7 @@ abstract class AbstractDeduplicationStoreTest extends TestCase
     protected function createLogRecord(string $message = 'test', Level $level = Level::Error): LogRecord
     {
         return new LogRecord(
-            datetime: new \DateTimeImmutable(),
+            datetime: new \DateTimeImmutable,
             channel: 'test',
             level: $level,
             message: $message,

@@ -5,6 +5,7 @@ namespace Naoray\LaravelGithubMonolog\DeduplicationStores;
 abstract class AbstractDeduplicationStore implements DeduplicationStoreInterface
 {
     protected string $prefix;
+
     protected int $time;
 
     public function __construct(string $prefix = 'github-monolog:', int $time = 60)
@@ -15,7 +16,7 @@ abstract class AbstractDeduplicationStore implements DeduplicationStoreInterface
 
     protected function formatEntry(string $signature, int $timestamp): string
     {
-        return $timestamp . ':' . $signature;
+        return $timestamp.':'.$signature;
     }
 
     protected function isExpired(int $timestamp): bool

@@ -10,6 +10,7 @@ use Monolog\LogRecord;
 class DatabaseDeduplicationStore extends AbstractDeduplicationStore
 {
     private string $table;
+
     private string $connection;
 
     public function __construct(
@@ -34,7 +35,7 @@ class DatabaseDeduplicationStore extends AbstractDeduplicationStore
             ->table($this->table)
             ->where('prefix', $this->prefix)
             ->get()
-            ->map(fn($row) => $this->formatEntry($row->signature, $row->created_at))
+            ->map(fn ($row) => $this->formatEntry($row->signature, $row->created_at))
             ->all();
     }
 

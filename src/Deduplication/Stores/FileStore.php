@@ -9,6 +9,7 @@ use RuntimeException;
 class FileDeduplicationStore extends AbstractDeduplicationStore
 {
     private string $path;
+
     private $handle = null;
 
     public function __construct(
@@ -32,11 +33,12 @@ class FileDeduplicationStore extends AbstractDeduplicationStore
 
             // Filter out expired entries and rebuild file
             $valid = array_filter($entries, function ($entry) {
-                if (!str_contains($entry, ':')) {
+                if (! str_contains($entry, ':')) {
                     return false;
                 }
                 [$timestamp] = explode(':', $entry, 2);
-                return is_numeric($timestamp) && !$this->isExpired((int) $timestamp);
+
+                return is_numeric($timestamp) && ! $this->isExpired((int) $timestamp);
             });
 
             if (count($valid) !== count($entries)) {
@@ -61,7 +63,7 @@ class FileDeduplicationStore extends AbstractDeduplicationStore
             $content = $this->readContent();
 
             $this->writeContent(
-                ($content ? $content . PHP_EOL : '') . $entry
+                ($content ? $content.PHP_EOL : '').$entry
             );
         } finally {
             $this->releaseLock();
@@ -74,7 +76,7 @@ class FileDeduplicationStore extends AbstractDeduplicationStore
             return; // Already have a lock
         }
 
-        if (!$this->handle = fopen($this->path, 'c+')) {
+        if (! $this->handle = fopen($this->path, 'c+')) {
             throw new RuntimeException("Cannot open file: {$this->path}");
         }
 
@@ -104,17 +106,18 @@ class FileDeduplicationStore extends AbstractDeduplicationStore
 
     private function readContent(): string
     {
-        if (!$this->handle) {
+        if (! $this->handle) {
             throw new RuntimeException('File handle not initialized');
         }
 
         fseek($this->handle, 0);
+
         return stream_get_contents($this->handle) ?: '';
     }
 
     private function writeContent(string $content): void
     {
-        if (!$this->handle) {
+        if (! $this->handle) {
             throw new RuntimeException('File handle not initialized');
         }
 
@@ -127,7 +130,7 @@ class FileDeduplicationStore extends AbstractDeduplicationStore
     private function ensureDirectoryExists(): void
     {
         $directory = dirname($this->path);
-        if (!File::exists($directory)) {
+        if (! File::exists($directory)) {
             File::makeDirectory($directory, 0755, true);
         }
     }

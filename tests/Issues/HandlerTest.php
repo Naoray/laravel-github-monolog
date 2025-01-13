@@ -8,8 +8,8 @@ use Naoray\LaravelGithubMonolog\DeduplicationStores\DatabaseDeduplicationStore;
 use Naoray\LaravelGithubMonolog\DeduplicationStores\RedisDeduplicationStore;
 use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
 use Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory;
-use Naoray\LaravelGithubMonolog\Issues\Handler;
 use Naoray\LaravelGithubMonolog\Handlers\SignatureDeduplicationHandler;
+use Naoray\LaravelGithubMonolog\Issues\Handler;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionProperty;
@@ -92,20 +92,22 @@ class GithubIssueHandlerFactoryTest extends TestCase
     {
         $factory = new GithubIssueHandlerFactory;
 
-        expect(fn() => $factory([]))->toThrow(\InvalidArgumentException::class);
-        expect(fn() => $factory(['repo' => 'test/repo']))->toThrow(\InvalidArgumentException::class);
-        expect(fn() => $factory(['token' => 'test-token']))->toThrow(\InvalidArgumentException::class);
+        expect(fn () => $factory([]))->toThrow(\InvalidArgumentException::class);
+        expect(fn () => $factory(['repo' => 'test/repo']))->toThrow(\InvalidArgumentException::class);
+        expect(fn () => $factory(['token' => 'test-token']))->toThrow(\InvalidArgumentException::class);
     }
 
     private function getWrappedHandler(SignatureDeduplicationHandler $handler): Handler
     {
         $reflection = new ReflectionProperty($handler, 'handler');
+
         return $reflection->getValue($handler);
     }
 
     private function getDeduplicationStore(SignatureDeduplicationHandler $handler): mixed
     {
         $reflection = new ReflectionProperty($handler, 'store');
+
         return $reflection->getValue($handler);
     }
 }

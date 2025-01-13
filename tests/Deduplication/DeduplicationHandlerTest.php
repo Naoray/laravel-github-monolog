@@ -13,13 +13,14 @@ use PHPUnit\Framework\Attributes\Test;
 class SignatureDeduplicationHandlerTest extends TestCase
 {
     private TestHandler $testHandler;
+
     private string $tempFile;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->testHandler = new TestHandler();
-        $this->tempFile = sys_get_temp_dir() . '/dedup-test-' . uniqid() . '.log';
+        $this->testHandler = new TestHandler;
+        $this->tempFile = sys_get_temp_dir().'/dedup-test-'.uniqid().'.log';
     }
 
     protected function tearDown(): void
@@ -35,7 +36,7 @@ class SignatureDeduplicationHandlerTest extends TestCase
         $handler = new SignatureDeduplicationHandler($this->testHandler, $store, time: 1);
 
         $record = new LogRecord(
-            datetime: new \DateTimeImmutable(),
+            datetime: new \DateTimeImmutable,
             channel: 'test',
             level: Level::Error,
             message: 'Test',
@@ -58,7 +59,7 @@ class SignatureDeduplicationHandlerTest extends TestCase
         $handler = new SignatureDeduplicationHandler($this->testHandler, $store);
 
         $record = new LogRecord(
-            datetime: new \DateTimeImmutable(),
+            datetime: new \DateTimeImmutable,
             channel: 'test',
             level: Level::Error,
             message: 'Test',

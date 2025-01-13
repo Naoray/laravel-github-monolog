@@ -8,11 +8,11 @@ use Monolog\Level;
 use Monolog\Logger;
 use Naoray\LaravelGithubMonolog\DeduplicationStores\DatabaseDeduplicationStore;
 use Naoray\LaravelGithubMonolog\DeduplicationStores\DeduplicationStoreInterface;
-use Naoray\LaravelGithubMonolog\DeduplicationStores\RedisDeduplicationStore;
 use Naoray\LaravelGithubMonolog\DeduplicationStores\FileDeduplicationStore;
+use Naoray\LaravelGithubMonolog\DeduplicationStores\RedisDeduplicationStore;
 use Naoray\LaravelGithubMonolog\Formatters\GithubIssueFormatter;
-use Naoray\LaravelGithubMonolog\Issues\Handler;
 use Naoray\LaravelGithubMonolog\Handlers\SignatureDeduplicationHandler;
+use Naoray\LaravelGithubMonolog\Issues\Handler;
 
 class GithubIssueHandlerFactory
 {
