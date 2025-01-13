@@ -15,7 +15,7 @@ Automatically create GitHub issues from your Laravel logs. Perfect for smaller p
 
 ## Features
 
-- ✨ Automatically create GitHub issues from logs
+- ✨ Automatically create GitHub issues from Exceptions & Logs
 - 🔍 Group similar errors into single issues
 - 💬 Add comments to existing issues for recurring errors
 - 🏷️ Support customizable labels
