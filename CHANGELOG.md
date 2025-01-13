@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v2.1.0 - 2025-01-13
+
+### What's Changed
+
+* Feature/added deduplication stores by @Naoray in https://github.com/Naoray/laravel-github-monolog/pull/2
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v2.0.1...v2.1.0
+
 ## v2.0.1 - 2025-01-12
 
 - include context in reports no matter if it's an exception being reported or just a log
