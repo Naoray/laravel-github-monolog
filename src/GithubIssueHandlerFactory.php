@@ -85,11 +85,12 @@ class GithubIssueHandlerFactory
         $time = $this->getDeduplicationTime($config);
         $prefix = Arr::get($deduplication, 'prefix', 'github-monolog:');
         $connection = Arr::get($deduplication, 'connection', 'default');
+        $table = Arr::get($deduplication, 'table', 'github_monolog_deduplication');
         $path = Arr::get($deduplication, 'path', storage_path('logs/github-monolog-deduplication.log'));
 
         return match ($driver) {
             'redis' => new RedisStore(prefix: $prefix, time: $time, connection: $connection),
-            'database' => new DatabaseStore(time: $time, connection: $connection),
+            'database' => new DatabaseStore(time: $time, table: $table, connection: $connection),
             default => new FileStore(path: $path, time: $time),
         };
     }
