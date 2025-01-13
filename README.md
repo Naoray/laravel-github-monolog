@@ -75,11 +75,37 @@ GITHUB_TOKEN=your-github-personal-access-token
 
 You can use the `github` log channel as your default `LOG_CHANNEL` or add it as part of your stack in `LOG_STACK`.
 
-### Advanced Configuration
+### Getting a GitHub Token
+
+To obtain a Personal Access Token:
+
+1. Go to [Generate a new token](https://github.com/settings/tokens/new?description=Laravel%20GitHub%20Issue%20Logger&scopes=repo) (this link pre-selects the required scopes)
+2. Review the pre-selected scopes (the `repo` scope should be checked)
+3. Click "Generate token"
+4. Copy the token immediately (you won't be able to access it again after leaving the page)
+5. Add it to your `.env` file as `GITHUB_TOKEN`
+
+> **Note**: The token requires the `repo` scope to create issues in both public and private repositories.
+
+## Usage
+
+Whenever an exception is thrown it will be logged as an issue to your repository.
+
+You can also use it like any other Laravel logging channel:
+
+```php
+// Single channel
+Log::channel('github')->error('Something went wrong!');
+
+// Or as part of a stack
+Log::stack(['daily', 'github'])->error('Something went wrong!');
+```
+
+## Advanced Configuration
 
 Deduplication and buffering are enabled by default to enhance logging. Customize these features to suit your needs.
 
-#### Deduplication
+### Deduplication
 
 Group similar errors to avoid duplicate issues. By default, the package uses file-based storage. Customize the storage and time window to fit your application.
 
@@ -93,7 +119,7 @@ Group similar errors to avoid duplicate issues. By default, the package uses fil
 ]
 ```
 
-##### Alternative Storage Options
+#### Alternative Storage Options
 
 Consider other storage options in these Laravel-specific scenarios:
 
@@ -123,7 +149,7 @@ Consider other storage options in these Laravel-specific scenarios:
   ],
   ```
 
-#### Buffering
+### Buffering
 
 Buffer logs to reduce GitHub API calls. Customize the buffer size and overflow behavior to optimize performance:
 
@@ -144,7 +170,7 @@ When buffering is active:
   - With `flush_on_overflow = true`: All records are flushed
   - With `flush_on_overflow = false`: Only the oldest record is removed
 
-#### Signature Generator
+### Signature Generator
 
 Control how errors are grouped by customizing the signature generator. By default, the package uses a generator that creates signatures based on exception details or log message content.
 
@@ -171,31 +197,19 @@ class CustomSignatureGenerator implements SignatureGeneratorInterface
 }
 ```
 
-### Getting a GitHub Token
+## Showcase
 
-To obtain a Personal Access Token:
+When an error occurs in your application, a GitHub issue is automatically created with comprehensive error information and stack trace:
 
-1. Go to [Generate a new token](https://github.com/settings/tokens/new?description=Laravel%20GitHub%20Issue%20Logger&scopes=repo) (this link pre-selects the required scopes)
-2. Review the pre-selected scopes (the `repo` scope should be checked)
-3. Click "Generate token"
-4. Copy the token immediately (you won't be able to access it again after leaving the page)
-5. Add it to your `.env` file as `GITHUB_TOKEN`
+<img src="https://github.com/user-attachments/assets/bd1a7e9b-e1f3-43ed-b779-14fbaa974916" width="800" alt="issue raised">
 
-> **Note**: The token requires the `repo` scope to create issues in both public and private repositories.
+The issue appears in your repository with all the detailed information about the error:
 
-## Usage
+<img src="https://github.com/user-attachments/assets/0fe6e6d7-8ecd-4253-8c05-e8ba2025a536" width="800" alt="issue detail">
 
-Whenever an exception is thrown it will be logged as an issue to your repository.
+If the same error occurs again, instead of creating a duplicate, a new comment is automatically added to track the occurrence:
 
-You can also use it like any other Laravel logging channel:
-
-```php
-// Single channel
-Log::channel('github')->error('Something went wrong!');
-
-// Or as part of a stack
-Log::stack(['daily', 'github'])->error('Something went wrong!');
-```
+<img src="https://github.com/user-attachments/assets/c76fd583-63a9-49b8-a7fb-a6dcf2c00ee6" width="800" alt="comment added">
 
 ## Testing
 
