@@ -197,20 +197,6 @@ class CustomSignatureGenerator implements SignatureGeneratorInterface
 }
 ```
 
-## Showcase
-
-When an error occurs in your application, a GitHub issue is automatically created with comprehensive error information and stack trace:
-
-<img src="https://github.com/user-attachments/assets/bd1a7e9b-e1f3-43ed-b779-14fbaa974916" width="800" alt="issue raised">
-
-The issue appears in your repository with all the detailed information about the error:
-
-<img src="https://github.com/user-attachments/assets/0fe6e6d7-8ecd-4253-8c05-e8ba2025a536" width="800" alt="issue detail">
-
-If the same error occurs again, instead of creating a duplicate, a new comment is automatically added to track the occurrence:
-
-<img src="https://github.com/user-attachments/assets/c76fd583-63a9-49b8-a7fb-a6dcf2c00ee6" width="800" alt="comment added">
-
 ## Testing
 
 ```bash
