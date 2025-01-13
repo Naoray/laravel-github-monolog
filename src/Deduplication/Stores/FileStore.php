@@ -46,7 +46,7 @@ class FileStore extends AbstractStore
         $valid = collect($this->get())
             ->filter(function ($entry) {
                 [$timestamp] = explode(':', $entry, 2);
-                return is_numeric($timestamp) && !$this->isExpired($timestamp);
+                return is_numeric($timestamp) && !$this->isExpired((int) $timestamp);
             })
             ->join(PHP_EOL);
 
