@@ -2,6 +2,12 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v2.0.1 - 2025-01-12
+
+- include context in reports no matter if it's an exception being reported or just a log
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v2.0.0...v2.0.1
+
 ## v2.0.0 - 2025-01-12
 
 - drop support for Laravel 10 / Monolog < 3.6.0
