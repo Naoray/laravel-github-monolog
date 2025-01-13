@@ -5,7 +5,7 @@
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/naoray/laravel-github-monolog/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/naoray/laravel-github-monolog/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/naoray/laravel-github-monolog.svg?style=flat-square)](https://packagist.org/packages/naoray/laravel-github-monolog)
 
-Automatically create GitHub issues from your Laravel logs. Perfect for smaller projects without the need for full-featured logging services.
+Automatically create GitHub issues from your Laravel exceptions & logs. Perfect for smaller projects without the need for full-featured logging services.
 
 ## Requirements
 
