@@ -93,7 +93,7 @@ class Formatter implements FormatterInterface
     private function formatContent(LogRecord $record, ?Throwable $exception): string
     {
         return Str::of('')
-            ->when($record->message, fn($str, $message) => $str->append("**Message:**\n{$message}\n\n"))
+            ->when($record->message, fn ($str, $message) => $str->append("**Message:**\n{$message}\n\n"))
             ->when(
                 $exception,
                 function (Stringable $str, Throwable $exception) {
@@ -103,8 +103,8 @@ class Formatter implements FormatterInterface
                     );
                 }
             )
-            ->when(! empty($record->context), fn($str, $context) => $str->append("**Context:**\n```json\n" . json_encode(Arr::except($record->context, ['exception']), JSON_PRETTY_PRINT) . "\n```\n\n"))
-            ->when(! empty($record->extra), fn($str, $extra) => $str->append("**Extra Data:**\n```json\n" . json_encode($record->extra, JSON_PRETTY_PRINT) . "\n```\n"))
+            ->when(! empty($record->context), fn ($str, $context) => $str->append("**Context:**\n```json\n".json_encode(Arr::except($record->context, ['exception']), JSON_PRETTY_PRINT)."\n```\n\n"))
+            ->when(! empty($record->extra), fn ($str, $extra) => $str->append("**Extra Data:**\n```json\n".json_encode($record->extra, JSON_PRETTY_PRINT)."\n```\n"))
             ->toString();
     }
 
@@ -124,7 +124,7 @@ class Formatter implements FormatterInterface
     private function cleanStackTrace(string $stackTrace): string
     {
         return collect(explode("\n", $stackTrace))
-            ->filter(fn($line) => ! empty(trim($line)))
+            ->filter(fn ($line) => ! empty(trim($line)))
             ->map(function ($line) {
                 if (trim($line) === '"}') {
                     return '';
@@ -200,8 +200,8 @@ class Formatter implements FormatterInterface
 
         return [
             'message' => $exception->getMessage(),
-            'stack_trace' => $header . "\n[stacktrace]\n" . $this->cleanStackTrace($exception->getTraceAsString()),
-            'full_stack_trace' => $header . "\n[stacktrace]\n" . $exception->getTraceAsString(),
+            'stack_trace' => $header."\n[stacktrace]\n".$this->cleanStackTrace($exception->getTraceAsString()),
+            'full_stack_trace' => $header."\n[stacktrace]\n".$exception->getTraceAsString(),
         ];
     }
 
