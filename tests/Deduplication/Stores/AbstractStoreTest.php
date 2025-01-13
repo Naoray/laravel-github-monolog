@@ -1,13 +1,13 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog\Tests\DeduplicationStores;
+namespace Naoray\LaravelGithubMonolog\Tests\Deduplication\Stores;
 
 use Monolog\Level;
 use Monolog\LogRecord;
 use Orchestra\Testbench\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
-abstract class AbstractDeduplicationStoreTest extends TestCase
+abstract class AbstractStoreTest extends TestCase
 {
     protected function createLogRecord(string $message = 'test', Level $level = Level::Error): LogRecord
     {

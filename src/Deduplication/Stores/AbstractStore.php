@@ -6,38 +6,34 @@ use Monolog\LogRecord;
 
 abstract class AbstractStore implements StoreInterface
 {
-    protected string $prefix;
+    public function __construct(
+        protected string $prefix = 'github-monolog:',
+        protected int $time = 60
+    ) {}
 
-    protected int $time;
-
-    public function __construct(string $prefix = 'github-monolog:', int $time = 60)
-    {
-        $this->prefix = $prefix;
-        $this->time = $time;
-    }
-
-    protected function formatEntry(string $signature, int $timestamp): string
+    protected function buildEntry(string $signature, int $timestamp): string
     {
         return $timestamp . ':' . $signature;
-    }
-
-    protected function isExpired(int $timestamp): bool
-    {
-        return $timestamp < time() - $this->time;
     }
 
     public function isDuplicate(LogRecord $record, string $signature): bool
     {
         $timestampValidity = time() - $this->time;
+        $foundDuplicate = false;
 
         foreach ($this->get() as $entry) {
             [$timestamp, $storedSignature] = explode(':', $entry, 2);
+            $timestamp = (int) $timestamp;
 
-            if ($storedSignature === $signature && (int) $timestamp > $timestampValidity) {
-                return true;
+            if ($timestamp <= $timestampValidity) {
+                continue;
+            }
+
+            if ($storedSignature === $signature) {
+                $foundDuplicate = true;
             }
         }
 
-        return false;
+        return $foundDuplicate;
     }
 }

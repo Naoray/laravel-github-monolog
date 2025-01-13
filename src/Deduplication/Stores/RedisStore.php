@@ -39,10 +39,6 @@ class RedisStore extends AbstractStore
 
     public function get(): array
     {
-        // Clean up old entries first
-        $this->redis()->zremrangebyscore($this->getKey(), '-inf', time() - $this->time);
-
-        // Then fetch remaining entries
         $entries = $this->redis()->zrangebyscore(
             $this->getKey(),
             time() - $this->time,
@@ -51,9 +47,14 @@ class RedisStore extends AbstractStore
         );
 
         return array_map(
-            fn($entry, $score) => $this->formatEntry($entry, (int) $score),
+            fn($entry, $score) => $this->buildEntry($entry, (int) $score),
             array_keys($entries),
             array_values($entries)
         );
+    }
+
+    public function cleanup(): void
+    {
+        $this->redis()->zremrangebyscore($this->getKey(), '-inf', time() - $this->time);
     }
 }

@@ -1,110 +1,140 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog\Tests\DeduplicationStores;
-
 use Illuminate\Support\Facades\File;
-use Naoray\LaravelGithubMonolog\DeduplicationStores\FileDeduplicationStore;
-use PHPUnit\Framework\Attributes\Test;
+use Monolog\Level;
+use Monolog\LogRecord;
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
 
-class FileDeduplicationStoreTest extends AbstractDeduplicationStoreTest
+beforeEach(function () {
+    $this->testPath = storage_path('logs/test-dedup.log');
+    File::delete($this->testPath);
+});
+
+afterEach(function () {
+    File::delete($this->testPath);
+});
+
+function createStore(string $prefix = 'test:', int $time = 60): FileStore
 {
-    private string $testPath;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->testPath = storage_path('logs/test-dedup.log');
-        File::delete($this->testPath);
-    }
-
-    protected function tearDown(): void
-    {
-        File::delete($this->testPath);
-        parent::tearDown();
-    }
-
-    protected function createStore(string $prefix = 'test:', int $time = 60): FileDeduplicationStore
-    {
-        return new FileDeduplicationStore(
-            path: $this->testPath,
-            prefix: $prefix,
-            time: $time
-        );
-    }
-
-    #[Test]
-    public function it_creates_directory_if_not_exists(): void
-    {
-        $path = storage_path('logs/nested/test-dedup.log');
-        File::deleteDirectory(dirname($path));
-
-        new FileDeduplicationStore($path);
-
-        $this->assertTrue(File::exists(dirname($path)));
-        File::deleteDirectory(dirname($path));
-    }
-
-    #[Test]
-    public function it_handles_concurrent_access(): void
-    {
-        $store1 = $this->createStore();
-        $store2 = $this->createStore();
-        $record = $this->createLogRecord();
-
-        // Simulate concurrent access
-        $store1->add($record, 'signature1');
-        $store2->add($record, 'signature2');
-
-        $entries = $store1->get();
-        $this->assertCount(2, $entries);
-    }
-
-    #[Test]
-    public function it_handles_corrupted_file(): void
-    {
-        // Create file with invalid content
-        File::put($this->testPath, 'invalid content');
-
-        $store = $this->createStore();
-        $record = $this->createLogRecord();
-
-        // Should handle invalid content gracefully
-        $store->add($record, 'test-signature');
-        $entries = $store->get();
-
-        $this->assertNotEmpty($entries);
-        $this->assertStringEndsWith('test-signature', $entries[array_key_first($entries)]);
-    }
-
-    #[Test]
-    public function it_handles_file_permissions(): void
-    {
-        $store = $this->createStore();
-        $record = $this->createLogRecord();
-
-        $store->add($record, 'test-signature');
-
-        // Verify file permissions
-        $this->assertEquals('0644', substr(sprintf('%o', fileperms($this->testPath)), -4));
-    }
-
-    #[Test]
-    public function it_maintains_file_integrity_after_cleanup(): void
-    {
-        $store = $this->createStore(time: 1);
-        $record = $this->createLogRecord();
-
-        // Add some entries
-        $store->add($record, 'signature1');
-        sleep(2); // Let first entry expire
-        $store->add($record, 'signature2');
-
-        // Get entries (triggers cleanup)
-        $entries = $store->get();
-
-        // Verify file content
-        $content = File::get($this->testPath);
-        $this->assertCount(1, explode(PHP_EOL, trim($content)));
-        $this->assertStringEndsWith('signature2', $content);
-    }
+    return new FileStore(
+        path: test()->testPath,
+        prefix: $prefix,
+        time: $time
+    );
 }
+
+function createLogRecord(string $message = 'test', Level $level = Level::Error): LogRecord
+{
+    return new LogRecord(
+        datetime: new \DateTimeImmutable,
+        channel: 'test',
+        level: $level,
+        message: $message,
+        context: [],
+        extra: [],
+    );
+}
+
+// Base Store Tests
+test('it can add and retrieve entries', function () {
+    $store = createStore();
+    $record = createLogRecord();
+
+    $store->add($record, 'test-signature');
+    $entries = $store->get();
+
+    expect($entries)->toHaveCount(1)
+        ->and($entries[0])->toEndWith('test-signature');
+});
+
+test('it removes expired entries', function () {
+    $store = createStore(time: 1);
+    $record = createLogRecord();
+
+    $store->add($record, 'test-signature');
+    sleep(2);
+
+    $store->cleanup();
+    expect($store->get())->toBeEmpty();
+});
+
+test('it keeps valid entries', function () {
+    $store = createStore(time: 5);
+    $record = createLogRecord();
+
+    $store->add($record, 'test-signature');
+    $entries = $store->get();
+
+    expect($entries)->toHaveCount(1);
+});
+
+test('it handles multiple entries', function () {
+    $store = createStore();
+    $record1 = createLogRecord('test1');
+    $record2 = createLogRecord('test2');
+
+    $store->add($record1, 'signature1');
+    $store->add($record2, 'signature2');
+
+    expect($store->get())->toHaveCount(2);
+});
+
+// FileStore Specific Tests
+test('it creates directory if not exists', function () {
+    $path = storage_path('logs/nested/test-dedup.log');
+    File::deleteDirectory(dirname($path));
+
+    new FileStore($path);
+
+    expect(File::exists(dirname($path)))->toBeTrue();
+    File::deleteDirectory(dirname($path));
+});
+
+test('it handles concurrent access', function () {
+    $store1 = createStore();
+    $store2 = createStore();
+    $record = createLogRecord();
+
+    $store1->add($record, 'signature1');
+    $store2->add($record, 'signature2');
+
+    expect($store1->get())->toHaveCount(2);
+});
+
+test('it handles corrupted file', function () {
+    File::put(test()->testPath, 'invalid content');
+
+    $store = createStore();
+    $record = createLogRecord();
+
+    $store->add($record, 'test-signature');
+    $entries = $store->get();
+
+    expect($entries)->not->toBeEmpty()
+        ->and($entries[array_key_first($entries)])->toEndWith('test-signature');
+});
+
+test('it handles file permissions', function () {
+    $store = createStore();
+    $record = createLogRecord();
+
+    $store->add($record, 'test-signature');
+
+    expect(substr(sprintf('%o', fileperms(test()->testPath)), -4))->toBe('0644');
+});
+
+test('it maintains file integrity after cleanup', function () {
+    $store = createStore(time: 1);
+    $record = createLogRecord();
+
+    $store->add($record, 'signature1');
+    sleep(2);
+    $store->add($record, 'signature2');
+
+    $store->cleanup();
+
+    $content = File::get(test()->testPath);
+
+    expect(explode(PHP_EOL, trim($content)))->toHaveCount(1)
+        ->and($content)->toEndWith('signature2');
+});

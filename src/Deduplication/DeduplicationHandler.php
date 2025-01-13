@@ -1,40 +1,23 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog\Handlers;
+namespace Naoray\LaravelGithubMonolog\Deduplication;
 
 use Illuminate\Support\Collection;
 use Monolog\Handler\BufferHandler;
 use Monolog\Handler\HandlerInterface;
 use Monolog\Level;
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\Contracts\SignatureGenerator;
-use Naoray\LaravelGithubMonolog\Deduplication\Store\DeduplicationStoreContract;
-<<<<<<< HEAD
-use Naoray\LaravelGithubMonolog\DeduplicationStores\RedisDeduplicationStore;
-use Naoray\LaravelGithubMonolog\DefaultSignatureGenerator;
-=======
->>>>>>> 4666cb4 (wip)
+use Naoray\LaravelGithubMonolog\Deduplication\Stores\StoreInterface;
 
 class DeduplicationHandler extends BufferHandler
 {
-<<<<<<< HEAD
-    private SignatureGenerator $signatureGenerator;
-
-    private HandlerInterface $handler;
-
-    private DeduplicationStoreInterface $store;
-
-    private int $time;
-
-=======
->>>>>>> 4666cb4 (wip)
     public function __construct(
         HandlerInterface $handler,
-        protected DeduplicationStoreInterface $store,
+        protected StoreInterface $store,
+        protected SignatureGeneratorInterface $signatureGenerator,
         int|string|Level $level = Level::Error,
         protected int $time = 60,
         bool $bubble = true,
-        protected SignatureGenerator $signatureGenerator,
     ) {
         parent::__construct(
             handler: $handler,

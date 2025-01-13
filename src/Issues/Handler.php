@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Http;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Level;
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\Contracts\SignatureGenerator;
+use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
 
 class Handler extends AbstractProcessingHandler
 {
@@ -31,7 +31,7 @@ class Handler extends AbstractProcessingHandler
         array $labels,
         $level,
         bool $bubble,
-        private SignatureGenerator $signatureGenerator
+        private SignatureGeneratorInterface $signatureGenerator
     ) {
         parent::__construct($level, $bubble);
 
@@ -68,11 +68,11 @@ class Handler extends AbstractProcessingHandler
     {
         $response = Http::withToken($this->token)
             ->get('https://api.github.com/search/issues', [
-                'q' => "repo:{$this->repo} is:issue is:open label:".self::DEFAULT_LABEL." \"Signature: {$this->signatureGenerator->generate($record)}\"",
+                'q' => "repo:{$this->repo} is:issue is:open label:" . self::DEFAULT_LABEL . " \"Signature: {$this->signatureGenerator->generate($record)}\"",
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to search GitHub issues: '.$response->body());
+            throw new \RuntimeException('Failed to search GitHub issues: ' . $response->body());
         }
 
         return $response->json('items.0', null);
@@ -89,7 +89,7 @@ class Handler extends AbstractProcessingHandler
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to comment on GitHub issue: '.$response->body());
+            throw new \RuntimeException('Failed to comment on GitHub issue: ' . $response->body());
         }
     }
 
@@ -106,7 +106,7 @@ class Handler extends AbstractProcessingHandler
             ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Failed to create GitHub issue: '.$response->body());
+            throw new \RuntimeException('Failed to create GitHub issue: ' . $response->body());
         }
     }
 }

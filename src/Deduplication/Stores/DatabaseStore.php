@@ -29,13 +29,12 @@ class DatabaseStore extends AbstractStore
 
     public function get(): array
     {
-        $this->cleanup();
-
         return DB::connection($this->connection)
             ->table($this->table)
             ->where('prefix', $this->prefix)
+            ->where('created_at', '>=', time() - $this->time)
             ->get()
-            ->map(fn($row) => $this->formatEntry($row->signature, $row->created_at))
+            ->map(fn($row) => $this->buildEntry($row->signature, $row->created_at))
             ->all();
     }
 
@@ -50,7 +49,7 @@ class DatabaseStore extends AbstractStore
             ]);
     }
 
-    private function cleanup(): void
+    public function cleanup(): void
     {
         DB::connection($this->connection)
             ->table($this->table)
@@ -59,7 +58,7 @@ class DatabaseStore extends AbstractStore
             ->delete();
     }
 
-    private function ensureTableExists(): void
+    public function ensureTableExists(): void
     {
         if (! Schema::connection($this->connection)->hasTable($this->table)) {
             Schema::connection($this->connection)->create($this->table, function (Blueprint $table) {
