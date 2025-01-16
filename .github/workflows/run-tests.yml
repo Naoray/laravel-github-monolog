@@ -31,12 +31,10 @@ jobs:
         os: [ubuntu-latest]
         php: [8.4, 8.3]
         laravel: [11.*]
-        stability: [prefer-lowest, prefer-stable]
+        stability: [prefer-stable]
         include:
           - laravel: 11.*
             testbench: 9.*
-            pest: ^2.34
-            pest_plugin_laravel: ^2.2
 
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }} - ${{ matrix.os }}
 
@@ -58,7 +56,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" "pestphp/pest:${{ matrix.pest }}" "pestphp/pest-plugin-laravel:${{ matrix.pest_plugin_laravel }}" --no-interaction --no-update
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction
 
       - name: List Installed Dependencies
