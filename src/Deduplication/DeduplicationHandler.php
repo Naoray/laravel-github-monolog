@@ -7,14 +7,17 @@ use Monolog\Handler\BufferHandler;
 use Monolog\Handler\HandlerInterface;
 use Monolog\Level;
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\Deduplication\Stores\StoreInterface;
 
 class DeduplicationHandler extends BufferHandler
 {
+    private CacheManager $cache;
+
     public function __construct(
         HandlerInterface $handler,
-        protected StoreInterface $store,
         protected SignatureGeneratorInterface $signatureGenerator,
+        string $store = 'default',
+        string $prefix = 'github-monolog:dedup:',
+        int $ttl = 60,
         int|string|Level $level = Level::Error,
         int $bufferLimit = 0,
         bool $bubble = true,
@@ -27,6 +30,8 @@ class DeduplicationHandler extends BufferHandler
             bubble: $bubble,
             flushOnOverflow: $flushOnOverflow,
         );
+
+        $this->cache = new CacheManager($store, $prefix, $ttl);
     }
 
     public function flush(): void
@@ -42,17 +47,17 @@ class DeduplicationHandler extends BufferHandler
                 // Create new record with signature in extra data
                 $record = $record->with(extra: ['github_issue_signature' => $signature] + $record->extra);
 
-                // If the record is a duplicate, we don't want to add it to the store
-                if ($this->store->isDuplicate($record, $signature)) {
+                // If the record is a duplicate, we don't want to process it
+                if ($this->cache->has($signature)) {
                     return null;
                 }
 
-                $this->store->add($record, $signature);
+                $this->cache->add($signature);
 
                 return $record;
             })
             ->filter()
-            ->pipe(fn (Collection $records) => $this->handler->handleBatch($records->toArray()));
+            ->pipe(fn(Collection $records) => $this->handler->handleBatch($records->toArray()));
 
         $this->clear();
     }

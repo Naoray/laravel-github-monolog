@@ -23,7 +23,9 @@
     "illuminate/http": "^11.0",
     "illuminate/support": "^11.0",
     "illuminate/filesystem": "^11.0",
-    "monolog/monolog": "^3.6"
+    "illuminate/cache": "^11.0",
+    "monolog/monolog": "^3.6",
+    "laravel/prompts": "^0.3.3"
   },
   "require-dev": {
     "laravel/pint": "^1.14",

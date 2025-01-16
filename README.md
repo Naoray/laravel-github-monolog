@@ -107,47 +107,20 @@ Deduplication and buffering are enabled by default to enhance logging. Customize
 
 ### Deduplication
 
-Group similar errors to avoid duplicate issues. By default, the package uses file-based storage. Customize the storage and time window to fit your application.
+Group similar errors to avoid duplicate issues. The package uses Laravel's cache system for deduplication storage.
 
 ```php
 'github' => [
     // ... basic config from above ...
     'deduplication' => [
-        'store' => 'file',  // Default store
-        'time' => 60,       // Time window in seconds
+        'time' => 60,        // Time window in seconds - how long to wait before creating a new issue
+        'store' => null,     // Uses your default cache store (from cache.default)
+        'prefix' => 'dedup', // Prefix for cache keys
     ],
 ]
 ```
 
-#### Alternative Storage Options
-
-Consider other storage options in these Laravel-specific scenarios:
-
-- **Redis Store**: Use when:
-  - Running async queue jobs (file storage won't work across processes)
-  - Using Laravel Horizon for queue management
-  - Running multiple application instances behind a load balancer
-
-  ```php
-  'deduplication' => [
-      'store' => 'redis',
-      'prefix' => 'github-monolog:',
-      'connection' => 'default',  // Uses your Laravel Redis connection
-  ],
-  ```
-
-- **Database Store**: Use when:
-  - Running queue jobs but Redis isn't available
-  - Need to persist deduplication data across deployments
-  - Want to query/debug deduplication history via database
-
-  ```php
-  'deduplication' => [
-      'store' => 'database',
-      'table' => 'github_monolog_deduplication',
-      'connection' => null,  // Uses your default database connection
-  ],
-  ```
+For cache store configuration, refer to the [Laravel Cache documentation](https://laravel.com/docs/cache).
 
 ### Buffering
 
