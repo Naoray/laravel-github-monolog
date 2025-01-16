@@ -2,16 +2,17 @@
 
 namespace Naoray\LaravelGithubMonolog\Issues;
 
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Level;
 use Monolog\LogRecord;
-use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Http\Client\RequestException;
 
 class Handler extends AbstractProcessingHandler
 {
     private const DEFAULT_LABEL = 'github-issue-logger';
+
     private PendingRequest $client;
 
     /**
@@ -42,7 +43,7 @@ class Handler extends AbstractProcessingHandler
     protected function write(LogRecord $record): void
     {
         if (! $record->formatted instanceof Formatted) {
-            throw new \RuntimeException('Record must be formatted with ' . Formatted::class);
+            throw new \RuntimeException('Record must be formatted with '.Formatted::class);
         }
 
         $formatted = $record->formatted;
@@ -52,6 +53,7 @@ class Handler extends AbstractProcessingHandler
 
             if ($existingIssue) {
                 $this->commentOnIssue($existingIssue['number'], $formatted);
+
                 return;
             }
 
@@ -76,7 +78,7 @@ class Handler extends AbstractProcessingHandler
 
         return $this->client
             ->get('/search/issues', [
-                'q' => "repo:{$this->repo} is:issue is:open label:" . self::DEFAULT_LABEL . " \"Signature: {$record->extra['github_issue_signature']}\"",
+                'q' => "repo:{$this->repo} is:issue is:open label:".self::DEFAULT_LABEL." \"Signature: {$record->extra['github_issue_signature']}\"",
             ])
             ->throw()
             ->json('items.0', null);
@@ -115,7 +117,7 @@ class Handler extends AbstractProcessingHandler
     {
         $this->client
             ->post("/repos/{$this->repo}/issues", [
-                'title' => '[GitHub Monolog Error] ' . $formatted->title,
+                'title' => '[GitHub Monolog Error] '.$formatted->title,
                 'body' => "**Original Error Message:**\n{$formatted->body}\n\n**Integration Error:**\n{$errorMessage}",
                 'labels' => array_merge($this->labels, ['monolog-integration-error']),
             ])

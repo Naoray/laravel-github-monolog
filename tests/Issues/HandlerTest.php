@@ -142,7 +142,7 @@ test('it creates fallback issue when 4xx error occurs', function () {
 
     Http::assertSent(function ($request) {
         return str($request->url())->endsWith('/repos/test/repo/issues')
-            && !str_contains($request->data()['title'], '[GitHub Monolog Error]');
+            && ! str_contains($request->data()['title'], '[GitHub Monolog Error]');
     });
 
     Http::assertSent(function ($request) use ($errorMessage) {
