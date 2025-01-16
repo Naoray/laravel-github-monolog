@@ -3,6 +3,7 @@
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Naoray\LaravelGithubMonolog\Deduplication\CacheManager;
+
 use function Pest\Laravel\travel;
 
 beforeEach(function () {

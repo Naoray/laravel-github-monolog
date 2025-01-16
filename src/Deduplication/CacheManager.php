@@ -9,9 +9,11 @@ use Illuminate\Support\Facades\Cache;
 class CacheManager
 {
     private const KEY_PREFIX = 'github-monolog';
+
     private const KEY_SEPARATOR = ':';
 
     private readonly string $store;
+
     private readonly Repository $cache;
 
     public function __construct(
@@ -46,6 +48,7 @@ class CacheManager
         // For Redis/Memcached stores that support tag-like operations
         if (method_exists($this->cache->getStore(), 'flush')) {
             $this->cache->getStore()->flush();
+
             return;
         }
 

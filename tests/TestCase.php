@@ -3,7 +3,6 @@
 namespace Naoray\LaravelGithubMonolog\Tests;
 
 use Orchestra\Testbench\TestCase as Orchestra;
-use Naoray\LaravelGithubMonolog\GithubMonologServiceProvider;
 
 class TestCase extends Orchestra
 {
