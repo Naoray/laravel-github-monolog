@@ -12,7 +12,7 @@ class StackTraceFormatter
     public function format(string $stackTrace): string
     {
         return collect(explode("\n", $stackTrace))
-            ->filter(fn($line) => ! empty(trim($line)))
+            ->filter(fn ($line) => ! empty(trim($line)))
             ->map(function ($line) {
                 if (trim($line) === '"}') {
                     return '';

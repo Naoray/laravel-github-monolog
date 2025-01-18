@@ -15,7 +15,7 @@ class IssueFormatter implements FormatterInterface
 
     public function format(LogRecord $record): Formatted
     {
-        if (!isset($record->extra['github_issue_signature'])) {
+        if (! isset($record->extra['github_issue_signature'])) {
             throw new \RuntimeException('Record is missing github_issue_signature in extra data. Make sure the DeduplicationHandler is configured correctly.');
         }
 

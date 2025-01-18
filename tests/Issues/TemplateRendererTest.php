@@ -31,7 +31,7 @@ beforeEach(function () {
 
 test('it renders basic log record', function () {
     $record = new LogRecord(
-        datetime: new DateTimeImmutable(),
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
@@ -48,7 +48,7 @@ test('it renders basic log record', function () {
 
 test('it renders title without exception', function () {
     $record = new LogRecord(
-        datetime: new DateTimeImmutable(),
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
@@ -63,7 +63,7 @@ test('it renders title without exception', function () {
 
 test('it renders title with exception', function () {
     $record = new LogRecord(
-        datetime: new DateTimeImmutable(),
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
@@ -82,7 +82,7 @@ test('it renders title with exception', function () {
 
 test('it renders context data', function () {
     $record = new LogRecord(
-        datetime: new DateTimeImmutable(),
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
@@ -99,7 +99,7 @@ test('it renders context data', function () {
 
 test('it renders extra data', function () {
     $record = new LogRecord(
-        datetime: new DateTimeImmutable(),
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
@@ -118,7 +118,7 @@ test('it renders previous exceptions', function () {
     $previous = new RuntimeException('Previous exception');
     $exception = new RuntimeException('Test exception', previous: $previous);
     $record = new LogRecord(
-        datetime: new DateTimeImmutable(),
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',

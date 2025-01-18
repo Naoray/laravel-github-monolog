@@ -3,7 +3,7 @@
 use Naoray\LaravelGithubMonolog\Issues\Formatters\StackTraceFormatter;
 
 beforeEach(function () {
-    $this->formatter = new StackTraceFormatter();
+    $this->formatter = new StackTraceFormatter;
 });
 
 test('it formats stack trace', function () {

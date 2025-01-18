@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\File;
 use Naoray\LaravelGithubMonolog\Issues\StubLoader;
 
 beforeEach(function () {
-    $this->loader = new StubLoader();
+    $this->loader = new StubLoader;
     File::partialMock();
 });
 
@@ -23,7 +23,7 @@ test('it loads stub from published path if it exists', function () {
 
 test('it falls back to package stub if published stub does not exist', function () {
     $publishedPath = resource_path('views/vendor/github-monolog/issue.md');
-    $packagePath = __DIR__ . '/../../resources/views/issue.md';
+    $packagePath = __DIR__.'/../../resources/views/issue.md';
     $expectedContent = <<<'MD'
 **Log Level:** {level}
 
@@ -71,7 +71,7 @@ MD;
 
 test('it throws exception if stub does not exist', function () {
     $publishedPath = resource_path('views/vendor/github-monolog/nonexistent.md');
-    $packagePath = __DIR__ . '/../../resources/views/nonexistent.md';
+    $packagePath = __DIR__.'/../../resources/views/nonexistent.md';
 
     File::shouldReceive('exists')
         ->with($publishedPath)
@@ -80,6 +80,6 @@ test('it throws exception if stub does not exist', function () {
         ->with($packagePath)
         ->andReturn(false);
 
-    expect(fn() => $this->loader->load('nonexistent'))
+    expect(fn () => $this->loader->load('nonexistent'))
         ->toThrow(FileNotFoundException::class);
 });

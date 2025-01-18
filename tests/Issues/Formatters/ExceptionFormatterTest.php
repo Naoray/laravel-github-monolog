@@ -17,7 +17,7 @@ beforeEach(function () {
 test('it formats exception details', function () {
     $exception = new RuntimeException('Test exception');
     $record = new LogRecord(
-        datetime: new DateTimeImmutable(),
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',
@@ -42,7 +42,7 @@ test('it formats exception details', function () {
 
 test('it returns empty array for non-exception records', function () {
     $record = new LogRecord(
-        datetime: new DateTimeImmutable(),
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: Level::Error,
         message: 'Test message',

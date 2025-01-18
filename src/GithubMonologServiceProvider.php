@@ -39,7 +39,7 @@ class GithubMonologServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../resources/views' => resource_path('views/vendor/github-monolog'),
+                __DIR__.'/../resources/views' => resource_path('views/vendor/github-monolog'),
             ], 'github-monolog-views');
         }
     }

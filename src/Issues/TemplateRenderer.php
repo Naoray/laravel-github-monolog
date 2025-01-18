@@ -11,9 +11,13 @@ use Throwable;
 class TemplateRenderer
 {
     private const TITLE_MAX_LENGTH = 100;
+
     private const MAX_PREVIOUS_EXCEPTIONS = 3;
+
     private string $issueStub;
+
     private string $commentStub;
+
     private string $previousExceptionStub;
 
     public function __construct(
@@ -36,7 +40,7 @@ class TemplateRenderer
 
     public function renderTitle(LogRecord $record, ?Throwable $exception = null): string
     {
-        if (!$exception) {
+        if (! $exception) {
             return Str::of('[{level}] {message}')
                 ->replace('{level}', $record->level->getName())
                 ->replace('{message}', Str::limit($record->message, self::TITLE_MAX_LENGTH))
@@ -75,14 +79,14 @@ class TemplateRenderer
     private function formatPrevious(Throwable $exception): string
     {
         $previous = $exception->getPrevious();
-        if (!$previous) {
+        if (! $previous) {
             return '';
         }
 
         $exceptions = collect()
             ->range(1, self::MAX_PREVIOUS_EXCEPTIONS)
             ->map(function ($count) use (&$previous) {
-                if (!$previous) {
+                if (! $previous) {
                     return null;
                 }
 
@@ -90,7 +94,7 @@ class TemplateRenderer
                 $previous = $previous->getPrevious();
 
                 $details = $this->exceptionFormatter->format(new LogRecord(
-                    datetime: new \DateTimeImmutable(),
+                    datetime: new \DateTimeImmutable,
                     channel: 'github',
                     level: \Monolog\Level::Error,
                     message: '',
