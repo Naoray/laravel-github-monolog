@@ -2,10 +2,18 @@
 
 namespace Naoray\LaravelGithubMonolog\Tests;
 
+use Naoray\LaravelGithubMonolog\GithubMonologServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
 {
+    protected function getPackageProviders($app): array
+    {
+        return [
+            GithubMonologServiceProvider::class,
+        ];
+    }
+
     protected function defineEnvironment($app): void
     {
         // Configure the default cache store to array for testing

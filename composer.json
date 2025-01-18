@@ -64,6 +64,13 @@
       "phpstan/extension-installer": true
     }
   },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Naoray\\LaravelGithubMonolog\\GithubMonologServiceProvider"
+      ]
+    }
+  },
   "minimum-stability": "dev",
   "prefer-stable": true
 }

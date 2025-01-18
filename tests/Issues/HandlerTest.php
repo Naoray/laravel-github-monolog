@@ -7,7 +7,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Monolog\Level;
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\Issues\Formatter;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\IssueFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Handler;
 
 function createHandler(): Handler
@@ -20,7 +20,7 @@ function createHandler(): Handler
         bubble: true
     );
 
-    $handler->setFormatter(new Formatter);
+    $handler->setFormatter(app()->make(IssueFormatter::class));
 
     return $handler;
 }

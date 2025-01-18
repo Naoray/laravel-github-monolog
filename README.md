@@ -21,6 +21,7 @@ Automatically create GitHub issues from your Laravel exceptions & logs. Perfect 
 - 🏷️ Support customizable labels
 - 🎯 Smart deduplication to prevent issue spam
 - ⚡️ Buffered logging for better performance
+- 📝 Customizable issue templates
 
 ## Showcase
 
@@ -103,7 +104,29 @@ Log::stack(['daily', 'github'])->error('Something went wrong!');
 
 ## Advanced Configuration
 
-Deduplication and buffering are enabled by default to enhance logging. Customize these features to suit your needs.
+### Customizing Templates
+
+The package uses Markdown templates to format issues and comments. You can customize these templates by publishing them:
+
+```bash
+php artisan vendor:publish --tag="github-monolog-views"
+```
+
+This will copy the templates to `resources/views/vendor/github-monolog/` where you can modify them:
+
+- `issue.md`: Template for new issues
+- `comment.md`: Template for comments on existing issues
+- `previous_exception.md`: Template for previous exceptions in the chain
+
+Available template variables:
+- `{level}`: Log level (error, warning, etc.)
+- `{message}`: The error message or log content
+- `{simplified_stack_trace}`: A cleaned up stack trace
+- `{full_stack_trace}`: The complete stack trace
+- `{previous_exceptions}`: Details of any previous exceptions
+- `{context}`: Additional context data
+- `{extra}`: Extra log data
+- `{signature}`: Internal signature used for deduplication
 
 ### Deduplication
 

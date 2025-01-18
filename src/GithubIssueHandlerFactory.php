@@ -9,11 +9,15 @@ use Monolog\Logger;
 use Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler;
 use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
 use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
-use Naoray\LaravelGithubMonolog\Issues\Formatter;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\IssueFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Handler;
 
 class GithubIssueHandlerFactory
 {
+    public function __construct(
+        private readonly IssueFormatter $formatter,
+    ) {}
+
     public function __invoke(array $config): Logger
     {
         $this->validateConfig($config);
@@ -45,7 +49,7 @@ class GithubIssueHandlerFactory
             bubble: Arr::get($config, 'bubble', true)
         );
 
-        $handler->setFormatter(new Formatter);
+        $handler->setFormatter($this->formatter);
 
         return $handler;
     }

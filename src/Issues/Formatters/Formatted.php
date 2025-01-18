@@ -1,6 +1,6 @@
 <?php
 
-namespace Naoray\LaravelGithubMonolog\Issues;
+namespace Naoray\LaravelGithubMonolog\Issues\Formatters;
 
 class Formatted
 {
