@@ -4,6 +4,7 @@ namespace Naoray\LaravelGithubMonolog\Issues\Formatters;
 
 use Monolog\Formatter\FormatterInterface;
 use Monolog\LogRecord;
+use Naoray\LaravelGithubMonolog\Issues\TemplateRenderer;
 use Throwable;
 
 class IssueFormatter implements FormatterInterface
