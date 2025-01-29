@@ -4,11 +4,8 @@ use Monolog\Level;
 use Monolog\Logger;
 use Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler;
 use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
-use Naoray\LaravelGithubMonolog\Deduplication\Stores\DatabaseStore;
-use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
-use Naoray\LaravelGithubMonolog\Deduplication\Stores\RedisStore;
 use Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory;
-use Naoray\LaravelGithubMonolog\Issues\Formatter;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\IssueFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Handler;
 
 function getWrappedHandler(DeduplicationHandler $handler): Handler
@@ -18,9 +15,9 @@ function getWrappedHandler(DeduplicationHandler $handler): Handler
     return $reflection->getValue($handler);
 }
 
-function getDeduplicationStore(DeduplicationHandler $handler): mixed
+function getCacheManager(DeduplicationHandler $handler): mixed
 {
-    $reflection = new ReflectionProperty($handler, 'store');
+    $reflection = new ReflectionProperty($handler, 'cache');
 
     return $reflection->getValue($handler);
 }
@@ -40,8 +37,7 @@ beforeEach(function () {
         'labels' => ['test-label'],
     ];
 
-    $this->signatureGenerator = new DefaultSignatureGenerator;
-    $this->factory = new GithubIssueHandlerFactory($this->signatureGenerator);
+    $this->factory = app()->make(GithubIssueHandlerFactory::class);
 });
 
 test('it creates a logger with deduplication handler', function () {
@@ -65,7 +61,7 @@ test('it configures handler correctly', function () {
         ->and($wrappedHandler->getLevel())
         ->toBe(Level::Error)
         ->and($wrappedHandler->getFormatter())
-        ->toBeInstanceOf(Formatter::class);
+        ->toBeInstanceOf(IssueFormatter::class);
 });
 
 test('it throws exception when required config is missing', function () {
@@ -91,62 +87,45 @@ test('it configures buffer settings correctly', function () {
         ->and($flushOnOverflow)->toBeFalse();
 });
 
-test('it can use file store driver', function () {
-    $path = sys_get_temp_dir().'/dedup-test-'.uniqid().'.log';
-
+test('it uses configured cache store', function () {
     $logger = ($this->factory)([
         ...$this->config,
         'deduplication' => [
-            'store' => 'file',
-            'path' => $path,
+            'store' => 'array',
+            'prefix' => 'custom:',
+            'time' => 120,
         ],
     ]);
 
     /** @var DeduplicationHandler $handler */
     $handler = $logger->getHandlers()[0];
-    $store = getDeduplicationStore($handler);
+    $cacheManager = getCacheManager($handler);
+    $store = (new ReflectionProperty($cacheManager, 'store'))->getValue($cacheManager);
+    $prefix = (new ReflectionProperty($cacheManager, 'prefix'))->getValue($cacheManager);
+    $ttl = (new ReflectionProperty($cacheManager, 'ttl'))->getValue($cacheManager);
 
-    expect($store)->toBeInstanceOf(FileStore::class);
+    expect($store)->toBe('array')
+        ->and($prefix)->toBe('custom:')
+        ->and($ttl)->toBe(120);
 });
 
-test('it can use redis store driver', function () {
-    $this->config['deduplication'] = [
-        'store' => 'redis',
-        'connection' => 'default',
-    ];
-
+test('it uses default cache configuration', function () {
     $logger = ($this->factory)($this->config);
 
     /** @var DeduplicationHandler $handler */
     $handler = $logger->getHandlers()[0];
-    $store = getDeduplicationStore($handler);
+    $cacheManager = getCacheManager($handler);
+    $store = (new ReflectionProperty($cacheManager, 'store'))->getValue($cacheManager);
+    $prefix = (new ReflectionProperty($cacheManager, 'prefix'))->getValue($cacheManager);
+    $ttl = (new ReflectionProperty($cacheManager, 'ttl'))->getValue($cacheManager);
 
-    expect($store)->toBeInstanceOf(RedisStore::class);
-});
-
-test('it can use database store driver', function () {
-    config()->set('database.connections.sqlite', [
-        'driver' => 'sqlite',
-        'database' => ':memory:',
-    ]);
-
-    $this->config['deduplication'] = [
-        'store' => 'database',
-        'connection' => 'sqlite',
-    ];
-
-    $logger = ($this->factory)($this->config);
-
-    /** @var DeduplicationHandler $handler */
-    $handler = $logger->getHandlers()[0];
-    $store = getDeduplicationStore($handler);
-
-    expect($store)->toBeInstanceOf(DatabaseStore::class);
+    expect($store)->toBe(config('cache.default'))
+        ->and($prefix)->toBe('github-monolog:')
+        ->and($ttl)->toBe(60);
 });
 
 test('it uses same signature generator across components', function () {
-    $factory = new GithubIssueHandlerFactory(new DefaultSignatureGenerator);
-    $logger = $factory([
+    $logger = ($this->factory)([
         'repo' => 'test/repo',
         'token' => 'test-token',
     ]);
@@ -177,14 +156,4 @@ test('it throws exception for invalid deduplication time', function () {
             'time' => 'invalid',
         ],
     ]))->toThrow(\InvalidArgumentException::class, 'Deduplication time must be a positive integer');
-});
-
-test('it uses file store driver by default', function () {
-    $logger = ($this->factory)($this->config);
-
-    /** @var DeduplicationHandler $handler */
-    $handler = $logger->getHandlers()[0];
-    $store = getDeduplicationStore($handler);
-
-    expect($store)->toBeInstanceOf(FileStore::class);
 });

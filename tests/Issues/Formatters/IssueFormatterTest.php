@@ -2,11 +2,14 @@
 
 use Monolog\Level;
 use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\Issues\Formatted;
-use Naoray\LaravelGithubMonolog\Issues\Formatter;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\Formatted;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\IssueFormatter;
+
+beforeEach(function () {
+    $this->formatter = app()->make(IssueFormatter::class);
+});
 
 test('it formats basic log records', function () {
-    $formatter = new Formatter;
     $record = new LogRecord(
         datetime: new DateTimeImmutable,
         channel: 'test',
@@ -16,7 +19,7 @@ test('it formats basic log records', function () {
         extra: ['github_issue_signature' => 'test-signature']
     );
 
-    $formatted = $formatter->format($record);
+    $formatted = $this->formatter->format($record);
 
     expect($formatted)
         ->toBeInstanceOf(Formatted::class)
@@ -26,7 +29,6 @@ test('it formats basic log records', function () {
 });
 
 test('it formats exceptions with file and line information', function () {
-    $formatter = new Formatter;
     $exception = new RuntimeException('Test exception');
     $record = new LogRecord(
         datetime: new DateTimeImmutable,
@@ -37,7 +39,7 @@ test('it formats exceptions with file and line information', function () {
         extra: ['github_issue_signature' => 'test-signature']
     );
 
-    $formatted = $formatter->format($record);
+    $formatted = $this->formatter->format($record);
 
     expect($formatted->title)
         ->toContain('RuntimeException')
@@ -48,7 +50,6 @@ test('it formats exceptions with file and line information', function () {
 });
 
 test('it truncates long titles', function () {
-    $formatter = new Formatter;
     $longMessage = str_repeat('a', 90);
     $record = new LogRecord(
         datetime: new DateTimeImmutable,
@@ -59,13 +60,12 @@ test('it truncates long titles', function () {
         extra: ['github_issue_signature' => 'test-signature']
     );
 
-    $formatted = $formatter->format($record);
+    $formatted = $this->formatter->format($record);
 
     expect(mb_strlen($formatted->title))->toBeLessThanOrEqual(100);
 });
 
 test('it includes context data in formatted output', function () {
-    $formatter = new Formatter;
     $record = new LogRecord(
         datetime: new DateTimeImmutable,
         channel: 'test',
@@ -75,7 +75,7 @@ test('it includes context data in formatted output', function () {
         extra: ['github_issue_signature' => 'test-signature']
     );
 
-    $formatted = $formatter->format($record);
+    $formatted = $this->formatter->format($record);
 
     expect($formatted->body)
         ->toContain('"user_id": 123')
@@ -83,8 +83,6 @@ test('it includes context data in formatted output', function () {
 });
 
 test('it formats stack traces with collapsible vendor frames', function () {
-    $formatter = new Formatter;
-
     $exception = new Exception('Test exception');
     $reflection = new ReflectionClass($exception);
     $traceProperty = $reflection->getProperty('trace');
@@ -127,7 +125,7 @@ test('it formats stack traces with collapsible vendor frames', function () {
         extra: ['github_issue_signature' => 'test-signature']
     );
 
-    $formatted = $formatter->format($record);
+    $formatted = $this->formatter->format($record);
 
     // Verify that app frames are directly visible
     expect($formatted->body)
