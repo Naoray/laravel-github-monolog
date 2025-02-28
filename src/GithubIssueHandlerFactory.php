@@ -9,15 +9,15 @@ use Monolog\Logger;
 use Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler;
 use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
 use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
-use Naoray\LaravelGithubMonolog\Deduplication\Stores\DatabaseStore;
-use Naoray\LaravelGithubMonolog\Deduplication\Stores\FileStore;
-use Naoray\LaravelGithubMonolog\Deduplication\Stores\RedisStore;
-use Naoray\LaravelGithubMonolog\Deduplication\Stores\StoreInterface;
-use Naoray\LaravelGithubMonolog\Issues\Formatter;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\IssueFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Handler;
 
 class GithubIssueHandlerFactory
 {
+    public function __construct(
+        private readonly IssueFormatter $formatter,
+    ) {}
+
     public function __invoke(array $config): Logger
     {
         $this->validateConfig($config);
@@ -49,7 +49,7 @@ class GithubIssueHandlerFactory
             bubble: Arr::get($config, 'bubble', true)
         );
 
-        $handler->setFormatter(new Formatter);
+        $handler->setFormatter($this->formatter);
 
         return $handler;
     }
@@ -67,32 +67,18 @@ class GithubIssueHandlerFactory
         /** @var SignatureGeneratorInterface $signatureGenerator */
         $signatureGenerator = new $signatureGeneratorClass;
 
+        $deduplication = Arr::get($config, 'deduplication', []);
+
         return new DeduplicationHandler(
             handler: $handler,
-            store: $this->createStore($config),
             signatureGenerator: $signatureGenerator,
+            store: Arr::get($deduplication, 'store', config('cache.default')),
+            prefix: Arr::get($deduplication, 'prefix', 'github-monolog:'),
+            ttl: $this->getDeduplicationTime($config),
             level: Arr::get($config, 'level', Level::Error),
-            bubble: true,
             bufferLimit: Arr::get($config, 'buffer.limit', 0),
             flushOnOverflow: Arr::get($config, 'buffer.flush_on_overflow', true)
         );
-    }
-
-    protected function createStore(array $config): StoreInterface
-    {
-        $deduplication = Arr::get($config, 'deduplication', []);
-        $driver = Arr::get($deduplication, 'store', 'file');
-        $time = $this->getDeduplicationTime($config);
-        $prefix = Arr::get($deduplication, 'prefix', 'github-monolog:');
-        $connection = Arr::get($deduplication, 'connection', 'default');
-        $table = Arr::get($deduplication, 'table', 'github_monolog_deduplication');
-        $path = Arr::get($deduplication, 'path', storage_path('logs/github-monolog-deduplication.log'));
-
-        return match ($driver) {
-            'redis' => new RedisStore(prefix: $prefix, time: $time, connection: $connection),
-            'database' => new DatabaseStore(time: $time, table: $table, connection: $connection),
-            default => new FileStore(path: $path, time: $time),
-        };
     }
 
     protected function getDeduplicationTime(array $config): int

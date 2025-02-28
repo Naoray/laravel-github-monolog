@@ -2,14 +2,19 @@
 
 namespace Naoray\LaravelGithubMonolog\Issues;
 
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Level;
 use Monolog\LogRecord;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\Formatted;
 
 class Handler extends AbstractProcessingHandler
 {
     private const DEFAULT_LABEL = 'github-issue-logger';
+
+    private PendingRequest $client;
 
     /**
      * @param  string  $repo  The GitHub repository in "owner/repo" format
@@ -30,6 +35,7 @@ class Handler extends AbstractProcessingHandler
         $this->repo = $repo;
         $this->token = $token;
         $this->labels = array_unique(array_merge([self::DEFAULT_LABEL], $labels));
+        $this->client = Http::withToken($this->token)->baseUrl('https://api.github.com');
     }
 
     /**
@@ -42,15 +48,24 @@ class Handler extends AbstractProcessingHandler
         }
 
         $formatted = $record->formatted;
-        $existingIssue = $this->findExistingIssue($record);
 
-        if ($existingIssue) {
-            $this->commentOnIssue($existingIssue['number'], $formatted);
+        try {
+            $existingIssue = $this->findExistingIssue($record);
 
-            return;
+            if ($existingIssue) {
+                $this->commentOnIssue($existingIssue['number'], $formatted);
+
+                return;
+            }
+
+            $this->createIssue($formatted);
+        } catch (RequestException $e) {
+            if ($e->response->serverError()) {
+                throw $e;
+            }
+
+            $this->createFallbackIssue($formatted, $e->response->body());
         }
-
-        $this->createIssue($formatted);
     }
 
     /**
@@ -62,16 +77,12 @@ class Handler extends AbstractProcessingHandler
             throw new \RuntimeException('Record is missing github_issue_signature in extra data. Make sure the DeduplicationHandler is configured correctly.');
         }
 
-        $response = Http::withToken($this->token)
-            ->get('https://api.github.com/search/issues', [
+        return $this->client
+            ->get('/search/issues', [
                 'q' => "repo:{$this->repo} is:issue is:open label:".self::DEFAULT_LABEL." \"Signature: {$record->extra['github_issue_signature']}\"",
-            ]);
-
-        if ($response->failed()) {
-            throw new \RuntimeException('Failed to search GitHub issues: '.$response->body());
-        }
-
-        return $response->json('items.0', null);
+            ])
+            ->throw()
+            ->json('items.0', null);
     }
 
     /**
@@ -79,14 +90,11 @@ class Handler extends AbstractProcessingHandler
      */
     private function commentOnIssue(int $issueNumber, Formatted $formatted): void
     {
-        $response = Http::withToken($this->token)
-            ->post("https://api.github.com/repos/{$this->repo}/issues/{$issueNumber}/comments", [
+        $this->client
+            ->post("/repos/{$this->repo}/issues/{$issueNumber}/comments", [
                 'body' => $formatted->comment,
-            ]);
-
-        if ($response->failed()) {
-            throw new \RuntimeException('Failed to comment on GitHub issue: '.$response->body());
-        }
+            ])
+            ->throw();
     }
 
     /**
@@ -94,15 +102,26 @@ class Handler extends AbstractProcessingHandler
      */
     private function createIssue(Formatted $formatted): void
     {
-        $response = Http::withToken($this->token)
-            ->post("https://api.github.com/repos/{$this->repo}/issues", [
+        $this->client
+            ->post("/repos/{$this->repo}/issues", [
                 'title' => $formatted->title,
                 'body' => $formatted->body,
                 'labels' => $this->labels,
-            ]);
+            ])
+            ->throw();
+    }
 
-        if ($response->failed()) {
-            throw new \RuntimeException('Failed to create GitHub issue: '.$response->body());
-        }
+    /**
+     * Create a fallback issue when the main issue creation fails
+     */
+    private function createFallbackIssue(Formatted $formatted, string $errorMessage): void
+    {
+        $this->client
+            ->post("/repos/{$this->repo}/issues", [
+                'title' => '[GitHub Monolog Error] '.$formatted->title,
+                'body' => "**Original Error Message:**\n{$formatted->body}\n\n**Integration Error:**\n{$errorMessage}",
+                'labels' => array_merge($this->labels, ['monolog-integration-error']),
+            ])
+            ->throw();
     }
 }
