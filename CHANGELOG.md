@@ -2,6 +2,22 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.0.0 - 2025-02-28
+
+### What's Changed
+
+* remove custom store implementation in favor of laravel's cache
+* add customizable stubs
+* Added Laravel 12 support by @andrey-helldar in https://github.com/Naoray/laravel-github-monolog/pull/7
+
+s. [UPGRADE.md](https://github.com/Naoray/laravel-github-monolog/blob/main/UPGRADE.md) for an upgrade guide as this release includes a few breaking changes.
+
+### New Contributors
+
+* @andrey-helldar made their first contribution in https://github.com/Naoray/laravel-github-monolog/pull/7
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v2.1.1...v3.0.0
+
 ## v2.1.1 - 2025-01-13
 
 - fix wrong array key being used for deduplication stores (before `driver`, now `store`)
