@@ -23,7 +23,7 @@ Version 3.0 introduces several breaking changes in how deduplication storage is 
 
 2. **Run Cleanup**
    - Keep your old configuration in place
-   - Run the cleanup code above to remove old storage artifacts
+   - Run the cleanup code in [Cleanup Code](#cleanup-code) to remove old storage artifacts
    - The cleanup code needs your old configuration to know what to clean up
 
 3. **Update Configuration**
@@ -34,7 +34,7 @@ Version 3.0 introduces several breaking changes in how deduplication storage is 
 ### Configuration Updates
 
 #### Before (2.x)
-- [ ] ```php
+```php
 'deduplication' => [
     'store' => 'redis',              // or 'file', 'database'
     'connection' => 'default',       // Redis/Database connection
