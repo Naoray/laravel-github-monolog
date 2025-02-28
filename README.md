@@ -21,6 +21,7 @@ Automatically create GitHub issues from your Laravel exceptions & logs. Perfect 
 - 🏷️ Support customizable labels
 - 🎯 Smart deduplication to prevent issue spam
 - ⚡️ Buffered logging for better performance
+- 📝 Customizable issue templates
 
 ## Showcase
 
@@ -103,51 +104,46 @@ Log::stack(['daily', 'github'])->error('Something went wrong!');
 
 ## Advanced Configuration
 
-Deduplication and buffering are enabled by default to enhance logging. Customize these features to suit your needs.
+### Customizing Templates
+
+The package uses Markdown templates to format issues and comments. You can customize these templates by publishing them:
+
+```bash
+php artisan vendor:publish --tag="github-monolog-views"
+```
+
+This will copy the templates to `resources/views/vendor/github-monolog/` where you can modify them:
+
+- `issue.md`: Template for new issues
+- `comment.md`: Template for comments on existing issues
+- `previous_exception.md`: Template for previous exceptions in the chain
+
+Available template variables:
+- `{level}`: Log level (error, warning, etc.)
+- `{message}`: The error message or log content
+- `{simplified_stack_trace}`: A cleaned up stack trace
+- `{full_stack_trace}`: The complete stack trace
+- `{previous_exceptions}`: Details of any previous exceptions
+- `{context}`: Additional context data
+- `{extra}`: Extra log data
+- `{signature}`: Internal signature used for deduplication
 
 ### Deduplication
 
-Group similar errors to avoid duplicate issues. By default, the package uses file-based storage. Customize the storage and time window to fit your application.
+Group similar errors to avoid duplicate issues. The package uses Laravel's cache system for deduplication storage.
 
 ```php
 'github' => [
     // ... basic config from above ...
     'deduplication' => [
-        'store' => 'file',  // Default store
-        'time' => 60,       // Time window in seconds
+        'time' => 60,        // Time window in seconds - how long to wait before creating a new issue
+        'store' => null,     // Uses your default cache store (from cache.default)
+        'prefix' => 'dedup', // Prefix for cache keys
     ],
 ]
 ```
 
-#### Alternative Storage Options
-
-Consider other storage options in these Laravel-specific scenarios:
-
-- **Redis Store**: Use when:
-  - Running async queue jobs (file storage won't work across processes)
-  - Using Laravel Horizon for queue management
-  - Running multiple application instances behind a load balancer
-
-  ```php
-  'deduplication' => [
-      'store' => 'redis',
-      'prefix' => 'github-monolog:',
-      'connection' => 'default',  // Uses your Laravel Redis connection
-  ],
-  ```
-
-- **Database Store**: Use when:
-  - Running queue jobs but Redis isn't available
-  - Need to persist deduplication data across deployments
-  - Want to query/debug deduplication history via database
-
-  ```php
-  'deduplication' => [
-      'store' => 'database',
-      'table' => 'github_monolog_deduplication',
-      'connection' => null,  // Uses your default database connection
-  ],
-  ```
+For cache store configuration, refer to the [Laravel Cache documentation](https://laravel.com/docs/cache).
 
 ### Buffering
 
