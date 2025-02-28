@@ -45,16 +45,8 @@ class CacheManager
      */
     public function clear(): void
     {
-        // For Redis/Memcached stores that support tag-like operations
-        if (method_exists($this->cache->getStore(), 'flush')) {
-            $this->cache->getStore()->flush();
-
-            return;
-        }
-
-        // For other stores, we'll have to rely on TTL cleanup
-        // You might want to implement a more specific cleanup strategy
-        // based on your cache store if needed
+        // All Laravel cache stores implement the flush method
+        $this->cache->getStore()->flush();
     }
 
     private function composeKey(string $signature): string
