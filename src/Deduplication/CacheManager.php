@@ -39,16 +39,6 @@ class CacheManager
         );
     }
 
-    /**
-     * Clear all entries for the current prefix.
-     * Note: This is a best-effort operation and might not work with all cache stores.
-     */
-    public function clear(): void
-    {
-        // All Laravel cache stores implement the flush method
-        $this->cache->getStore()->flush();
-    }
-
     private function composeKey(string $signature): string
     {
         return implode(self::KEY_SEPARATOR, [
