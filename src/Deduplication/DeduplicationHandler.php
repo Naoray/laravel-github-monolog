@@ -15,7 +15,7 @@ class DeduplicationHandler extends BufferHandler
     public function __construct(
         HandlerInterface $handler,
         protected SignatureGeneratorInterface $signatureGenerator,
-        string $store = 'default',
+        ?string $store = 'default',
         string $prefix = 'github-monolog:dedup:',
         int $ttl = 60,
         int|string|Level $level = Level::Error,
