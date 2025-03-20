@@ -1,28 +1,50 @@
+## Error Details
 **Log Level:** {level}
+**Class:** {class}
+**Message:** {message}
 
-{message}
+<!-- stacktrace:start -->
+---
 
-**Simplified Stack Trace:**
-```php
+## Stack Trace
+```shell
 {simplified_stack_trace}
 ```
 
 <details>
-<summary>Complete Stack Trace</summary>
+<summary>📋 View Complete Stack Trace</summary>
 
-```php
+```shell
 {full_stack_trace}
 ```
 </details>
 
+<!-- prev-stacktrace:start -->
 <details>
-<summary>Previous Exceptions</summary>
+<summary>🔍 View Previous Exceptions</summary>
 
 {previous_exceptions}
+
 </details>
+<!-- prev-stacktrace:end -->
+<!-- stacktrace:end -->
 
+<!-- context:start -->
+---
+
+## Context
+```json
 {context}
+```
+<!-- context:end -->
 
+<!-- extra:start -->
+---
+
+## Extra Data
+```json
 {extra}
+```
+<!-- extra:end -->
 
 <!-- Signature: {signature} -->

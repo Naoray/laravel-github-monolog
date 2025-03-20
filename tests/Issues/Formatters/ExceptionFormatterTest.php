@@ -1,34 +1,14 @@
 <?php
 
-use Mockery\MockInterface;
-use Monolog\Level;
-use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Issues\Formatters\ExceptionFormatter;
-use Naoray\LaravelGithubMonolog\Issues\Formatters\StackTraceFormatter;
 
 beforeEach(function () {
-    /** @var StackTraceFormatter&MockInterface */
-    $this->stackTraceFormatter = Mockery::mock(StackTraceFormatter::class);
-    $this->formatter = new ExceptionFormatter(
-        stackTraceFormatter: $this->stackTraceFormatter,
-    );
+    $this->formatter = resolve(ExceptionFormatter::class);
 });
 
 test('it formats exception details', function () {
     $exception = new RuntimeException('Test exception');
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: 'Test message',
-        context: ['exception' => $exception],
-        extra: [],
-    );
-
-    $this->stackTraceFormatter->shouldReceive('format')
-        ->once()
-        ->with($exception->getTraceAsString())
-        ->andReturn('formatted stack trace');
+    $record = createLogRecord('Test message', exception: $exception);
 
     $result = $this->formatter->format($record);
 
@@ -36,19 +16,12 @@ test('it formats exception details', function () {
         ->toBeArray()
         ->toHaveKeys(['message', 'simplified_stack_trace', 'full_stack_trace'])
         ->and($result['message'])->toBe('Test exception')
-        ->and($result['simplified_stack_trace'])->toContain('formatted stack trace')
+        ->and($result['simplified_stack_trace'])->toContain('[Vendor frames]')
         ->and($result['full_stack_trace'])->toContain($exception->getTraceAsString());
 });
 
 test('it returns empty array for non-exception records', function () {
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: 'Test message',
-        context: [],
-        extra: [],
-    );
+    $record = createLogRecord('Test message');
 
     expect($this->formatter->format($record))->toBeArray()->toBeEmpty();
 });
