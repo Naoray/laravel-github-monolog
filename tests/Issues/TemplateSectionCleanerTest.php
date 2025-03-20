@@ -3,7 +3,7 @@
 use Naoray\LaravelGithubMonolog\Issues\TemplateSectionCleaner;
 
 beforeEach(function () {
-    $this->cleaner = new TemplateSectionCleaner();
+    $this->cleaner = new TemplateSectionCleaner;
 });
 
 test('it replaces template variables', function () {
@@ -150,7 +150,7 @@ EOT;
     $replacements = [
         '{simplified_stack_trace}' => 'Stack trace content',
         '{context}' => '{"key": "value"}',
-        '{extra}' => 'Extra data'
+        '{extra}' => 'Extra data',
     ];
 
     $result = $this->cleaner->clean($template, $replacements);

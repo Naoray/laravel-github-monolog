@@ -4,7 +4,7 @@ use Naoray\LaravelGithubMonolog\Issues\StubLoader;
 use Naoray\LaravelGithubMonolog\Issues\TemplateRenderer;
 
 beforeEach(function () {
-    $this->stubLoader = new StubLoader();
+    $this->stubLoader = new StubLoader;
     $this->renderer = resolve(TemplateRenderer::class);
 });
 
