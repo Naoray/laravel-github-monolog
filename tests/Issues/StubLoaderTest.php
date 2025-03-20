@@ -11,50 +11,23 @@ beforeEach(function () {
 
 test('it loads stub from published path if it exists', function () {
     $publishedPath = resource_path('views/vendor/github-monolog/issue.md');
+    $packagePath = __DIR__.'/../../resources/views/issue.md';
+    $expectedContent = file_get_contents($packagePath);
+
     File::shouldReceive('exists')
         ->with($publishedPath)
         ->andReturn(true);
     File::shouldReceive('get')
         ->with($publishedPath)
-        ->andReturn('published content');
+        ->andReturn($expectedContent);
 
-    expect($this->loader->load('issue'))->toBe('published content');
+    expect($this->loader->load('issue'))->toBe($expectedContent);
 });
 
 test('it falls back to package stub if published stub does not exist', function () {
     $publishedPath = resource_path('views/vendor/github-monolog/issue.md');
     $packagePath = __DIR__.'/../../resources/views/issue.md';
-    $expectedContent = <<<'MD'
-**Log Level:** {level}
-
-{message}
-
-**Simplified Stack Trace:**
-```php
-{simplified_stack_trace}
-```
-
-<details>
-<summary>Complete Stack Trace</summary>
-
-```php
-{full_stack_trace}
-```
-</details>
-
-<details>
-<summary>Previous Exceptions</summary>
-
-{previous_exceptions}
-</details>
-
-{context}
-
-{extra}
-
-<!-- Signature: {signature} -->
-
-MD;
+    $expectedContent = file_get_contents($packagePath);
 
     File::shouldReceive('exists')
         ->with($publishedPath)

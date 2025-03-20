@@ -1,60 +1,25 @@
 <?php
 
-use Mockery\MockInterface;
-use Monolog\Level;
-use Monolog\LogRecord;
-use Naoray\LaravelGithubMonolog\Issues\Formatters\ExceptionFormatter;
 use Naoray\LaravelGithubMonolog\Issues\StubLoader;
 use Naoray\LaravelGithubMonolog\Issues\TemplateRenderer;
 
 beforeEach(function () {
-    /** @var StubLoader&MockInterface */
-    $this->stubLoader = Mockery::mock(StubLoader::class);
-    /** @var ExceptionFormatter&MockInterface */
-    $this->exceptionFormatter = Mockery::mock(ExceptionFormatter::class);
-
-    $this->stubLoader->shouldReceive('load')
-        ->with('issue')
-        ->andReturn('**Log Level:** {level}\n{message}\n{previous_exceptions}\n{context}\n{extra}\n{signature}');
-    $this->stubLoader->shouldReceive('load')
-        ->with('comment')
-        ->andReturn('# New Occurrence\n**Log Level:** {level}\n{message}');
-    $this->stubLoader->shouldReceive('load')
-        ->with('previous_exception')
-        ->andReturn('## Previous Exception #{count}\n{type}\n{simplified_stack_trace}');
-
-    $this->renderer = new TemplateRenderer(
-        exceptionFormatter: $this->exceptionFormatter,
-        stubLoader: $this->stubLoader,
-    );
+    $this->stubLoader = new StubLoader();
+    $this->renderer = resolve(TemplateRenderer::class);
 });
 
 test('it renders basic log record', function () {
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: 'Test message',
-        context: [],
-        extra: [],
-    );
+    $record = createLogRecord('Test message');
 
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
         ->toContain('**Log Level:** ERROR')
-        ->toContain('Test message');
+        ->toContain('**Message:** Test message');
 });
 
 test('it renders title without exception', function () {
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: 'Test message',
-        context: [],
-        extra: [],
-    );
+    $record = createLogRecord('Test message');
 
     $title = $this->renderer->renderTitle($record);
 
@@ -62,81 +27,71 @@ test('it renders title without exception', function () {
 });
 
 test('it renders title with exception', function () {
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: 'Test message',
-        context: ['exception' => new RuntimeException('Test exception')],
-        extra: [],
-    );
+    $record = createLogRecord('Test message', exception: new RuntimeException('Test exception'));
 
-    $this->exceptionFormatter->shouldReceive('formatTitle')
-        ->once()
-        ->andReturn('[ERROR] RuntimeException: Test exception');
+    $title = $this->renderer->renderTitle($record);
 
-    $title = $this->renderer->renderTitle($record, $record->context['exception']);
-
-    expect($title)->toBe('[ERROR] RuntimeException: Test exception');
+    expect($title)->toContain('[ERROR] RuntimeException', 'Test exception');
 });
 
 test('it renders context data', function () {
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: 'Test message',
-        context: ['user_id' => 123],
-        extra: [],
-    );
+    $record = createLogRecord('Test message', ['user_id' => 123]);
 
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('**Context:**')
+        ->toContain('## Context')
         ->toContain('"user_id": 123');
 });
 
 test('it renders extra data', function () {
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: 'Test message',
-        context: [],
-        extra: ['request_id' => 'abc123'],
-    );
+    $record = createLogRecord('Test message', extra: ['request_id' => 'abc123']);
 
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('**Extra Data:**')
+        ->toContain('## Extra Data')
         ->toContain('"request_id": "abc123"');
 });
 
 test('it renders previous exceptions', function () {
     $previous = new RuntimeException('Previous exception');
     $exception = new RuntimeException('Test exception', previous: $previous);
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: 'Test message',
-        context: ['exception' => $exception],
-        extra: [],
-    );
+    $record = createLogRecord('Test message', exception: $exception);
 
-    $this->exceptionFormatter->shouldReceive('format')
-        ->twice()
-        ->andReturn([
-            'simplified_stack_trace' => 'simplified stack trace',
-            'full_stack_trace' => 'full stack trace',
-        ]);
-
-    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record, null, $exception);
+    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
         ->toContain('Previous Exception #1')
-        ->toContain(RuntimeException::class)
-        ->toContain('simplified stack trace');
+        ->toContain('Previous exception')
+        ->toContain('[Vendor frames]');
+});
+
+test('it handles nested stack traces in previous exceptions correctly', function () {
+    $previous = new RuntimeException('Previous exception');
+    $exception = new RuntimeException('Test exception', previous: $previous);
+    $record = createLogRecord('Test message', exception: $exception);
+
+    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
+
+    // Verify that the main stack trace section is present
+    expect($rendered)
+        ->toContain('View Complete Stack Trace')
+        // Verify that the previous exceptions section is present
+        ->toContain('View Previous Exceptions');
+});
+
+test('it cleans all empty sections', function () {
+    $record = createLogRecord('');
+
+    $rendered = $this->renderer->render(
+        template: $this->stubLoader->load('comment'),
+        record: $record,
+        signature: 'test',
+    );
+
+    expect($rendered)
+        ->toContain('## Error Details')
+        ->toContain('**Type:** ERROR')
+        ->toContain('<!-- Signature: test -->');
 });

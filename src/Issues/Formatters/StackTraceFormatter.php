@@ -28,7 +28,11 @@ class StackTraceFormatter
 
                 $line = str_replace(base_path(), '', $line);
 
-                if (str_contains((string) $line, '/vendor/') && ! Str::isMatch("/BoundMethod\.php\([0-9]+\): App/", $line)) {
+                // Stack trace lines start with #\d. Here we pad the numbers 0-9
+                // with a preceding zero to keep everything in line visually.
+                $line = preg_replace('/^(\e\[0m)#(\d)(?!\d)/', '$1#0$2', $line);
+
+                if ($this->isVendorFrame($line)) {
                     return self::VENDOR_FRAME_PLACEHOLDER;
                 }
 
@@ -48,19 +52,30 @@ class StackTraceFormatter
         ];
     }
 
+    private function isVendorFrame($line): bool
+    {
+        return str_contains((string) $line, self::VENDOR_FRAME_PLACEHOLDER)
+            || str_contains((string) $line, '/vendor/') && ! Str::isMatch("/BoundMethod\.php\([0-9]+\): App/", $line)
+            || str_ends_with($line, '{main}');
+    }
+
     private function collapseVendorFrames(Collection $lines): Collection
     {
         $hasVendorFrame = false;
 
         return $lines->filter(function ($line) use (&$hasVendorFrame) {
-            $isVendorFrame = str_contains($line, '[Vendor frames]');
+            $isVendorFrame = $this->isVendorFrame($line);
 
             if ($isVendorFrame) {
+                // Skip the line if a vendor frame has already been added.
                 if ($hasVendorFrame) {
                     return false;
                 }
+
+                // Otherwise, mark that a vendor frame has been added.
                 $hasVendorFrame = true;
             } else {
+                // Reset the flag if the current line is not a vendor frame.
                 $hasVendorFrame = false;
             }
 

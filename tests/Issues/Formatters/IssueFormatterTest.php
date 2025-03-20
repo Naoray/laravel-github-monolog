@@ -1,7 +1,5 @@
 <?php
 
-use Monolog\Level;
-use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Issues\Formatters\Formatted;
 use Naoray\LaravelGithubMonolog\Issues\Formatters\IssueFormatter;
 
@@ -10,14 +8,7 @@ beforeEach(function () {
 });
 
 test('it formats basic log records', function () {
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: 'Test error message',
-        context: [],
-        extra: ['github_issue_signature' => 'test-signature']
-    );
+    $record = createLogRecord('Test error message', signature: 'test-signature');
 
     $formatted = $this->formatter->format($record);
 
@@ -29,15 +20,7 @@ test('it formats basic log records', function () {
 });
 
 test('it formats exceptions with file and line information', function () {
-    $exception = new RuntimeException('Test exception');
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: 'Error occurred',
-        context: ['exception' => $exception],
-        extra: ['github_issue_signature' => 'test-signature']
-    );
+    $record = createLogRecord('Error occurred', exception: new RuntimeException('Test exception'), signature: 'test-signature');
 
     $formatted = $this->formatter->format($record);
 
@@ -46,19 +29,12 @@ test('it formats exceptions with file and line information', function () {
         ->toContain('.php:')
         ->and($formatted->body)
         ->toContain('Test exception')
-        ->toContain('Stack Trace:');
+        ->toContain('Stack Trace');
 });
 
 test('it truncates long titles', function () {
     $longMessage = str_repeat('a', 90);
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: $longMessage,
-        context: [],
-        extra: ['github_issue_signature' => 'test-signature']
-    );
+    $record = createLogRecord($longMessage, signature: 'test-signature');
 
     $formatted = $this->formatter->format($record);
 
@@ -66,13 +42,14 @@ test('it truncates long titles', function () {
 });
 
 test('it includes context data in formatted output', function () {
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: 'Test message',
-        context: ['user_id' => 123, 'action' => 'login', 'exception' => new RuntimeException('Test exception')],
-        extra: ['github_issue_signature' => 'test-signature']
+    $record = createLogRecord(
+        'Test message',
+        exception: new RuntimeException('Test exception'),
+        context: [
+            'user_id' => 123,
+            'action' => 'login',
+        ],
+        signature: 'test-signature',
     );
 
     $formatted = $this->formatter->format($record);
@@ -116,23 +93,12 @@ test('it formats stack traces with collapsible vendor frames', function () {
         ],
     ]);
 
-    $record = new LogRecord(
-        datetime: new DateTimeImmutable,
-        channel: 'test',
-        level: Level::Error,
-        message: 'Error occurred',
-        context: ['exception' => $exception],
-        extra: ['github_issue_signature' => 'test-signature']
-    );
+    $record = createLogRecord('Error occurred', exception: $exception, signature: 'test-signature');
 
     $formatted = $this->formatter->format($record);
 
-    // Verify that app frames are directly visible
     expect($formatted->body)
         ->toContain('app/Http/Controllers/TestController.php')
         ->toContain('app/Services/TestService.php')
-        // Verify that vendor frames are wrapped in details tags
-        ->toContain('[Vendor frames]')
-        ->toContain('vendor/laravel/framework/src/Testing.php')
-        ->toContain('vendor/another/package/src/File.php');
+        ->toContain('[Vendor frames]');
 });

@@ -1,15 +1,14 @@
-### Previous Exception #{count}
-**Type:** {type}
+## Previous Exception #{count}
+{message}
 
-**Simplified Stack Trace:**
-```php
+<!-- prev-exception-stacktrace:start -->
+```shell
 {simplified_stack_trace}
 ```
 
-<details>
-<summary>Complete Stack Trace</summary>
+---
 
-```php
+```shell
 {full_stack_trace}
 ```
-</details>
+<!-- prev-exception-stacktrace:end -->

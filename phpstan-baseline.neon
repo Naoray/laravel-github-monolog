@@ -1,0 +1,7 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,string\>\:\:filter\(\) expects \(callable\(string, int\)\: bool\)\|null, Closure\(string, string\)\: bool given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Issues/SectionMapping.php
