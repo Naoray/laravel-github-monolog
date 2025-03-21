@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.2.1 - 2025-03-21
+
+### What's Changed
+
+* Fix/min version requirement by @Naoray in https://github.com/Naoray/laravel-github-monolog/pull/13
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.2.0...v3.2.1
+
 ## v3.2.0 - 2025-03-21
 
 ### What's Changed
