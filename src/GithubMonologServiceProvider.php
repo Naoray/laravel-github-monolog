@@ -2,54 +2,20 @@
 
 namespace Naoray\LaravelGithubMonolog;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Naoray\LaravelGithubMonolog\Issues\Formatters\ExceptionFormatter;
-use Naoray\LaravelGithubMonolog\Issues\Formatters\IssueFormatter;
-use Naoray\LaravelGithubMonolog\Issues\Formatters\PreviousExceptionFormatter;
-use Naoray\LaravelGithubMonolog\Issues\Formatters\StackTraceFormatter;
-use Naoray\LaravelGithubMonolog\Issues\StubLoader;
-use Naoray\LaravelGithubMonolog\Issues\TemplateRenderer;
-use Naoray\LaravelGithubMonolog\Issues\TemplateSectionCleaner;
+use Naoray\LaravelGithubMonolog\Tracing\EventHandler;
 
 class GithubMonologServiceProvider extends ServiceProvider
 {
-    public function register(): void
-    {
-        $this->app->bind(StackTraceFormatter::class);
-        $this->app->bind(StubLoader::class);
-        $this->app->bind(TemplateSectionCleaner::class);
-
-        $this->app->bind(ExceptionFormatter::class, function ($app) {
-            return new ExceptionFormatter(
-                stackTraceFormatter: $app->make(StackTraceFormatter::class),
-            );
-        });
-
-        $this->app->bind(PreviousExceptionFormatter::class, function ($app) {
-            return new PreviousExceptionFormatter(
-                exceptionFormatter: $app->make(ExceptionFormatter::class),
-                stubLoader: $app->make(StubLoader::class),
-            );
-        });
-
-        $this->app->singleton(TemplateRenderer::class, function ($app) {
-            return new TemplateRenderer(
-                exceptionFormatter: $app->make(ExceptionFormatter::class),
-                previousExceptionFormatter: $app->make(PreviousExceptionFormatter::class),
-                sectionCleaner: $app->make(TemplateSectionCleaner::class),
-                stubLoader: $app->make(StubLoader::class),
-            );
-        });
-
-        $this->app->singleton(IssueFormatter::class, function ($app) {
-            return new IssueFormatter(
-                templateRenderer: $app->make(TemplateRenderer::class),
-            );
-        });
-    }
-
     public function boot(): void
     {
+        $config = config('logging.channels.github.tracing');
+
+        if (isset($config['enabled']) && $config['enabled']) {
+            Event::subscribe(EventHandler::class);
+        }
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../resources/views' => resource_path('views/vendor/github-monolog'),

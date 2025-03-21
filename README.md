@@ -22,6 +22,7 @@ Automatically create GitHub issues from your Laravel exceptions & logs. Perfect 
 - 🎯 Smart deduplication to prevent issue spam
 - ⚡️ Buffered logging for better performance
 - 📝 Customizable issue templates
+- 🕵🏻‍♂️ Tracing Support (Request & User)
 
 ## Showcase
 
@@ -167,6 +168,42 @@ When buffering is active:
 - When limit is reached:
   - With `flush_on_overflow = true`: All records are flushed
   - With `flush_on_overflow = false`: Only the oldest record is removed
+
+### Tracing
+
+The package includes optional tracing capabilities that allow you to track requests and user data in your logs. Enable this feature through your configuration:
+
+```php
+'tracing' => [
+    'enabled' => true,    // Master switch for all tracing
+    'requests' => true,   // Enable request tracing
+    'user' => true,      // Enable user tracing
+]
+```
+
+#### Request Tracing
+When request tracing is enabled, the following data is automatically logged:
+- URL
+- HTTP Method
+- Route information
+- Headers (filtered to remove sensitive data)
+- Request body
+
+#### User Tracing
+By default, user tracing only logs the user identifier to comply with GDPR regulations. However, you can customize the user data being logged by setting your own resolver:
+
+```php
+use Naoray\LaravelGithubMonolog\Tracing\UserDataCollector;
+
+UserDataCollector::setUserDataResolver(function ($user) {
+    return [
+        'username' => $user->username,
+        // Add any other user fields you want to log
+    ];
+});
+```
+
+> **Note:** When customizing user data collection, ensure you comply with relevant privacy regulations and only collect necessary information.
 
 ### Signature Generator
 
