@@ -4,9 +4,9 @@ namespace Naoray\LaravelGithubMonolog\Issues\Formatters;
 
 use Illuminate\Support\Str;
 use Monolog\LogRecord;
-use Throwable;
 use Naoray\LaravelGithubMonolog\Issues\InteractsWithLogRecord;
 use Naoray\LaravelGithubMonolog\Issues\StubLoader;
+use Throwable;
 
 class PreviousExceptionFormatter
 {

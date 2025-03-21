@@ -2,9 +2,9 @@
 
 namespace Naoray\LaravelGithubMonolog\Tracing;
 
-use Illuminate\Support\Str;
 use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Support\Facades\Context;
+use Illuminate\Support\Str;
 
 class RequestDataCollector
 {

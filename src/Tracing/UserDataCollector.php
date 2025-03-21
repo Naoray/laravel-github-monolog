@@ -2,9 +2,9 @@
 
 namespace Naoray\LaravelGithubMonolog\Tracing;
 
-use Illuminate\Support\Facades\Context;
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Context;
 
 class UserDataCollector
 {
