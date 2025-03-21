@@ -10,7 +10,7 @@ Automatically create GitHub issues from your Laravel exceptions & logs. Perfect 
 ## Requirements
 
 - PHP ^8.3
-- Laravel ^11.0|^12.0
+- Laravel ^11.37|^12.0
 - Monolog ^3.6
 
 ## Features
