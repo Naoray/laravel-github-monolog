@@ -8,7 +8,7 @@ use Naoray\LaravelGithubMonolog\Tracing\RequestDataCollector;
 use Symfony\Component\HttpFoundation\HeaderBag;
 
 beforeEach(function () {
-    $this->collector = new RequestDataCollector();
+    $this->collector = new RequestDataCollector;
 });
 
 afterEach(function () {

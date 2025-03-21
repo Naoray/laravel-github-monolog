@@ -2,6 +2,23 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.2.0 - 2025-03-21
+
+### What's Changed
+
+* feat: add tracing capabilities by @Naoray in https://github.com/Naoray/laravel-github-monolog/pull/12
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.1.0...v3.2.0
+
+## v3.1.0 - 2025-03-20
+
+### What's Changed
+
+* fix: TypeError: DeduplicationHandler::__construct(): Argument #3 ($store) must be of type string, null given by @andrey-helldar in https://github.com/Naoray/laravel-github-monolog/pull/10
+* feat: enhance templates by @Naoray in https://github.com/Naoray/laravel-github-monolog/pull/11
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.0.0...v3.1.0
+
 ## v3.0.0 - 2025-02-28
 
 ### What's Changed

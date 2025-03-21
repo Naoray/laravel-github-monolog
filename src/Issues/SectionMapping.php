@@ -20,7 +20,7 @@ class SectionMapping
     {
         return collect(self::SECTION_MAPPINGS)
             ->when(empty($replacements), fn (Collection $collection) => $collection->values()->unique())
-            ->when(!empty($replacements), function (Collection $collection) use ($replacements) {
+            ->when(! empty($replacements), function (Collection $collection) use ($replacements) {
                 return $collection
                     ->filter(fn (string $_, string $placeholder) => isset($replacements[$placeholder]) && empty($replacements[$placeholder]))
                     ->values()

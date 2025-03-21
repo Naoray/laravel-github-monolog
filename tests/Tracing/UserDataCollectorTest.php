@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\UserDataCollector;
 
 beforeEach(function () {
-    $this->collector = new UserDataCollector();
+    $this->collector = new UserDataCollector;
 });
 
 afterEach(function () {

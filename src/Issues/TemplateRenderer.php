@@ -32,7 +32,7 @@ class TemplateRenderer
     public function render(string $template, LogRecord $record, ?string $signature = null): string
     {
         $replacements = $this->buildReplacements($record, $signature);
-        
+
         return $this->sectionCleaner->clean($template, $replacements);
     }
 
