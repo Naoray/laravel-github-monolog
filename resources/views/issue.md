@@ -1,4 +1,3 @@
-## Error Details
 **Log Level:** {level}
 **Class:** {class}
 **Message:** {message}

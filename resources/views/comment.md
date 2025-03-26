@@ -1,4 +1,3 @@
-## Error Details
 **Type:** {level}
 **Message:** {message}
 

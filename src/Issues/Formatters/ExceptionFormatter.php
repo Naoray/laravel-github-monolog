@@ -29,7 +29,7 @@ class ExceptionFormatter implements FormatterInterface
         return [
             'message' => $exception->getMessage(),
             'simplified_stack_trace' => $header."\n[stacktrace]\n".$this->stackTraceFormatter->format($stackTrace),
-            'full_stack_trace' => $header."\n[stacktrace]\n".$stackTrace,
+            'full_stack_trace' => $header."\n[stacktrace]\n".$this->stackTraceFormatter->format($stackTrace, collapseVendorFrames: false),
         ];
     }
 
