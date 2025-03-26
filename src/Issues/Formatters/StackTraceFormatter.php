@@ -9,11 +9,11 @@ class StackTraceFormatter
 {
     private const VENDOR_FRAME_PLACEHOLDER = '[Vendor frames]';
 
-    public function format(string $stackTrace): string
+    public function format(string $stackTrace, bool $collapseVendorFrames = true): string
     {
         return collect(explode("\n", $stackTrace))
             ->filter(fn ($line) => ! empty(trim($line)))
-            ->map(function ($line) {
+            ->map(function ($line) use ($collapseVendorFrames) {
                 if (trim($line) === '"}') {
                     return '';
                 }
@@ -28,18 +28,25 @@ class StackTraceFormatter
 
                 $line = str_replace(base_path(), '', $line);
 
-                // Stack trace lines start with #\d. Here we pad the numbers 0-9
-                // with a preceding zero to keep everything in line visually.
-                $line = preg_replace('/^(\e\[0m)#(\d)(?!\d)/', '$1#0$2', $line);
+                $line = $this->padStackTraceLine($line);
 
-                if ($this->isVendorFrame($line)) {
+                if ($collapseVendorFrames && $this->isVendorFrame($line)) {
                     return self::VENDOR_FRAME_PLACEHOLDER;
                 }
 
                 return $line;
             })
-            ->pipe($this->collapseVendorFrames(...))
+            ->pipe(fn ($lines) => $collapseVendorFrames ? $this->collapseVendorFrames($lines) : $lines)
             ->join("\n");
+    }
+
+    /**
+     * Stack trace lines start with #\d. Here we pad the numbers 0-9
+     * with a preceding zero to keep everything in line visually.
+     */
+    public function padStackTraceLine(string $line): string
+    {
+        return (string) preg_replace('/^#(\d)(?!\d)/', '#0$1', $line);
     }
 
     private function formatInitialException(string $line): array
@@ -56,6 +63,7 @@ class StackTraceFormatter
     {
         return str_contains((string) $line, self::VENDOR_FRAME_PLACEHOLDER)
             || str_contains((string) $line, '/vendor/') && ! Str::isMatch("/BoundMethod\.php\([0-9]+\): App/", $line)
+            || str_contains((string) $line, '/artisan')
             || str_ends_with($line, '{main}');
     }
 

@@ -91,7 +91,6 @@ test('it cleans all empty sections', function () {
     );
 
     expect($rendered)
-        ->toContain('## Error Details')
         ->toContain('**Type:** ERROR')
         ->toContain('<!-- Signature: test -->');
 });

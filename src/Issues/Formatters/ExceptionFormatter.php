@@ -18,18 +18,29 @@ class ExceptionFormatter implements FormatterInterface
 
     public function format(LogRecord $record): array
     {
-        $exception = $record->context['exception'] ?? null;
-        if (! $exception instanceof Throwable) {
+        $exceptionData = $record->context['exception'] ?? null;
+
+        // Handle case where the exception is stored as a string instead of a Throwable object
+        if (is_string($exceptionData) &&
+            (str_contains($exceptionData, 'Stack trace:') || preg_match('/#\d+ \//', $exceptionData))) {
+
+            return $this->formatExceptionString($exceptionData);
+        }
+
+        // Original code for Throwable objects
+        if (! $exceptionData instanceof Throwable) {
             return [];
         }
 
-        $header = $this->formatHeader($exception);
-        $stackTrace = $exception->getTraceAsString();
+        $message = $this->formatMessage($exceptionData->getMessage());
+        $stackTrace = $exceptionData->getTraceAsString();
+
+        $header = $this->formatHeader($exceptionData);
 
         return [
-            'message' => $exception->getMessage(),
-            'simplified_stack_trace' => $header."\n[stacktrace]\n".$this->stackTraceFormatter->format($stackTrace),
-            'full_stack_trace' => $header."\n[stacktrace]\n".$stackTrace,
+            'message' => $message,
+            'simplified_stack_trace' => $header."\n[stacktrace]\n".$this->stackTraceFormatter->format($stackTrace, true),
+            'full_stack_trace' => $header."\n[stacktrace]\n".$this->stackTraceFormatter->format($stackTrace, false),
         ];
     }
 
@@ -52,6 +63,15 @@ class ExceptionFormatter implements FormatterInterface
             ->toString();
     }
 
+    private function formatMessage(string $message): string
+    {
+        if (! str_contains($message, 'Stack trace:')) {
+            return $message;
+        }
+
+        return (string) preg_replace('/\s+in\s+\/[^\s]+\.php:\d+.*$/s', '', $message);
+    }
+
     private function formatHeader(Throwable $exception): string
     {
         return sprintf(
@@ -62,5 +82,49 @@ class ExceptionFormatter implements FormatterInterface
             str_replace(base_path(), '', $exception->getFile()),
             $exception->getLine()
         );
+    }
+
+    /**
+     * Format an exception stored as a string.
+     */
+    private function formatExceptionString(string $exceptionString): array
+    {
+        $message = $exceptionString;
+        $stackTrace = '';
+
+        // Try to extract the message and stack trace
+        if (preg_match('/^(.*?)(?:Stack trace:|#\d+ \/)/', $exceptionString, $matches)) {
+            $message = trim($matches[1]);
+
+            // Remove file/line info if present
+            if (preg_match('/^(.*) in \/[^\s]+(?:\.php)? on line \d+$/s', $message, $fileMatches)) {
+                $message = trim($fileMatches[1]);
+            }
+
+            // Extract stack trace
+            $traceStart = strpos($exceptionString, 'Stack trace:');
+            if ($traceStart === false) {
+                // Find the first occurrence of a stack frame pattern
+                if (preg_match('/#\d+ \//', $exceptionString, $matches, PREG_OFFSET_CAPTURE)) {
+                    $traceStart = $matches[0][1];
+                }
+            }
+
+            if ($traceStart !== false) {
+                $stackTrace = substr($exceptionString, $traceStart);
+            }
+        }
+
+        $header = sprintf(
+            '[%s] Exception: %s at unknown:0',
+            now()->format('Y-m-d H:i:s'),
+            $message
+        );
+
+        return [
+            'message' => $this->formatMessage($message),
+            'simplified_stack_trace' => $header."\n[stacktrace]\n".$this->stackTraceFormatter->format($stackTrace, true),
+            'full_stack_trace' => $header."\n[stacktrace]\n".$this->stackTraceFormatter->format($stackTrace, false),
+        ];
     }
 }
