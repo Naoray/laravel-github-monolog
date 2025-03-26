@@ -65,7 +65,7 @@ class ExceptionFormatter implements FormatterInterface
 
     private function formatMessage(string $message): string
     {
-        if (!str_contains($message, 'Stack trace:')) {
+        if (! str_contains($message, 'Stack trace:')) {
             return $message;
         }
 

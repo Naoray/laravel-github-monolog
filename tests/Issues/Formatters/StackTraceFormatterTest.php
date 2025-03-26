@@ -58,7 +58,7 @@ TRACE;
 });
 
 test('it replaces base path in stack traces', function () {
-    $formatter = new StackTraceFormatter();
+    $formatter = new StackTraceFormatter;
     $basePath = base_path();
 
     $stackTrace = <<<TRACE
@@ -69,26 +69,26 @@ TRACE;
 
     // Test simplified trace (with vendor frame collapsing)
     expect($formatter->format($stackTrace, true))
-        ->toBe(<<<TRACE
-#00 /app/Services/ImageService.php(25): Spatie\\Image\\Image->loadFile()
+        ->toBe(<<<'TRACE'
+#00 /app/Services/ImageService.php(25): Spatie\Image\Image->loadFile()
 [Vendor frames]
 TRACE
         );
 
     // Test full trace (without vendor frame collapsing)
     expect($formatter->format($stackTrace, false))
-        ->toBe(<<<TRACE
-#00 /app/Services/ImageService.php(25): Spatie\\Image\\Image->loadFile()
-#01 /vendor/laravel/framework/src/Foundation/Application.php(1235): App\\Services\\ImageService->process()
-#02 /artisan(13): Illuminate\\Foundation\\Application->run()
+        ->toBe(<<<'TRACE'
+#00 /app/Services/ImageService.php(25): Spatie\Image\Image->loadFile()
+#01 /vendor/laravel/framework/src/Foundation/Application.php(1235): App\Services\ImageService->process()
+#02 /artisan(13): Illuminate\Foundation\Application->run()
 TRACE
         );
 });
 
 test('it handles empty base path correctly', function () {
-    $formatter = new StackTraceFormatter();
+    $formatter = new StackTraceFormatter;
 
-    $stackTrace = <<<TRACE
+    $stackTrace = <<<'TRACE'
 #0 /absolute/path/to/app/Services/ImageService.php(25): someMethod()
 #1 /vendor/package/src/File.php(10): otherMethod()
 TRACE;
@@ -96,7 +96,7 @@ TRACE;
     $result = $formatter->format($stackTrace, true);
 
     expect($result)
-        ->toBe(<<<TRACE
+        ->toBe(<<<'TRACE'
 #00 /absolute/path/to/app/Services/ImageService.php(25): someMethod()
 [Vendor frames]
 TRACE
@@ -104,9 +104,9 @@ TRACE
 });
 
 test('it preserves non-stack-trace lines', function () {
-    $formatter = new StackTraceFormatter();
+    $formatter = new StackTraceFormatter;
 
-    $stackTrace = <<<TRACE
+    $stackTrace = <<<'TRACE'
 [2024-03-21 12:00:00] Error: Something went wrong
 #0 /app/Services/Service.php(25): someMethod()
 #1 /vendor/package/src/File.php(10): otherMethod()
@@ -115,7 +115,7 @@ TRACE;
     $result = $formatter->format($stackTrace, true);
 
     expect($result)
-        ->toBe(<<<TRACE
+        ->toBe(<<<'TRACE'
 [2024-03-21 12:00:00] Error: Something went wrong
 #00 /app/Services/Service.php(25): someMethod()
 [Vendor frames]
@@ -124,7 +124,7 @@ TRACE
 });
 
 test('it recognizes artisan lines as vendor frames', function () {
-    $formatter = new StackTraceFormatter();
+    $formatter = new StackTraceFormatter;
     $basePath = base_path();
 
     $stackTrace = <<<TRACE
@@ -135,7 +135,7 @@ TRACE;
 
     // Test simplified trace (with vendor frame collapsing)
     expect($formatter->format($stackTrace, true))
-        ->toBe(<<<TRACE
+        ->toBe(<<<'TRACE'
 #00 /app/Console/Commands/ImportCommand.php(25): handle()
 [Vendor frames]
 TRACE
@@ -143,19 +143,19 @@ TRACE
 
     // Test that artisan lines are preserved in full trace
     expect($formatter->format($stackTrace, false))
-        ->toBe(<<<TRACE
+        ->toBe(<<<'TRACE'
 #00 /app/Console/Commands/ImportCommand.php(25): handle()
-#01 /artisan(13): Illuminate\\Foundation\\Application->run()
+#01 /artisan(13): Illuminate\Foundation\Application->run()
 #02 /artisan(37): require()
 TRACE
         );
 });
 
 test('it collapses multiple artisan lines into single vendor frame', function () {
-    $formatter = new StackTraceFormatter();
+    $formatter = new StackTraceFormatter;
 
-    $stackTrace = <<<TRACE
-#0 /artisan(13): Illuminate\\Foundation\\Application->run()
+    $stackTrace = <<<'TRACE'
+#0 /artisan(13): Illuminate\Foundation\Application->run()
 #1 /vendor/laravel/framework/src/Foundation/Application.php(1235): handle()
 #2 /artisan(37): require()
 TRACE;

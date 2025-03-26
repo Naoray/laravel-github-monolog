@@ -43,9 +43,6 @@ class StackTraceFormatter
     /**
      * Stack trace lines start with #\d. Here we pad the numbers 0-9
      * with a preceding zero to keep everything in line visually.
-     *
-     * @param string $line
-     * @return string
      */
     public function padStackTraceLine(string $line): string
     {
