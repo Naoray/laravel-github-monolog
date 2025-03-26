@@ -28,9 +28,7 @@ class StackTraceFormatter
 
                 $line = str_replace(base_path(), '', $line);
 
-                // Stack trace lines start with #\d. Here we pad the numbers 0-9
-                // with a preceding zero to keep everything in line visually.
-                $line = preg_replace('/^#(\d)(?!\d)/', '#0$1', $line);
+                $line = $this->padStackTraceLine($line);
 
                 if ($collapseVendorFrames && $this->isVendorFrame($line)) {
                     return self::VENDOR_FRAME_PLACEHOLDER;
@@ -40,6 +38,18 @@ class StackTraceFormatter
             })
             ->pipe(fn ($lines) => $collapseVendorFrames ? $this->collapseVendorFrames($lines) : $lines)
             ->join("\n");
+    }
+
+    /**
+     * Stack trace lines start with #\d. Here we pad the numbers 0-9
+     * with a preceding zero to keep everything in line visually.
+     *
+     * @param string $line
+     * @return string
+     */
+    public function padStackTraceLine(string $line): string
+    {
+        return (string) preg_replace('/^#(\d)(?!\d)/', '#0$1', $line);
     }
 
     private function formatInitialException(string $line): array

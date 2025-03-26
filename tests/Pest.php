@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Arr;
 use Monolog\Level;
 use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Tests\TestCase;
@@ -14,12 +15,14 @@ function createLogRecord(
     ?Throwable $exception = null,
     ?string $signature = null,
 ): LogRecord {
+    $context = Arr::has($context, 'exception') ? $context : array_merge($context, ['exception' => $exception]);
+
     return new LogRecord(
         datetime: new \DateTimeImmutable,
         channel: 'test',
         level: $level,
         message: $message,
-        context: array_merge($context, ['exception' => $exception]),
+        context: $context,
         extra: array_merge($extra, ['github_issue_signature' => $signature]),
     );
 }
