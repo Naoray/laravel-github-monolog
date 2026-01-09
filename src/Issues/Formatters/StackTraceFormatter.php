@@ -18,9 +18,10 @@ class StackTraceFormatter
     {
         return collect(explode("\n", $stackTrace))
             ->filter(fn ($line) => ! empty(trim($line)))
-            ->map(function ($line) use ($collapseVendorFrames) {
+            ->flatMap(function ($line) use ($collapseVendorFrames) {
+                /** @var string $line */
                 if (trim($line) === '"}') {
-                    return '';
+                    return [''];
                 }
 
                 if (str_contains($line, '{"exception":"[object] ')) {
@@ -28,7 +29,7 @@ class StackTraceFormatter
                 }
 
                 if (! Str::isMatch('/#[0-9]+ /', $line)) {
-                    return $line;
+                    return [$line];
                 }
 
                 $line = str_replace(base_path(), '', $line);
@@ -36,10 +37,10 @@ class StackTraceFormatter
                 $line = $this->padStackTraceLine($line);
 
                 if ($collapseVendorFrames && $this->isVendorFrame($line)) {
-                    return self::VENDOR_FRAME_PLACEHOLDER;
+                    return [self::VENDOR_FRAME_PLACEHOLDER];
                 }
 
-                return $line;
+                return [$line];
             })
             ->pipe(fn ($lines) => $collapseVendorFrames ? $this->collapseVendorFrames($lines) : $lines)
             ->join("\n");
