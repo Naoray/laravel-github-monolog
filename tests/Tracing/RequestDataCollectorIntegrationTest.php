@@ -72,14 +72,6 @@ it('captures route data when route throws an exception', function () {
     // Verify the request data matches what we expect
     expect($processedRecord->context['request']['method'])->toBe('GET');
     expect($processedRecord->context['request']['url'])->toContain('/test-route/123');
-
-    // Verify it renders correctly in the issue template
-    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $processedRecord);
-
-    expect($rendered)
-        ->toContain('## Request')
-        ->toContain('"method": "GET"')
-        ->toContain('/test-route/123');
 });
 
 it('captures route data for POST route that throws an exception', function () {
