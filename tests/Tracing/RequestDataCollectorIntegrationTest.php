@@ -47,7 +47,7 @@ it('captures route data when route throws an exception', function () {
     expect($testHandler->getRecords())->not->toBeEmpty();
 
     // Get the error level record
-    $errorRecords = array_filter($testHandler->getRecords(), fn($record) => $record['level'] >= Level::Error->value);
+    $errorRecords = array_filter($testHandler->getRecords(), fn ($record) => $record['level'] >= Level::Error->value);
     expect($errorRecords)->not->toBeEmpty();
 
     $logRecord = $errorRecords[array_key_first($errorRecords)];
@@ -108,7 +108,7 @@ it('captures route data for POST route that throws an exception', function () {
     // Assert - Verify that a log record was created with route data
     expect($testHandler->getRecords())->not->toBeEmpty();
 
-    $errorRecords = array_filter($testHandler->getRecords(), fn($record) => $record['level'] >= Level::Error->value);
+    $errorRecords = array_filter($testHandler->getRecords(), fn ($record) => $record['level'] >= Level::Error->value);
     expect($errorRecords)->not->toBeEmpty();
 
     $logRecord = $errorRecords[array_key_first($errorRecords)];

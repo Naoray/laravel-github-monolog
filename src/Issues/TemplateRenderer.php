@@ -117,5 +117,4 @@ class TemplateRenderer
 
         return 'Exception';
     }
-
 }

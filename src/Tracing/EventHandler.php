@@ -4,16 +4,14 @@ namespace Naoray\LaravelGithubMonolog\Tracing;
 
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Console\Events\CommandStarting;
-use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Client\Events\RequestSending;
 use Illuminate\Http\Client\Events\ResponseReceived;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Routing\Events\RouteMatched;
 use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
-use Naoray\LaravelGithubMonolog\Tracing\OutgoingRequestResponseCollector;
-use Naoray\LaravelGithubMonolog\Tracing\OutgoingRequestSendingCollector;
 
 class EventHandler
 {

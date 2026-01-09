@@ -18,8 +18,6 @@ interface EventDrivenCollectorInterface
 {
     /**
      * Check if this collector is enabled.
-     *
-     * @return bool
      */
     public function isEnabled(): bool;
 }

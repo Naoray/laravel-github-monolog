@@ -48,8 +48,6 @@ class VendorFrameDetector
 
     /**
      * Check if a formatted stack trace line is a vendor frame
-     *
-     * @param  string  $line
      */
     public function isVendorFrameLine(string $line): bool
     {

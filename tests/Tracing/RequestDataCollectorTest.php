@@ -4,7 +4,6 @@ use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\RequestDataCollector;
-use Symfony\Component\HttpFoundation\HeaderBag;
 
 beforeEach(function () {
     $this->collector = new RequestDataCollector;

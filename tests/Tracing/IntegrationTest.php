@@ -4,14 +4,11 @@ use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Context;
-use Illuminate\Support\Facades\Event;
 use Monolog\Level;
 use Naoray\LaravelGithubMonolog\Tracing\ContextProcessor;
 use Naoray\LaravelGithubMonolog\Tracing\EnvironmentCollector;
 use Naoray\LaravelGithubMonolog\Tracing\QueryCollector;
 use Naoray\LaravelGithubMonolog\Tracing\RequestDataCollector;
-use Naoray\LaravelGithubMonolog\Tracing\UserDataCollector;
-use Symfony\Component\HttpFoundation\HeaderBag;
 
 beforeEach(function () {
     Context::flush();

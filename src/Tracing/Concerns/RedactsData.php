@@ -12,7 +12,6 @@ trait RedactsData
     /**
      * Redact sensitive headers from a HeaderBag.
      *
-     * @param  HeaderBag  $headers
      * @param  array<string>  $sensitiveKeys
      * @return array<string, array<string>>
      */
@@ -77,7 +76,6 @@ trait RedactsData
     /**
      * Redact a header value based on its type.
      *
-     * @param  string  $key
      * @param  array<string>  $values
      * @return array<string>
      */
