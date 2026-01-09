@@ -119,7 +119,9 @@ This will copy the templates to `resources/views/vendor/github-monolog/` where y
 - `comment.md`: Template for comments on existing issues
 - `previous_exception.md`: Template for previous exceptions in the chain
 
-> **Important**: The templates use HTML comments as section markers (e.g. `<!-- stacktrace:start -->` and `<!-- stacktrace:end -->`). These markers are used to intelligently remove empty sections from the rendered output. Please keep these markers intact when customizing the templates.
+> **Important**: 
+> - The templates use HTML comments as section markers (e.g. `<!-- stacktrace:start -->` and `<!-- stacktrace:end -->`). These markers are used to intelligently remove empty sections from the rendered output. Please keep these markers intact when customizing the templates.
+> - If you've previously published and customized templates, you may need to republish them to get the latest structure with triage headers and collapsible sections. Compare your custom templates with the new defaults and migrate any customizations.
 
 Available template variables:
 - `{level}`: Log level (error, warning, etc.)
@@ -184,6 +186,8 @@ When buffering is active:
   - With `flush_on_overflow = false`: Only the oldest record is removed
 
 ### Tracing
+
+> **Note:** Tracing is opt-in and disabled by default. To enable tracing capabilities, you must add the `tracing` configuration to your `config/logging.php` file under the `github` channel configuration.
 
 The package includes optional tracing capabilities that allow you to track requests, user data, queries, and more in your logs. Enable this feature through your configuration:
 
