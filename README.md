@@ -124,12 +124,26 @@ This will copy the templates to `resources/views/vendor/github-monolog/` where y
 Available template variables:
 - `{level}`: Log level (error, warning, etc.)
 - `{message}`: The error message or log content
+- `{class}`: Exception class name
+- `{signature}`: Internal signature used for deduplication
+- `{timestamp}`: Timestamp when the error occurred (format: Y-m-d H:i:s)
+- `{environment_name}`: Environment name (e.g., production, staging) from APP_ENV
+- `{route_summary}`: HTTP method and path (e.g., "GET /api/users")
+- `{user_summary}`: User ID or "Unauthenticated"
 - `{simplified_stack_trace}`: A cleaned up stack trace
 - `{full_stack_trace}`: The complete stack trace
 - `{previous_exceptions}`: Details of any previous exceptions
-- `{context}`: Additional context data
-- `{extra}`: Extra log data
-- `{signature}`: Internal signature used for deduplication
+- `{environment}`: Full environment data (JSON)
+- `{request}`: Full request data (JSON)
+- `{route}`: Full route data (JSON)
+- `{user}`: Full user data (JSON)
+- `{queries}`: Recent database queries
+- `{job}`: Job context data (JSON)
+- `{command}`: Command context data (JSON)
+- `{outgoing_requests}`: Outgoing HTTP requests
+- `{session}`: Session data (JSON)
+- `{context}`: Additional context data (JSON)
+- `{extra}`: Extra log data (JSON)
 
 ### Deduplication
 

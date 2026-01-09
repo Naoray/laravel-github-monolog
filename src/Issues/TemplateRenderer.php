@@ -84,6 +84,10 @@ class TemplateRenderer
             '{message}' => $message,
             '{class}' => $class,
             '{signature}' => $signature ?? '',
+            '{timestamp}' => $this->formatTimestamp($record),
+            '{route_summary}' => $this->formatRouteSummary($record),
+            '{user_summary}' => $this->formatUserSummary($record),
+            '{environment_name}' => $this->extractEnvironmentName($record),
             '{simplified_stack_trace}' => $exceptionDetails['simplified_stack_trace'] ?? '',
             '{full_stack_trace}' => $exceptionDetails['full_stack_trace'] ?? '',
             '{previous_exceptions}' => $this->hasException($record) ? $this->previousExceptionFormatter->format($record) : '',
@@ -116,5 +120,59 @@ class TemplateRenderer
         }
 
         return 'Exception';
+    }
+
+    private function formatTimestamp(LogRecord $record): string
+    {
+        return $record->datetime->format('Y-m-d H:i:s');
+    }
+
+    private function formatRouteSummary(LogRecord $record): string
+    {
+        $request = $record->context['request'] ?? null;
+
+        if (! is_array($request)) {
+            return '';
+        }
+
+        $method = $request['method'] ?? '';
+        $url = $request['url'] ?? '';
+
+        if ($method === '' || $url === '') {
+            return '';
+        }
+
+        $parsedUrl = parse_url($url);
+        $path = $parsedUrl['path'] ?? '/';
+
+        return strtoupper($method).' '.$path;
+    }
+
+    private function formatUserSummary(LogRecord $record): string
+    {
+        $user = $record->context['user'] ?? null;
+
+        if (! is_array($user)) {
+            return 'Unauthenticated';
+        }
+
+        $id = $user['id'] ?? null;
+
+        if ($id === null) {
+            return 'Unauthenticated';
+        }
+
+        return 'User ID: '.$id;
+    }
+
+    private function extractEnvironmentName(LogRecord $record): string
+    {
+        $environment = $record->context['environment'] ?? null;
+
+        if (! is_array($environment)) {
+            return '';
+        }
+
+        return $environment['APP_ENV'] ?? $environment['app_env'] ?? '';
     }
 }

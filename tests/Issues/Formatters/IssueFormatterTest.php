@@ -15,7 +15,7 @@ test('it formats basic log records', function () {
     expect($formatted)
         ->toBeInstanceOf(Formatted::class)
         ->and($formatted->title)->toContain('[ERROR] Test error message')
-        ->and($formatted->body)->toContain('**Log Level:** ERROR')
+        ->and($formatted->body)->toContain('**Level:** ERROR')
         ->and($formatted->body)->toContain('Test error message');
 });
 
@@ -29,7 +29,7 @@ test('it formats exceptions with file and line information', function () {
         ->toContain('.php:')
         ->and($formatted->body)
         ->toContain('Test exception')
-        ->toContain('Stack Trace');
+        ->toContain('<summary>📋 Stack Trace</summary>');
 });
 
 test('it truncates long titles', function () {

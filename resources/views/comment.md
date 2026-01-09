@@ -1,10 +1,22 @@
-**Type:** {level}
-**Message:** {message}
+- **Type:** {level}
+- **Message:** {message}
+- **Timestamp:** {timestamp}
+
+<!-- request:start -->
+<details>
+<summary>📥 Request</summary>
+
+**Route:** {route_summary}
+
+{request}
+
+</details>
+<!-- request:end -->
 
 <!-- stacktrace:start -->
----
+<details>
+<summary>📋 Stack Trace</summary>
 
-## Stack Trace
 ```shell
 {simplified_stack_trace}
 ```
@@ -15,89 +27,85 @@
 ```shell
 {full_stack_trace}
 ```
+
 </details>
 
 <!-- prev-stacktrace:start -->
 <details>
 <summary>🔍 View Previous Exceptions</summary>
 
-```shell
 {previous_exceptions}
-```
+
 </details>
 <!-- prev-stacktrace:end -->
+</details>
 <!-- stacktrace:end -->
 
-<!-- environment:start -->
----
-## Environment
-{environment}
-<!-- environment:end -->
-
-<!-- request:start -->
----
-## Request
-{request}
-<!-- request:end -->
-
-<!-- route:start -->
----
-## Route
-{route}
-<!-- route:end -->
-
-<!-- user:start -->
----
-## User
-{user}
-<!-- user:end -->
-
 <!-- queries:start -->
----
-## Recent Queries
+<details>
+<summary>🗄️ Recent Queries</summary>
+
 {queries}
+
+</details>
 <!-- queries:end -->
 
 <!-- job:start -->
----
-## Job Context
+<details>
+<summary>⚙️ Job Context</summary>
+
 {job}
+
+</details>
 <!-- job:end -->
 
 <!-- command:start -->
----
-## Command Context
+<details>
+<summary>💻 Command Context</summary>
+
 {command}
+
+</details>
 <!-- command:end -->
 
 <!-- outgoing_requests:start -->
----
-## Outgoing Requests
+<details>
+<summary>📤 Outgoing Requests</summary>
+
 {outgoing_requests}
+
+</details>
 <!-- outgoing_requests:end -->
 
 <!-- session:start -->
----
-## Session
+<details>
+<summary>🔐 Session</summary>
+
 {session}
+
+</details>
 <!-- session:end -->
 
 <!-- context:start -->
----
+<details>
+<summary>📦 Context</summary>
 
-## Context
 ```json
 {context}
 ```
+
+</details>
 <!-- context:end -->
 
 <!-- extra:start -->
----
+<details>
+<summary>➕ Extra Data</summary>
 
-## Extra Data
 ```json
 {extra}
 ```
+
+</details>
 <!-- extra:end -->
 
 <!-- Signature: {signature} -->
