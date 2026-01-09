@@ -28,6 +28,60 @@
 <!-- prev-stacktrace:end -->
 <!-- stacktrace:end -->
 
+<!-- environment:start -->
+---
+## Environment
+{environment}
+<!-- environment:end -->
+
+<!-- request:start -->
+---
+## Request
+{request}
+<!-- request:end -->
+
+<!-- route:start -->
+---
+## Route
+{route}
+<!-- route:end -->
+
+<!-- user:start -->
+---
+## User
+{user}
+<!-- user:end -->
+
+<!-- queries:start -->
+---
+## Recent Queries
+{queries}
+<!-- queries:end -->
+
+<!-- job:start -->
+---
+## Job Context
+{job}
+<!-- job:end -->
+
+<!-- command:start -->
+---
+## Command Context
+{command}
+<!-- command:end -->
+
+<!-- outgoing_requests:start -->
+---
+## Outgoing Requests
+{outgoing_requests}
+<!-- outgoing_requests:end -->
+
+<!-- session:start -->
+---
+## Session
+{session}
+<!-- session:end -->
+
 <!-- context:start -->
 ---
 
