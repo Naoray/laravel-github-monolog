@@ -2,6 +2,19 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.4.0 - 2026-01-09
+
+### What's Changed
+
+* Bump dependabot/fetch-metadata from 2.3.0 to 2.4.0 by @dependabot[bot] in https://github.com/Naoray/laravel-github-monolog/pull/16
+* Bump aglipanci/laravel-pint-action from 2.5 to 2.6 by @dependabot[bot] in https://github.com/Naoray/laravel-github-monolog/pull/18
+* Bump actions/checkout from 4 to 6 by @dependabot[bot] in https://github.com/Naoray/laravel-github-monolog/pull/21
+* Bump stefanzweifel/git-auto-commit-action from 5 to 7 by @dependabot[bot] in https://github.com/Naoray/laravel-github-monolog/pull/20
+* feat(tracing): add context collectors and processor for enhanced logging by @Naoray in https://github.com/Naoray/laravel-github-monolog/pull/22
+* refactor(templates): restructure issue and comment templates with triage header by @Naoray in https://github.com/Naoray/laravel-github-monolog/pull/23
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.3.0...v3.4.0
+
 ## v3.3.0 - 2025-03-26
 
 ### What's Changed
