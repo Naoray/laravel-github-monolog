@@ -185,13 +185,31 @@ When buffering is active:
 
 ### Tracing
 
-The package includes optional tracing capabilities that allow you to track requests and user data in your logs. Enable this feature through your configuration:
+The package includes optional tracing capabilities that allow you to track requests, user data, queries, and more in your logs. Enable this feature through your configuration:
 
 ```php
 'tracing' => [
-    'enabled' => true,    // Master switch for all tracing
-    'requests' => true,   // Enable request tracing
-    'user' => true,      // Enable user tracing
+    'enabled' => true,           // Master switch for all tracing
+    'requests' => true,          // Enable request tracing
+    'route' => true,            // Enable route tracing
+    'user' => true,             // Enable user tracing
+    'queries' => [               // Database query tracing
+        'enabled' => true,
+        'limit' => 10,           // Maximum number of queries to track
+    ],
+    'jobs' => true,             // Enable job context tracing
+    'commands' => true,         // Enable command context tracing
+    'outgoing_requests' => [    // Outgoing HTTP request tracing
+        'enabled' => true,
+        'limit' => 5,           // Maximum number of outgoing requests to track
+    ],
+    'environment' => true,      // Enable environment data collection
+    'session' => true,          // Enable session data collection
+    'redact' => [               // Data redaction configuration
+        'headers' => [],        // Additional headers to redact (beyond defaults)
+        'payload_fields' => [], // Additional payload fields to redact (beyond defaults)
+        'query_bindings' => false, // Whether to redact query bindings
+    ],
 ]
 ```
 
@@ -202,6 +220,15 @@ When request tracing is enabled, the following data is automatically logged:
 - Route information
 - Headers (filtered to remove sensitive data)
 - Request body
+
+#### Route Tracing
+When route tracing is enabled, the following route information is logged:
+- Route name
+- URI pattern
+- Route parameters
+- Controller action
+- Middleware stack
+- HTTP methods
 
 #### User Tracing
 By default, user tracing only logs the user identifier to comply with GDPR regulations. However, you can customize the user data being logged by setting your own resolver:
@@ -218,6 +245,57 @@ UserDataCollector::setUserDataResolver(function ($user) {
 ```
 
 > **Note:** When customizing user data collection, ensure you comply with relevant privacy regulations and only collect necessary information.
+
+#### Query Tracing
+When query tracing is enabled, recent database queries are logged with:
+- SQL statement
+- Query bindings (can be redacted)
+- Execution time
+- Connection name
+
+You can limit the number of queries tracked using the `limit` configuration option.
+
+#### Job Tracing
+When job tracing is enabled, queue job context is logged including:
+- Job name and class
+- Queue name
+- Connection name
+- Attempt number
+- Job payload (sensitive data is redacted)
+
+#### Command Tracing
+When command tracing is enabled, artisan command context is logged including:
+- Command name
+- Command arguments
+- Command options (sensitive data is redacted)
+
+#### Outgoing Request Tracing
+When outgoing request tracing is enabled, HTTP requests made by your application are logged with:
+- Request URL and method
+- Response status code
+- Request duration
+- Request headers
+
+You can limit the number of outgoing requests tracked using the `limit` configuration option.
+
+#### Environment Tracing
+When environment tracing is enabled, application environment data is collected including:
+- App environment and debug mode
+- Laravel and PHP versions
+- Hostname
+- Git commit (if configured)
+
+#### Session Tracing
+When session tracing is enabled, session data is logged including:
+- Session data (sensitive fields are redacted)
+- Flash data (old and new)
+
+#### Data Redaction
+The package automatically redacts sensitive data from headers, payloads, and query bindings. You can customize what gets redacted:
+
+- `headers`: Additional header names to redact beyond the default sensitive headers
+- `payload_fields`: Additional payload field names to redact beyond the default sensitive fields
+- `query_bindings`: Set to `true` to redact all query bindings (default: `false`)
 
 ### Signature Generator
 
