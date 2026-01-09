@@ -30,5 +30,11 @@ class TestCase extends Orchestra
             'database' => ':memory:',
             'prefix' => '',
         ]);
+
+        $app['config']->set('logging.channels.github.tracing', [
+            'enabled' => true,
+            'requests' => true,
+            'user' => true,
+        ]);
     }
 }

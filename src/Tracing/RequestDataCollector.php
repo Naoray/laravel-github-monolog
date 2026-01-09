@@ -2,53 +2,62 @@
 
 namespace Naoray\LaravelGithubMonolog\Tracing;
 
-use Illuminate\Routing\Events\RouteMatched;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Support\Facades\Context;
-use Illuminate\Support\Str;
+use Naoray\LaravelGithubMonolog\Tracing\Concerns\RedactsData;
+use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
 
-class RequestDataCollector
+class RequestDataCollector implements EventDrivenCollectorInterface
 {
-    public function __invoke(RouteMatched $event): void
+    use RedactsData;
+
+    public function isEnabled(): bool
     {
-        $route = $event->route;
+        $config = config('logging.channels.github.tracing', []);
+
+        return isset($config['requests']) && $config['requests'];
+    }
+
+    public function __invoke(RequestHandled $event): void
+    {
         $request = $event->request;
 
         Context::add('request', [
             'url' => $request->url(),
+            'full_url' => $request->fullUrl(),
             'method' => $request->method(),
-            'route' => $route->getName(),
-            'headers' => $this->filterSensitiveHeaders($request->headers->all()),
-            'body' => $request->all(),
+            'ip' => $request->ip(),
+            'ips' => $request->ips(),
+            'user_agent' => $request->userAgent(),
+            'headers' => $this->redactHeaders($request->headers),
+            'cookies' => $this->redactPayload($request->cookies->all()),
+            'query' => $request->query->all(),
+            'body' => $this->redactPayload($request->all()),
+            'files' => $this->formatFiles($request->allFiles()),
+            'size' => $request->header('Content-Length') ? (int) $request->header('Content-Length') : null,
         ]);
     }
 
-    private function filterSensitiveHeaders(array $headers): array
+    /**
+     * Format uploaded files metadata.
+     *
+     * @param  array<string, \Illuminate\Http\UploadedFile|array>  $files
+     * @return array<string, mixed>
+     */
+    private function formatFiles(array $files): array
     {
-        $sensitiveHeaders = $this->getSensitiveHeaders();
-
-        return collect($headers)
-            ->map(function ($value, $key) use ($sensitiveHeaders) {
-                if (Str::is($sensitiveHeaders, $key, true)) {
-                    return ['[FILTERED]'];
+        return collect($files)
+            ->map(function ($file) {
+                if (is_array($file)) {
+                    return $this->formatFiles($file);
                 }
 
-                return $value;
+                return [
+                    'name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
+                ];
             })
-            ->toArray();
-    }
-
-    private function getSensitiveHeaders(): array
-    {
-        $sensitiveHeaders = [
-            config('session.cookie'),
-            'remember_*',
-            'XSRF-TOKEN',
-            'cookie',
-        ];
-
-        return collect($sensitiveHeaders)
-            ->merge(collect($sensitiveHeaders)->map(fn ($header) => str($header)->replace('_', '-'))->toArray())
-            ->unique()
             ->toArray();
     }
 }
