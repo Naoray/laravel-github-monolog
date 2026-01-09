@@ -57,8 +57,8 @@ it('includes request route information in context section', function () {
 
     // Assert
     expect($rendered)
-        ->toContain('## Request')
-        ->toContain('## Route')
+        ->toContain('<summary>📥 Request</summary>')
+        ->toContain('<summary>🛣️ Route Details</summary>')
         ->toContain('"name": "api.users.index"')
         ->toContain('"url"')
         ->toContain('"method": "GET"');
@@ -100,9 +100,9 @@ it('includes both user and request data in context section', function () {
 
     // Assert - All should be in their respective sections
     expect($rendered)
-        ->toContain('## User')
-        ->toContain('## Request')
-        ->toContain('## Route')
+        ->toContain('<summary>👤 User Details</summary>')
+        ->toContain('<summary>📥 Request</summary>')
+        ->toContain('<summary>🛣️ Route Details</summary>')
         ->toContain('"id": 123')
         ->toContain('"email": "user@example.com"')
         ->toContain('"name": "api.posts.store"')

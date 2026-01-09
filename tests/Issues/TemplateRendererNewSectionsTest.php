@@ -29,7 +29,7 @@ it('renders environment section when environment data exists', function () {
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('## Environment')
+        ->toContain('<summary>🌍 Environment</summary>')
         ->toContain('"app_env": "testing"')
         ->toContain('"laravel_version": "11.0.0"')
         ->toContain('"php_version": "8.2.0"');
@@ -53,7 +53,7 @@ it('renders request section when request data exists', function () {
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('## Request')
+        ->toContain('<summary>📥 Request</summary>')
         ->toContain('example.com')
         ->toContain('"method": "POST"');
 });
@@ -72,7 +72,7 @@ it('renders route section when route data exists', function () {
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('## Route')
+        ->toContain('<summary>🛣️ Route Details</summary>')
         ->toContain('users.show')
         ->toContain('UserController@show')
         ->toContain('middleware');
@@ -91,7 +91,7 @@ it('renders user section when user data exists', function () {
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('## User')
+        ->toContain('<summary>👤 User Details</summary>')
         ->toContain('"id": 123')
         ->toContain('"email": "user@example.com"')
         ->toContain('"authenticated": true');
@@ -113,7 +113,7 @@ it('renders queries section when queries exist', function () {
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('## Recent Queries')
+        ->toContain('<summary>🗄️ Recent Queries</summary>')
         ->toContain('SELECT * FROM users WHERE id = ?')
         ->toContain('mysql')
         ->toContain('10.5');
@@ -132,7 +132,7 @@ it('renders job section when job data exists', function () {
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('## Job Context')
+        ->toContain('<summary>⚙️ Job Context</summary>')
         ->toContain('ProcessOrder')
         ->toContain('default')
         ->toContain('2');
@@ -151,7 +151,7 @@ it('renders command section when command data exists', function () {
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('## Command Context')
+        ->toContain('<summary>💻 Command Context</summary>')
         ->toContain('"name": "test:command"')
         ->toContain('"arguments"')
         ->toContain('"options"');
@@ -173,7 +173,7 @@ it('renders outgoing requests section when outgoing requests exist', function ()
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('## Outgoing Requests')
+        ->toContain('<summary>📤 Outgoing Requests</summary>')
         ->toContain('GET https://api.example.com/test')
         ->toContain('200')
         ->toContain('150.5');
@@ -191,7 +191,7 @@ it('renders session section when session data exists', function () {
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('## Session')
+        ->toContain('<summary>🔐 Session</summary>')
         ->toContain('"data"')
         ->toContain('"flash"');
 });

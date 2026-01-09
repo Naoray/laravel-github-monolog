@@ -36,7 +36,7 @@ it('includes context data in context section not extra', function () {
 
     // Assert - Context section should exist and contain the data
     // Note: The section cleaner removes empty sections, so if context exists, the section should be present
-    expect($rendered)->toContain('## Context');
+    expect($rendered)->toContain('<summary>📦 Context</summary>');
 
     // Extract context section (it might be cleaned if empty, so check if it exists first)
     if (preg_match('/<!-- context:start -->(.*?)<!-- context:end -->/s', $rendered, $contextMatches)) {
@@ -92,7 +92,7 @@ it('does not include context data in extra section', function () {
     }
 
     // Verify user data IS in User section (not context section, as it's now in its own section)
-    expect($rendered)->toContain('## User');
+    expect($rendered)->toContain('<summary>👤 User Details</summary>');
     // User data should be present in the rendered output
     expect($rendered)->toContain('456');
 });
