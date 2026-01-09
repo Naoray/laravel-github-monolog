@@ -94,3 +94,39 @@ test('it cleans all empty sections', function () {
         ->toContain('**Type:** ERROR')
         ->toContain('<!-- Signature: test -->');
 });
+
+test('it extracts clean message and stack trace when exception is a string in context', function () {
+    // Simulate the scenario where exception is logged as a string
+    $exceptionString = 'The calculation amount [123.45] does not match the expected total [456.78]. in /path/to/app/Calculations/Calculator.php:49
+Stack trace:
+#0 /path/to/app/Services/PaymentService.php(83): App\\Calculations\\Calculator->calculate()
+#1 /vendor/framework/src/Services/TransactionService.php(247): App\\Services\\PaymentService->process()';
+
+    $record = createLogRecord(
+        message: $exceptionString, // The full exception string is in the message
+        context: ['exception' => $exceptionString], // Also in context as string
+    );
+
+    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
+
+    // Should have clean short message (not the full exception string)
+    // Extract the message line to check it specifically
+    preg_match('/\*\*Message:\*\* (.+?)(?:\n|$)/', $rendered, $messageMatches);
+    $messageValue = $messageMatches[1] ?? '';
+
+    expect($messageValue)
+        ->toBe('The calculation amount [123.45] does not match the expected total [456.78].')
+        ->not->toContain('Stack trace:')
+        ->not->toContain('#0 /path/to/app/Services/PaymentService.php');
+
+    // Should have class populated (even if generic)
+    expect($rendered)
+        ->toContain('**Class:**')
+        ->toMatch('/\*\*Class:\*\* .+/'); // Class should have a value
+
+    // Should have stack traces populated
+    expect($rendered)
+        ->toContain('## Stack Trace')
+        ->toContain('[stacktrace]')
+        ->toContain('App\\Calculations\\Calculator->calculate()');
+});

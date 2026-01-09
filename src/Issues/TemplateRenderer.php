@@ -5,8 +5,13 @@ namespace Naoray\LaravelGithubMonolog\Issues;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Monolog\LogRecord;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\ContextFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Formatters\ExceptionFormatter;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\ExtraFormatter;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\OutgoingRequestFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Formatters\PreviousExceptionFormatter;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\QueryFormatter;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\StructuredDataFormatter;
 use Throwable;
 
 class TemplateRenderer
@@ -22,6 +27,11 @@ class TemplateRenderer
     public function __construct(
         private readonly ExceptionFormatter $exceptionFormatter,
         private readonly PreviousExceptionFormatter $previousExceptionFormatter,
+        private readonly StructuredDataFormatter $structuredDataFormatter,
+        private readonly QueryFormatter $queryFormatter,
+        private readonly OutgoingRequestFormatter $outgoingRequestFormatter,
+        private readonly ContextFormatter $contextFormatter,
+        private readonly ExtraFormatter $extraFormatter,
         private readonly TemplateSectionCleaner $sectionCleaner,
         private readonly StubLoader $stubLoader,
     ) {
@@ -63,41 +73,48 @@ class TemplateRenderer
     private function buildReplacements(LogRecord $record, ?string $signature): array
     {
         $exception = $this->getException($record);
-        $exceptionDetails = $exception instanceof Throwable ? $this->exceptionFormatter->format($record) : [];
+        $exceptionDetails = $this->exceptionFormatter->format($record);
+        $exceptionData = $record->context['exception'] ?? null;
+
+        $message = $exceptionDetails['message'] ?? $record->message;
+        $class = $this->resolveExceptionClass($exception, $exceptionData);
 
         return [
-            // Core replacements (always present)
             '{level}' => $record->level->getName(),
-            '{message}' => $record->message,
-            '{class}' => $exception instanceof Throwable ? get_class($exception) : '',
+            '{message}' => $message,
+            '{class}' => $class,
             '{signature}' => $signature ?? '',
-
-            // Section replacements (may be empty)
             '{simplified_stack_trace}' => $exceptionDetails['simplified_stack_trace'] ?? '',
             '{full_stack_trace}' => $exceptionDetails['full_stack_trace'] ?? '',
             '{previous_exceptions}' => $this->hasException($record) ? $this->previousExceptionFormatter->format($record) : '',
-            '{context}' => $this->formatContext($record->context),
-            '{extra}' => $this->formatExtra(Arr::except($record->extra, ['github_issue_signature'])),
+            '{environment}' => $this->structuredDataFormatter->format($record->context['environment'] ?? null),
+            '{request}' => $this->structuredDataFormatter->format($record->context['request'] ?? null),
+            '{route}' => $this->structuredDataFormatter->format($record->context['route'] ?? null),
+            '{user}' => $this->structuredDataFormatter->format($record->context['user'] ?? null),
+            '{queries}' => $this->queryFormatter->format($record->context['queries'] ?? null),
+            '{job}' => $this->structuredDataFormatter->format($record->context['job'] ?? null),
+            '{command}' => $this->structuredDataFormatter->format($record->context['command'] ?? null),
+            '{outgoing_requests}' => $this->outgoingRequestFormatter->format($record->context['outgoing_requests'] ?? null),
+            '{session}' => $this->structuredDataFormatter->format($record->context['session'] ?? null),
+            '{context}' => $this->contextFormatter->format($record->context),
+            '{extra}' => $this->extraFormatter->format(Arr::except($record->extra, ['github_issue_signature'])),
         ];
     }
 
-    private function formatContext(array $context): string
+    private function resolveExceptionClass(?Throwable $exception, mixed $exceptionData): string
     {
-        $context = Arr::except($context, ['exception']);
+        if ($exception instanceof Throwable) {
+            return get_class($exception);
+        }
 
-        if (empty($context)) {
+        if (! is_string($exceptionData)) {
             return '';
         }
 
-        return json_encode($context, JSON_PRETTY_PRINT);
-    }
-
-    private function formatExtra(array $extra): string
-    {
-        if (empty($extra)) {
-            return '';
+        if (preg_match('/^([A-Z][a-zA-Z0-9_\\\\]+Exception|Exception|Error|RuntimeException|InvalidArgumentException|LogicException)/', $exceptionData, $matches)) {
+            return $matches[1];
         }
 
-        return json_encode($extra, JSON_PRETTY_PRINT);
+        return 'Exception';
     }
 }

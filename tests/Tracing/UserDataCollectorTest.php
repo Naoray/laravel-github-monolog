@@ -2,6 +2,7 @@
 
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\UserDataCollector;
 
@@ -11,7 +12,7 @@ beforeEach(function () {
 
 afterEach(function () {
     // Reset to default resolver
-    UserDataCollector::setUserDataResolver(fn (Authenticatable $user) => ['id' => $user->getAuthIdentifier()]);
+    UserDataCollector::setUserDataResolver(null);
     Context::flush();
 });
 
@@ -25,7 +26,11 @@ it('collects default user data', function () {
     ($this->collector)($event);
 
     // Assert
-    expect(Context::get('user'))->toBe(['id' => 1]);
+    $userData = Context::get('user');
+    expect($userData)->toHaveKey('id');
+    expect($userData)->toHaveKey('authenticated');
+    expect($userData['id'])->toBe(1);
+    expect($userData['authenticated'])->toBeTrue();
 });
 
 it('uses custom user data resolver', function () {
@@ -41,4 +46,13 @@ it('uses custom user data resolver', function () {
 
     // Assert
     expect(Context::get('user'))->toBe(['custom' => 'data']);
+});
+
+it('collects user data on demand when not authenticated', function () {
+    Auth::shouldReceive('check')->once()->andReturn(false);
+
+    $this->collector->collect();
+
+    $userData = Context::get('user');
+    expect($userData)->toBe(['authenticated' => false]);
 });

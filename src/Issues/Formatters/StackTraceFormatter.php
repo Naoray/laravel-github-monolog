@@ -4,18 +4,24 @@ namespace Naoray\LaravelGithubMonolog\Issues\Formatters;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use Naoray\LaravelGithubMonolog\Deduplication\VendorFrameDetector;
 
 class StackTraceFormatter
 {
     private const VENDOR_FRAME_PLACEHOLDER = '[Vendor frames]';
 
+    public function __construct(
+        private readonly VendorFrameDetector $vendorFrameDetector = new VendorFrameDetector
+    ) {}
+
     public function format(string $stackTrace, bool $collapseVendorFrames = true): string
     {
         return collect(explode("\n", $stackTrace))
             ->filter(fn ($line) => ! empty(trim($line)))
-            ->map(function ($line) use ($collapseVendorFrames) {
+            ->flatMap(function ($line) use ($collapseVendorFrames) {
+                /** @var string $line */
                 if (trim($line) === '"}') {
-                    return '';
+                    return [''];
                 }
 
                 if (str_contains($line, '{"exception":"[object] ')) {
@@ -23,7 +29,7 @@ class StackTraceFormatter
                 }
 
                 if (! Str::isMatch('/#[0-9]+ /', $line)) {
-                    return $line;
+                    return [$line];
                 }
 
                 $line = str_replace(base_path(), '', $line);
@@ -31,10 +37,10 @@ class StackTraceFormatter
                 $line = $this->padStackTraceLine($line);
 
                 if ($collapseVendorFrames && $this->isVendorFrame($line)) {
-                    return self::VENDOR_FRAME_PLACEHOLDER;
+                    return [self::VENDOR_FRAME_PLACEHOLDER];
                 }
 
-                return $line;
+                return [$line];
             })
             ->pipe(fn ($lines) => $collapseVendorFrames ? $this->collapseVendorFrames($lines) : $lines)
             ->join("\n");
@@ -61,10 +67,11 @@ class StackTraceFormatter
 
     private function isVendorFrame($line): bool
     {
-        return str_contains((string) $line, self::VENDOR_FRAME_PLACEHOLDER)
-            || str_contains((string) $line, '/vendor/') && ! Str::isMatch("/BoundMethod\.php\([0-9]+\): App/", $line)
-            || str_contains((string) $line, '/artisan')
-            || str_ends_with($line, '{main}');
+        if (str_contains((string) $line, self::VENDOR_FRAME_PLACEHOLDER)) {
+            return true;
+        }
+
+        return $this->vendorFrameDetector->isVendorFrameLine((string) $line);
     }
 
     private function collapseVendorFrames(Collection $lines): Collection

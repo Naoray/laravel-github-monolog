@@ -10,6 +10,15 @@ class SectionMapping
         '{simplified_stack_trace}' => 'stacktrace',
         '{full_stack_trace}' => 'stacktrace',
         '{previous_exceptions}' => 'prev-exception',
+        '{environment}' => 'environment',
+        '{request}' => 'request',
+        '{route}' => 'route',
+        '{user}' => 'user',
+        '{queries}' => 'queries',
+        '{job}' => 'job',
+        '{command}' => 'command',
+        '{outgoing_requests}' => 'outgoing_requests',
+        '{session}' => 'session',
         '{context}' => 'context',
         '{extra}' => 'extra',
         '{prev_exception_simplified_stack_trace}' => 'prev-exception-stacktrace',
@@ -51,6 +60,6 @@ class SectionMapping
 
     public static function getStandaloneFlagPattern(): string
     {
-        return '/<!-- (stacktrace|prev-stacktrace|context|extra|prev-exception|prev-exception-stacktrace):(start|end) -->\n?/s';
+        return '/<!-- (stacktrace|prev-stacktrace|context|extra|prev-exception|prev-exception-stacktrace|environment|request|route|user|queries|job|command|outgoing_requests|session):(start|end) -->\n?/s';
     }
 }

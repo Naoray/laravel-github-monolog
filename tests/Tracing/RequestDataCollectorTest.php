@@ -1,11 +1,9 @@
 <?php
 
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Events\RouteMatched;
-use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\RequestDataCollector;
-use Symfony\Component\HttpFoundation\HeaderBag;
 
 beforeEach(function () {
     $this->collector = new RequestDataCollector;
@@ -17,67 +15,40 @@ afterEach(function () {
 
 it('collects request data', function () {
     // Arrange
-    $request = Mockery::mock(Request::class);
-    $route = Mockery::mock(Route::class);
-    $headers = new HeaderBag([
-        'accept' => ['application/json'],
-        'cookie' => ['sensitive-cookie'],
-        'x-custom' => ['custom-value'],
-    ]);
+    $request = Request::create('https://example.com/test?foo=bar', 'POST', ['key' => 'value']);
+    $request->headers->set('accept', 'application/json');
+    $request->headers->set('cookie', 'sensitive-cookie');
+    $request->headers->set('x-custom', 'custom-value');
+    $request->headers->set('content-length', '1024');
 
-    $request->headers = $headers;
-    $request->shouldReceive('url')->once()->andReturn('https://example.com/test');
-    $request->shouldReceive('method')->once()->andReturn('POST');
-    $request->shouldReceive('all')->once()->andReturn(['key' => 'value']);
-    $route->shouldReceive('getName')->once()->andReturn('test.route');
-
-    $event = new RouteMatched($route, $request);
+    $event = new RequestHandled($request, Mockery::mock('Illuminate\Http\Response'));
 
     // Act
     ($this->collector)($event);
 
     // Assert
-    expect(Context::get('request'))->toBe([
-        'url' => 'https://example.com/test',
-        'method' => 'POST',
-        'route' => 'test.route',
-        'headers' => [
-            'accept' => ['application/json'],
-            'cookie' => ['[FILTERED]'],
-            'x-custom' => ['custom-value'],
-        ],
-        'body' => ['key' => 'value'],
-    ]);
+    $requestData = Context::get('request');
+    expect($requestData)->toHaveKeys(['url', 'full_url', 'method', 'ip', 'headers', 'cookies', 'query', 'body']);
+    expect($requestData['url'])->toBe('https://example.com/test');
+    expect($requestData['full_url'])->toBe('https://example.com/test?foo=bar');
+    expect($requestData['method'])->toBe('POST');
 });
 
 it('filters sensitive headers', function () {
     // Arrange
-    $request = Mockery::mock(Request::class);
-    $route = Mockery::mock(Route::class);
-    $headers = new HeaderBag([
-        'XSRF-TOKEN' => ['token123'],
-        'remember_web_123' => ['sensitive'],
-        'laravel_session' => ['session123'],
-        'safe-header' => ['value'],
-    ]);
+    $request = Request::create('https://example.com/test', 'GET');
+    $request->headers->set('authorization', 'Bearer secret-token');
+    $request->headers->set('cookie', 'session=abc123');
+    $request->headers->set('safe-header', 'value');
 
-    $request->headers = $headers;
-    $request->shouldReceive('url')->once()->andReturn('https://example.com/test');
-    $request->shouldReceive('method')->once()->andReturn('GET');
-    $request->shouldReceive('all')->once()->andReturn([]);
-    $route->shouldReceive('getName')->once()->andReturn('test.route');
-
-    config(['session.cookie' => 'laravel_session']);
-    $event = new RouteMatched($route, $request);
+    $event = new RequestHandled($request, Mockery::mock('Illuminate\Http\Response'));
 
     // Act
     ($this->collector)($event);
 
     // Assert
-    expect(Context::get('request')['headers'])->toBe([
-        'xsrf-token' => ['[FILTERED]'],
-        'remember-web-123' => ['[FILTERED]'],
-        'laravel-session' => ['[FILTERED]'],
-        'safe-header' => ['value'],
-    ]);
+    $requestData = Context::get('request');
+    expect($requestData['headers']['authorization'][0])->toContain('Bearer');
+    expect($requestData['headers']['authorization'][0])->toContain('bytes redacted');
+    expect($requestData['headers']['safe-header'][0])->toBe('value');
 });
