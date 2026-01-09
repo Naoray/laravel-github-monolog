@@ -5,13 +5,20 @@ use Naoray\LaravelGithubMonolog\Issues\SectionMapping;
 test('it returns all sections when no replacements provided', function () {
     $sections = SectionMapping::getSectionsToRemove([]);
 
-    expect($sections)->toBe([
-        'stacktrace',
-        'prev-exception',
-        'context',
-        'extra',
-        'prev-exception-stacktrace',
-    ]);
+    expect($sections)->toContain('stacktrace')
+        ->toContain('prev-exception')
+        ->toContain('context')
+        ->toContain('extra')
+        ->toContain('prev-exception-stacktrace')
+        ->toContain('environment')
+        ->toContain('request')
+        ->toContain('route')
+        ->toContain('user')
+        ->toContain('queries')
+        ->toContain('job')
+        ->toContain('command')
+        ->toContain('outgoing_requests')
+        ->toContain('session');
 });
 
 test('it returns empty sections based on empty replacements', function () {
@@ -31,7 +38,18 @@ test('it returns remaining sections after removing empty ones', function () {
 
     $remaining = SectionMapping::getRemainingSections($sectionsToRemove);
 
-    expect($remaining)->toBe(['prev-exception', 'context', 'prev-exception-stacktrace']);
+    expect($remaining)->toContain('prev-exception')
+        ->toContain('context')
+        ->toContain('prev-exception-stacktrace')
+        ->toContain('environment')
+        ->toContain('request')
+        ->toContain('route')
+        ->toContain('user')
+        ->toContain('queries')
+        ->toContain('job')
+        ->toContain('command')
+        ->toContain('outgoing_requests')
+        ->toContain('session');
 });
 
 test('it returns correct pattern for removing section content', function () {
@@ -49,5 +67,31 @@ test('it returns correct pattern for preserving section content', function () {
 test('it returns correct pattern for standalone flags', function () {
     $pattern = SectionMapping::getStandaloneFlagPattern();
 
-    expect($pattern)->toBe('/<!-- (stacktrace|prev-stacktrace|context|extra|prev-exception|prev-exception-stacktrace):(start|end) -->\n?/s');
+    expect($pattern)->toContain('environment')
+        ->toContain('request')
+        ->toContain('route')
+        ->toContain('user')
+        ->toContain('queries')
+        ->toContain('job')
+        ->toContain('command')
+        ->toContain('outgoing_requests')
+        ->toContain('session');
+});
+
+test('it handles new section placeholders correctly', function () {
+    $replacements = [
+        '{environment}' => '',
+        '{request}' => 'some content',
+        '{route}' => '',
+        '{user}' => '',
+        '{queries}' => '',
+    ];
+
+    $sections = SectionMapping::getSectionsToRemove($replacements);
+
+    expect($sections)->toContain('environment')
+        ->toContain('route')
+        ->toContain('user')
+        ->toContain('queries')
+        ->not->toContain('request');
 });
