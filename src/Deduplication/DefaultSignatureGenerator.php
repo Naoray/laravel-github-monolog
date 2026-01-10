@@ -112,8 +112,6 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
 
     /**
      * Get context identifier with fallback chain: route → job → command
-     *
-     * @return string|null
      */
     private function getContextIdentifier(LogRecord $record): ?string
     {
