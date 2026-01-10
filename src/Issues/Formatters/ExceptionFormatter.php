@@ -65,6 +65,11 @@ class ExceptionFormatter implements FormatterInterface
 
     private function formatMessage(string $message): string
     {
+        // Remove exception class prefix if present (e.g., "RuntimeException: ")
+        if (preg_match('/^[A-Z][a-zA-Z0-9_\\\\]+Exception: (.+)$/s', $message, $matches)) {
+            $message = trim($matches[1]);
+        }
+
         if (! str_contains($message, 'Stack trace:')) {
             return $message;
         }
@@ -93,26 +98,40 @@ class ExceptionFormatter implements FormatterInterface
         $stackTrace = '';
 
         // Try to extract the message and stack trace
-        if (preg_match('/^(.*?)(?:Stack trace:|#\d+ \/)/', $exceptionString, $matches)) {
-            $message = trim($matches[1]);
+        if (! preg_match('/^(.*?)(?:Stack trace:|#\d+ \/)/', $exceptionString, $matches)) {
+            $header = sprintf(
+                '[%s] Exception: %s at unknown:0',
+                now()->format('Y-m-d H:i:s'),
+                $message
+            );
 
-            // Remove file/line info if present
-            if (preg_match('/^(.*) in \/[^\s]+(?:\.php)? on line \d+$/s', $message, $fileMatches)) {
-                $message = trim($fileMatches[1]);
-            }
+            return [
+                'message' => $this->formatMessage($message),
+                'simplified_stack_trace' => $header."\n[stacktrace]\n".$this->stackTraceFormatter->format($stackTrace, true),
+                'full_stack_trace' => $header."\n[stacktrace]\n".$this->stackTraceFormatter->format($stackTrace, false),
+            ];
+        }
 
-            // Extract stack trace
-            $traceStart = strpos($exceptionString, 'Stack trace:');
-            if ($traceStart === false) {
-                // Find the first occurrence of a stack frame pattern
-                if (preg_match('/#\d+ \//', $exceptionString, $matches, PREG_OFFSET_CAPTURE)) {
-                    $traceStart = $matches[0][1];
-                }
-            }
+        $message = trim($matches[1]);
 
-            if ($traceStart !== false) {
-                $stackTrace = substr($exceptionString, $traceStart);
-            }
+        // Remove exception class prefix if present (e.g., "RuntimeException: ")
+        if (preg_match('/^[A-Z][a-zA-Z0-9_\\\\]+Exception: (.+)$/s', $message, $classMatches)) {
+            $message = trim($classMatches[1]);
+        }
+
+        // Remove file/line info if present
+        if (preg_match('/^(.*) in \/[^\s]+(?:\.php)? on line \d+$/s', $message, $fileMatches)) {
+            $message = trim($fileMatches[1]);
+        }
+
+        // Extract stack trace
+        $traceStart = strpos($exceptionString, 'Stack trace:');
+        if ($traceStart === false && preg_match('/#\d+ \//', $exceptionString, $traceMatches, PREG_OFFSET_CAPTURE)) {
+            $traceStart = $traceMatches[0][1];
+        }
+
+        if ($traceStart !== false) {
+            $stackTrace = substr($exceptionString, $traceStart);
         }
 
         $header = sprintf(

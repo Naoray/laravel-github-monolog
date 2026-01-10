@@ -1,8 +1,5 @@
-## Triage Information
-
 - **Level:** {level}
 - **Exception:** {class}
-- **Signature:** {signature}
 - **Timestamp:** {timestamp}
 - **Environment:** {environment_name}
 - **Route:** {route_summary}

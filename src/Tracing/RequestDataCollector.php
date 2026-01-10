@@ -52,10 +52,20 @@ class RequestDataCollector implements EventDrivenCollectorInterface
                     return $this->formatFiles($file);
                 }
 
+                /** @var \Illuminate\Http\UploadedFile $file */
+                $name = $file->getClientOriginalName();
+                $mimeType = $file->getMimeType();
+
+                try {
+                    $size = $file->getSize();
+                } catch (\Throwable $e) {
+                    $size = null;
+                }
+
                 return [
-                    'name' => $file->getClientOriginalName(),
-                    'size' => $file->getSize(),
-                    'mime_type' => $file->getMimeType(),
+                    'name' => $name,
+                    'size' => $size,
+                    'mime_type' => $mimeType,
                 ];
             })
             ->toArray();
