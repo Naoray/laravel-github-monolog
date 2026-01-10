@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.4.1 - 2026-01-10
+
+### What's Changed
+
+* fixes file in request data collector by @Naoray in https://github.com/Naoray/laravel-github-monolog/pull/24
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.4.0...v3.4.1
+
 ## v3.4.0 - 2026-01-09
 
 ### What's Changed
