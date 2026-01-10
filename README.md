@@ -119,7 +119,7 @@ This will copy the templates to `resources/views/vendor/github-monolog/` where y
 - `comment.md`: Template for comments on existing issues
 - `previous_exception.md`: Template for previous exceptions in the chain
 
-> **Important**: 
+> **Important**:
 > - The templates use HTML comments as section markers (e.g. `<!-- stacktrace:start -->` and `<!-- stacktrace:end -->`). These markers are used to intelligently remove empty sections from the rendered output. Please keep these markers intact when customizing the templates.
 > - If you've previously published and customized templates, you may need to republish them to get the latest structure with triage headers and collapsible sections. Compare your custom templates with the new defaults and migrate any customizations.
 

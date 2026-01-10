@@ -15,8 +15,7 @@ test('it renders basic log record', function () {
 
     expect($rendered)
         ->toContain('**Level:** ERROR')
-        ->toContain('**Message:** Test message')
-        ->toContain('## Triage Information');
+        ->toContain('**Message:** Test message');
 });
 
 test('it renders title without exception', function () {
@@ -132,6 +131,34 @@ Stack trace:
         ->toContain('App\\Calculations\\Calculator->calculate()');
 });
 
+test('it extracts clean message when stack trace is only in record message', function () {
+    // Simulate the scenario where exception is logged directly as message without exception in context
+    $messageWithStackTrace = 'RuntimeException: Error message in /path/to/file.php:123
+Stack trace:
+#0 /path/to/app/Service.php(45): App\\Service->method()
+#1 /vendor/framework/src/Kernel.php(200): App\\Service->handle()';
+
+    // Create record with stack trace in message but NO exception in context
+    $record = createLogRecord($messageWithStackTrace);
+
+    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
+
+    // Message should be extracted without stack trace
+    preg_match('/\*\*Message:\*\* (.+?)(?:\n|$)/', $rendered, $messageMatches);
+    $messageValue = $messageMatches[1] ?? '';
+
+    expect($messageValue)
+        ->toBe('Error message')
+        ->not->toContain('Stack trace:')
+        ->not->toContain('#0 /path/to/app/Service.php');
+
+    // Stack trace should be in the stack trace sections
+    expect($rendered)
+        ->toContain('<summary>📋 Stack Trace</summary>')
+        ->toContain('[stacktrace]')
+        ->toContain('App\\Service->method()');
+});
+
 test('it formats timestamp placeholder correctly', function () {
     $record = createLogRecord('Test message');
 
@@ -163,6 +190,43 @@ test('it returns empty string for route summary when request data is missing', f
 
     expect($rendered)
         ->toContain('**Route:**');
+});
+
+test('it formats route summary from route context when request url is missing', function () {
+    $record = createLogRecord('Test message', [
+        'request' => [
+            'method' => 'PUT',
+            // url is missing
+        ],
+        'route' => [
+            'methods' => ['PUT'],
+            'uri' => 'nova-api/{resource}/{resourceId}',
+        ],
+    ]);
+
+    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
+
+    expect($rendered)
+        ->toContain('**Route:** PUT /nova-api/{resource}/{resourceId}');
+});
+
+test('it prefers request context over route context for route summary', function () {
+    $record = createLogRecord('Test message', [
+        'request' => [
+            'method' => 'POST',
+            'url' => 'https://example.com/api/users',
+        ],
+        'route' => [
+            'methods' => ['PUT'],
+            'uri' => 'nova-api/{resource}/{resourceId}',
+        ],
+    ]);
+
+    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
+
+    expect($rendered)
+        ->toContain('**Route:** POST /api/users')
+        ->not->toContain('PUT /nova-api');
 });
 
 test('it formats user summary with user id', function () {
@@ -246,13 +310,11 @@ test('issue template renders triage header with all fields', function () {
         'environment' => ['APP_ENV' => 'testing'],
     ]);
 
-    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record, 'sig123');
+    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('## Triage Information')
         ->toContain('**Level:** ERROR')
         ->toContain('**Exception:**')
-        ->toContain('**Signature:** sig123')
         ->toContain('**Timestamp:**')
         ->toContain('**Environment:** testing')
         ->toContain('**Route:** GET /test')
@@ -310,12 +372,10 @@ test('comment template does not include environment section', function () {
 test('triage header renders correctly with missing optional data', function () {
     $record = createLogRecord('Test message');
 
-    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record, 'sig789');
+    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
     expect($rendered)
-        ->toContain('## Triage Information')
         ->toContain('**Level:** ERROR')
-        ->toContain('**Signature:** sig789')
         ->toContain('**Timestamp:**')
         ->toContain('**Environment:**')
         ->toContain('**Route:**')

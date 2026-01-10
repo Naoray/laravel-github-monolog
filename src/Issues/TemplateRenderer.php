@@ -76,7 +76,14 @@ class TemplateRenderer
         $exceptionDetails = $this->exceptionFormatter->format($record);
         $exceptionData = $record->context['exception'] ?? null;
 
-        $message = $exceptionDetails['message'] ?? $record->message;
+        // If exceptionDetails is empty but record message contains stack trace, try to format it
+        if (empty($exceptionDetails) &&
+            (str_contains($record->message, 'Stack trace:') || preg_match('/#\d+ \//', $record->message))) {
+            $tempRecord = $record->with(context: array_merge($record->context, ['exception' => $record->message]));
+            $exceptionDetails = $this->exceptionFormatter->format($tempRecord);
+        }
+
+        $message = $exceptionDetails['message'] ?? $this->extractMessageFromRecord($record->message);
         $class = $this->resolveExceptionClass($exception, $exceptionData);
 
         return [
@@ -130,22 +137,35 @@ class TemplateRenderer
     private function formatRouteSummary(LogRecord $record): string
     {
         $request = $record->context['request'] ?? null;
+        $route = $record->context['route'] ?? null;
 
-        if (! is_array($request)) {
-            return '';
+        // Try to get method and path from request context first
+        if (is_array($request)) {
+            $method = $request['method'] ?? '';
+            $url = $request['url'] ?? '';
+
+            if ($method !== '' && $url !== '') {
+                $parsedUrl = parse_url($url);
+                $path = $parsedUrl['path'] ?? '/';
+
+                return strtoupper($method).' '.$path;
+            }
         }
 
-        $method = $request['method'] ?? '';
-        $url = $request['url'] ?? '';
+        // Fallback to route context if request context is missing or incomplete
+        if (is_array($route)) {
+            $methods = $route['methods'] ?? [];
+            $uri = $route['uri'] ?? '';
 
-        if ($method === '' || $url === '') {
-            return '';
+            if (! empty($methods) && $uri !== '') {
+                $method = is_array($methods) ? ($methods[0] ?? '') : $methods;
+                if ($method !== '') {
+                    return strtoupper($method).' /'.$uri;
+                }
+            }
         }
 
-        $parsedUrl = parse_url($url);
-        $path = $parsedUrl['path'] ?? '/';
-
-        return strtoupper($method).' '.$path;
+        return '';
     }
 
     private function formatUserSummary(LogRecord $record): string
@@ -174,5 +194,33 @@ class TemplateRenderer
         }
 
         return $environment['APP_ENV'] ?? $environment['app_env'] ?? '';
+    }
+
+    /**
+     * Extract just the message part from a record message that may contain stack trace.
+     */
+    private function extractMessageFromRecord(string $message): string
+    {
+        // If message contains stack trace, extract just the message part
+        if (str_contains($message, 'Stack trace:') || preg_match('/#\d+ \//', $message)) {
+            // Try to extract the message before the stack trace
+            if (preg_match('/^(.*?)(?:Stack trace:|#\d+ \/)/', $message, $matches)) {
+                $extracted = trim($matches[1]);
+
+                // Remove exception class prefix (e.g., "RuntimeException: ")
+                if (preg_match('/^[A-Z][a-zA-Z0-9_\\\\]+Exception: (.+)$/s', $extracted, $classMatches)) {
+                    $extracted = trim($classMatches[1]);
+                }
+
+                // Remove file/line info if present (e.g., "message in /path/to/file.php:123")
+                if (preg_match('/^(.*) in \/[^\s]+(?:\.php)?(?: on line \d+)?$/s', $extracted, $fileMatches)) {
+                    return trim($fileMatches[1]);
+                }
+
+                return $extracted;
+            }
+        }
+
+        return $message;
     }
 }

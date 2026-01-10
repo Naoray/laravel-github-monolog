@@ -35,10 +35,7 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
             'message' => $this->normalizeMessage($record->message),
             'channel' => $record->channel,
             'level' => $record->level->name,
-            // optionally include stable keys if you store them:
-            'route' => data_get($record->context, 'request.route'),
-            'job' => data_get($record->context, 'job.class'),
-            'command' => data_get($record->context, 'command.name'),
+            'context' => $this->getContextIdentifier($record),
         ];
 
         return hash('sha256', json_encode($stable, JSON_UNESCAPED_SLASHES));
@@ -56,8 +53,8 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
             // prefer in-app origin; avoid line numbers
             'file' => $frame ? $this->normalizePath($frame['file'] ?? '') : $this->normalizePath($exception->getFile()),
             'func' => $frame ? (($frame['class'] ?? '').($frame['type'] ?? '').($frame['function'] ?? '')) : '',
-            // add route grouping if available (huge for Laravel HTTP)
-            'route' => data_get($record->context, 'request.route') ?? data_get($record->context, 'route.action'),
+            'message' => $this->normalizeMessage($exception->getMessage()),
+            'context' => $this->getContextIdentifier($record),
         ];
 
         return hash('sha256', json_encode($parts, JSON_UNESCAPED_SLASHES));
@@ -114,20 +111,53 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
     }
 
     /**
+     * Get context identifier with fallback chain: route → job → command
+     *
+     * @return string|null
+     */
+    private function getContextIdentifier(LogRecord $record): ?string
+    {
+        // Try route first
+        $routeData = data_get($record->context, 'request.route') ?? data_get($record->context, 'route');
+
+        if (is_array($routeData)) {
+            return $routeData['name'] ?? $routeData['uri'] ?? null;
+        }
+
+        if (is_string($routeData)) {
+            return $routeData;
+        }
+
+        // Fall back to job class
+        $jobClass = data_get($record->context, 'job.class');
+        if ($jobClass) {
+            return $jobClass;
+        }
+
+        // Fall back to command name
+        $commandName = data_get($record->context, 'command.name');
+        if ($commandName) {
+            return $commandName;
+        }
+
+        return null;
+    }
+
+    /**
      * Normalize a message by replacing unstable values (UUIDs, large numbers)
      */
     private function normalizeMessage(string $message): string
     {
         // Replace UUIDs
-        $message = preg_replace(
+        $result = preg_replace(
             '/\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/i',
             '{uuid}',
             $message
         );
 
         // Replace long numbers (IDs, timestamps)
-        $message = preg_replace('/\b\d{6,}\b/', '{num}', $message);
+        $result = preg_replace('/\b\d{6,}\b/', '{num}', $result ?? $message);
 
-        return $message;
+        return is_string($result) ? $result : $message;
     }
 }
