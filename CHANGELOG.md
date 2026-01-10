@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.4.2 - 2026-01-10
+
+### What's Changed
+
+* fix: handle deleted temporary files and improve error deduplication by @Naoray in https://github.com/Naoray/laravel-github-monolog/pull/25
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.4.1...v3.4.2
+
 ## v3.4.1 - 2026-01-10
 
 ### What's Changed
