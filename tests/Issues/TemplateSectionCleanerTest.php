@@ -95,6 +95,65 @@ More content
 EOT);
 });
 
+test('it removes empty previous stacktrace section when previous_exceptions is empty', function () {
+    $template = <<<'EOT'
+Some content
+<!-- prev-stacktrace:start -->
+<details>
+<summary>🔍 View Previous Exceptions</summary>
+
+{previous_exceptions}
+
+</details>
+<!-- prev-stacktrace:end -->
+More content
+EOT;
+
+    $replacements = [
+        '{previous_exceptions}' => '',
+    ];
+
+    $result = $this->cleaner->clean($template, $replacements);
+
+    expect($result)
+        ->not->toContain('<!-- prev-stacktrace:start -->')
+        ->not->toContain('<!-- prev-stacktrace:end -->')
+        ->not->toContain('<details>')
+        ->not->toContain('<summary>🔍 View Previous Exceptions</summary>')
+        ->toContain('Some content')
+        ->toContain('More content');
+});
+
+test('it preserves previous stacktrace section when previous_exceptions has content', function () {
+    $template = <<<'EOT'
+Some content
+<!-- prev-stacktrace:start -->
+<details>
+<summary>🔍 View Previous Exceptions</summary>
+
+{previous_exceptions}
+
+</details>
+<!-- prev-stacktrace:end -->
+More content
+EOT;
+
+    $replacements = [
+        '{previous_exceptions}' => 'Previous exception content',
+    ];
+
+    $result = $this->cleaner->clean($template, $replacements);
+
+    expect($result)
+        ->not->toContain('<!-- prev-stacktrace:start -->')
+        ->not->toContain('<!-- prev-stacktrace:end -->')
+        ->toContain('<details>')
+        ->toContain('<summary>🔍 View Previous Exceptions</summary>')
+        ->toContain('Previous exception content')
+        ->toContain('Some content')
+        ->toContain('More content');
+});
+
 test('it normalizes multiple newlines before signature', function () {
     $template = <<<'EOT'
 Some content

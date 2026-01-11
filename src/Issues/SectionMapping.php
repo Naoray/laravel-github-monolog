@@ -9,7 +9,7 @@ class SectionMapping
     private const SECTION_MAPPINGS = [
         '{simplified_stack_trace}' => 'stacktrace',
         '{full_stack_trace}' => 'stacktrace',
-        '{previous_exceptions}' => 'prev-exception',
+        '{previous_exceptions}' => 'prev-stacktrace',
         '{environment}' => 'environment',
         '{request}' => 'request',
         '{route}' => 'route',
