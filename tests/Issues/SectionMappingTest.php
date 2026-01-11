@@ -6,7 +6,7 @@ test('it returns all sections when no replacements provided', function () {
     $sections = SectionMapping::getSectionsToRemove([]);
 
     expect($sections)->toContain('stacktrace')
-        ->toContain('prev-exception')
+        ->toContain('prev-stacktrace')
         ->toContain('context')
         ->toContain('extra')
         ->toContain('prev-exception-stacktrace')
@@ -38,7 +38,7 @@ test('it returns remaining sections after removing empty ones', function () {
 
     $remaining = SectionMapping::getRemainingSections($sectionsToRemove);
 
-    expect($remaining)->toContain('prev-exception')
+    expect($remaining)->toContain('prev-stacktrace')
         ->toContain('context')
         ->toContain('prev-exception-stacktrace')
         ->toContain('environment')
