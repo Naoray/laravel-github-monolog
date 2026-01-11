@@ -2,7 +2,7 @@
 
 namespace Naoray\LaravelGithubMonolog\Tracing;
 
-use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\RedactsData;
 use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
@@ -18,7 +18,7 @@ class JobContextCollector implements EventDrivenCollectorInterface
         return isset($config['jobs']) && $config['jobs'];
     }
 
-    public function __invoke(JobProcessing $event): void
+    public function __invoke(JobExceptionOccurred $event): void
     {
         $job = $event->job;
 
