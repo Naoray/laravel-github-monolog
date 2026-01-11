@@ -22,7 +22,13 @@ class RequestDataCollector implements EventDrivenCollectorInterface
     {
         $request = $event->request;
 
-        Context::add('request', [
+        try {
+            $files = $this->formatFiles($request->allFiles());
+        } catch (\Throwable $e) {
+            $files = null;
+        }
+
+        Context::add('request', array_filter([
             'url' => $request->url(),
             'full_url' => $request->fullUrl(),
             'method' => $request->method(),
@@ -33,9 +39,9 @@ class RequestDataCollector implements EventDrivenCollectorInterface
             'cookies' => $this->redactPayload($request->cookies->all()),
             'query' => $request->query->all(),
             'body' => $this->redactPayload($request->all()),
-            'files' => $this->formatFiles($request->allFiles()),
+            'files' => $files,
             'size' => $request->header('Content-Length') ? (int) $request->header('Content-Length') : null,
-        ]);
+        ]));
     }
 
     /**
@@ -55,12 +61,7 @@ class RequestDataCollector implements EventDrivenCollectorInterface
                 /** @var \Illuminate\Http\UploadedFile $file */
                 $name = $file->getClientOriginalName();
                 $mimeType = $file->getMimeType();
-
-                try {
-                    $size = $file->getSize();
-                } catch (\Throwable $e) {
-                    $size = null;
-                }
+                $size = $file->getSize();
 
                 return [
                     'name' => $name,
