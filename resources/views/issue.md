@@ -14,6 +14,7 @@
 ```shell
 {simplified_stack_trace}
 ```
+</details
 
 <details>
 <summary>📋 View Complete Stack Trace</summary>
