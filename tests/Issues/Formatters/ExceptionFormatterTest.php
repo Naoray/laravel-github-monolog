@@ -103,3 +103,55 @@ Stack trace:
         ->and($result['simplified_stack_trace'])->toContain('[stacktrace]')
         ->and($result['simplified_stack_trace'])->toContain('App\\Calculations\\Calculator->calculate()');
 });
+
+test('it creates different simplified and full stack traces', function () {
+    // Create a string exception with vendor frames
+    // Use paths that will be detected as vendor frames after base_path() replacement
+    $exceptionString = 'Test exception message
+Stack trace:
+#0 /app/Services/TestService.php(25): App\\Services\\TestService->handle()
+#1 /vendor/laravel/framework/src/Foundation/Application.php(1235): App\\Services\\TestService->process()
+#2 /vendor/spatie/package/src/File.php(100): Illuminate\\Foundation\\Application->run()
+#3 /app/Http/Controllers/TestController.php(50): Spatie\\Package\\File->execute()';
+
+    $record = createLogRecord('Test message', ['exception' => $exceptionString]);
+    $result = $this->formatter->format($record);
+
+    // Simplified trace should collapse vendor frames
+    expect($result['simplified_stack_trace'])
+        ->toContain('/app/Services/TestService.php')
+        ->toContain('/app/Http/Controllers/TestController.php')
+        ->toContain('[Vendor frames]')
+        ->not->toContain('/vendor/laravel/framework/src/Foundation/Application.php')
+        ->not->toContain('/vendor/spatie/package/src/File.php');
+
+    // Full trace should show all frames
+    expect($result['full_stack_trace'])
+        ->toContain('/app/Services/TestService.php')
+        ->toContain('/app/Http/Controllers/TestController.php')
+        ->toContain('/vendor/laravel/framework/src/Foundation/Application.php')
+        ->toContain('/vendor/spatie/package/src/File.php')
+        ->not->toContain('[Vendor frames]');
+
+    // They should be different
+    expect($result['simplified_stack_trace'])->not->toBe($result['full_stack_trace']);
+});
+
+test('it strips stack trace prefix from string exceptions', function () {
+    $exceptionString = 'Error message
+Stack trace:
+#0 /app/Services/Service.php(25): App\\Services\\Service->handle()
+#1 /vendor/package/src/File.php(10): App\\Services\\Service->process()';
+
+    $record = createLogRecord('Test message', ['exception' => $exceptionString]);
+    $result = $this->formatter->format($record);
+
+    // Should not contain "Stack trace:" in the formatted output since we add our own "[stacktrace]" tag
+    expect($result['simplified_stack_trace'])
+        ->toContain('[stacktrace]')
+        ->not->toContain('Stack trace:');
+
+    expect($result['full_stack_trace'])
+        ->toContain('[stacktrace]')
+        ->not->toContain('Stack trace:');
+});

@@ -98,7 +98,7 @@ class ExceptionFormatter implements FormatterInterface
         $stackTrace = '';
 
         // Try to extract the message and stack trace
-        if (! preg_match('/^(.*?)(?:Stack trace:|#\d+ \/)/', $exceptionString, $matches)) {
+        if (! preg_match('/^(.*?)(?:Stack trace:|#\d+ \/)/s', $exceptionString, $matches)) {
             $header = sprintf(
                 '[%s] Exception: %s at unknown:0',
                 now()->format('Y-m-d H:i:s'),
@@ -119,19 +119,23 @@ class ExceptionFormatter implements FormatterInterface
             $message = trim($classMatches[1]);
         }
 
-        // Remove file/line info if present
-        if (preg_match('/^(.*) in \/[^\s]+(?:\.php)? on line \d+$/s', $message, $fileMatches)) {
+        // Remove file/line info if present (handles both " on line X" and ":X" formats)
+        if (preg_match('/^(.*) in \/[^\s]+(?:\.php)?(?::\d+| on line \d+)$/s', $message, $fileMatches)) {
             $message = trim($fileMatches[1]);
         }
 
         // Extract stack trace
         $traceStart = strpos($exceptionString, 'Stack trace:');
-        if ($traceStart === false && preg_match('/#\d+ \//', $exceptionString, $traceMatches, PREG_OFFSET_CAPTURE)) {
-            $traceStart = $traceMatches[0][1];
-        }
-
         if ($traceStart !== false) {
-            $stackTrace = substr($exceptionString, $traceStart);
+            // Find the position after "Stack trace:" and any whitespace/newlines
+            $stackTraceStart = $traceStart + strlen('Stack trace:');
+            $stackTrace = substr($exceptionString, $stackTraceStart);
+            // Remove leading whitespace and newlines
+            $stackTrace = ltrim($stackTrace, " \t\n\r\0\x0B");
+        } elseif (preg_match('/#\d+ \//', $exceptionString, $traceMatches, PREG_OFFSET_CAPTURE)) {
+            $stackTrace = substr($exceptionString, $traceMatches[0][1]);
+        } else {
+            $stackTrace = '';
         }
 
         $header = sprintf(
