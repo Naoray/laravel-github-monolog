@@ -300,3 +300,101 @@ test('normalizes paths by stripping base path', function () {
     // Signatures should be the same despite different line numbers
     expect($signature2)->toBe($signature1);
 });
+
+test('same exception with different tmp file paths produces same signature', function () {
+    $exception1 = new \Exception('Failed to move file from /tmp/phpABC123');
+    $exception2 = new \Exception('Failed to move file from /tmp/phpXYZ789');
+
+    $record1 = createLogRecord('Test', exception: $exception1);
+    $record2 = createLogRecord('Test', exception: $exception2);
+
+    $signature1 = $this->generator->generate($record1);
+    $signature2 = $this->generator->generate($record2);
+
+    // Different tmp file paths should produce same signature after templating
+    expect($signature2)->toBe($signature1);
+});
+
+test('same stack trace but different route produces different signature', function () {
+    $exception = new \Exception('Test exception');
+    $reflection = new \ReflectionClass($exception);
+    $traceProperty = $reflection->getProperty('trace');
+    $traceProperty->setAccessible(true);
+
+    $traceProperty->setValue($exception, [[
+        'file' => base_path('app/Http/Controllers/UserController.php'),
+        'line' => 50,
+        'function' => 'index',
+        'class' => 'App\\Http\\Controllers\\UserController',
+        'type' => '->',
+    ]]);
+
+    $record1 = createLogRecord('Test', [
+        'request' => [
+            'route' => ['name' => 'api.users.index'],
+            'method' => 'GET',
+        ],
+    ], exception: $exception);
+
+    $record2 = createLogRecord('Test', [
+        'request' => [
+            'route' => ['name' => 'api.posts.index'],
+            'method' => 'GET',
+        ],
+    ], exception: $exception);
+
+    $signature1 = $this->generator->generate($record1);
+    $signature2 = $this->generator->generate($record2);
+
+    // Same exception and stack but different route should produce different signature
+    expect($signature2)->not->toBe($signature1);
+});
+
+test('same exception with different HTTP methods produces different signature', function () {
+    $exception = new \Exception('Test exception');
+    $reflection = new \ReflectionClass($exception);
+    $traceProperty = $reflection->getProperty('trace');
+    $traceProperty->setAccessible(true);
+
+    $traceProperty->setValue($exception, [[
+        'file' => base_path('app/Http/Controllers/UserController.php'),
+        'line' => 50,
+        'function' => 'store',
+        'class' => 'App\\Http\\Controllers\\UserController',
+        'type' => '->',
+    ]]);
+
+    $record1 = createLogRecord('Test', [
+        'request' => [
+            'route' => ['name' => 'api.users.store'],
+            'method' => 'POST',
+        ],
+    ], exception: $exception);
+
+    $record2 = createLogRecord('Test', [
+        'request' => [
+            'route' => ['name' => 'api.users.store'],
+            'method' => 'PUT',
+        ],
+    ], exception: $exception);
+
+    $signature1 = $this->generator->generate($record1);
+    $signature2 = $this->generator->generate($record2);
+
+    // Same exception and route but different method should produce different signature
+    expect($signature2)->not->toBe($signature1);
+});
+
+test('same exception message template produces same signature regardless of actual values', function () {
+    $exception1 = new \Exception('User 550e8400-e29b-41d4-a716-446655440000 failed to login');
+    $exception2 = new \Exception('User 123e4567-e89b-12d3-a456-426614174000 failed to login');
+
+    $record1 = createLogRecord('Test', exception: $exception1);
+    $record2 = createLogRecord('Test', exception: $exception2);
+
+    $signature1 = $this->generator->generate($record1);
+    $signature2 = $this->generator->generate($record2);
+
+    // Different UUIDs in exception message should produce same signature after templating
+    expect($signature2)->toBe($signature1);
+});

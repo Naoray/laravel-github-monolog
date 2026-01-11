@@ -11,6 +11,7 @@ use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
 use Naoray\LaravelGithubMonolog\Deduplication\SignatureGeneratorInterface;
 use Naoray\LaravelGithubMonolog\Issues\Formatters\IssueFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Handler;
+use Naoray\LaravelGithubMonolog\Tracing\CallerFrameProcessor;
 use Naoray\LaravelGithubMonolog\Tracing\ContextProcessor;
 
 class GithubIssueHandlerFactory
@@ -27,6 +28,7 @@ class GithubIssueHandlerFactory
         $deduplicationHandler = $this->wrapWithDeduplication($handler, $config);
 
         $logger = new Logger('github', [$deduplicationHandler]);
+        $logger->pushProcessor(new CallerFrameProcessor);
         $logger->pushProcessor(new ContextProcessor);
 
         return $logger;

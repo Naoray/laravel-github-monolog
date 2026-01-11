@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\JobContextCollector;
 
@@ -23,7 +23,7 @@ it('collects job context', function () {
         'data' => ['key' => 'value'],
     ]);
 
-    $event = new JobProcessing('redis', $job);
+    $event = new JobExceptionOccurred('redis', $job, new \RuntimeException('Test exception'));
 
     ($this->collector)($event);
 

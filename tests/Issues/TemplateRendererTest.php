@@ -238,8 +238,9 @@ test('it formats user summary with user id', function () {
 
     $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
 
+    // formatUserSummary returns just the ID, not "User ID: {id}"
     expect($rendered)
-        ->toContain('**User:** User ID: 123');
+        ->toContain('**User:** 123');
 });
 
 test('it formats user summary as unauthenticated when user data is missing', function () {
@@ -318,7 +319,7 @@ test('issue template renders triage header with all fields', function () {
         ->toContain('**Timestamp:**')
         ->toContain('**Environment:** testing')
         ->toContain('**Route:** GET /test')
-        ->toContain('**User:** User ID: 456')
+        ->toContain('**User:** 456')
         ->toContain('**Message:** Test message');
 });
 

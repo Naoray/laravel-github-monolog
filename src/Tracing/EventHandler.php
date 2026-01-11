@@ -9,7 +9,7 @@ use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Client\Events\RequestSending;
 use Illuminate\Http\Client\Events\ResponseReceived;
-use Illuminate\Queue\Events\JobProcessing;
+use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Routing\Events\RouteMatched;
 use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
 
@@ -27,7 +27,7 @@ class EventHandler
             RouteMatched::class => RouteDataCollector::class,
             Authenticated::class => UserDataCollector::class,
             QueryExecuted::class => QueryCollector::class,
-            JobProcessing::class => JobContextCollector::class,
+            JobExceptionOccurred::class => JobContextCollector::class,
             CommandStarting::class => CommandContextCollector::class,
             RequestSending::class => OutgoingRequestSendingCollector::class,
             ResponseReceived::class => OutgoingRequestResponseCollector::class,
@@ -47,7 +47,12 @@ class EventHandler
             $collector = new $collectorClass;
 
             if ($collector->isEnabled()) {
-                $events->listen($eventClass, $collectorClass);
+                $events->listen($eventClass, function ($event) use ($collectorClass) {
+                    /** @var EventDrivenCollectorInterface $collectorInstance */
+                    $collectorInstance = new $collectorClass;
+
+                    rescue(fn () => $collectorInstance($event));
+                });
             }
         }
     }
