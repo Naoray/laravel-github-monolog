@@ -111,7 +111,7 @@ it('registers job collector when enabled', function () {
     $job->shouldReceive('getQueue')->andReturn('default');
     $job->shouldReceive('getConnectionName')->andReturn('sync');
     $job->shouldReceive('attempts')->andReturn(1);
-    
+
     $event = new JobExceptionOccurred('connection', $job, new \RuntimeException('Test exception'));
 
     Event::dispatch($event);
@@ -127,7 +127,7 @@ it('registers command collector when enabled', function () {
     $input = Mockery::mock('Symfony\Component\Console\Input\InputInterface');
     $input->shouldReceive('getArguments')->andReturn([]);
     $input->shouldReceive('getOptions')->andReturn([]);
-    
+
     $event = new CommandStarting('test:command', $input, Mockery::mock('Symfony\Component\Console\Output\OutputInterface'));
 
     Event::dispatch($event);
@@ -145,7 +145,7 @@ it('registers outgoing request collectors when enabled', function () {
     $request->shouldReceive('method')->andReturn('POST');
     $request->shouldReceive('headers')->andReturn([]);
     $request->shouldReceive('data')->andReturn([]);
-    
+
     $sendingEvent = new RequestSending($request);
     Event::dispatch($sendingEvent);
 
@@ -156,10 +156,10 @@ it('registers outgoing request collectors when enabled', function () {
     // Mock the same request object for the response event
     $request->shouldReceive('url')->andReturn('https://example.com/api');
     $request->shouldReceive('method')->andReturn('POST');
-    
+
     $response = Mockery::mock('Illuminate\Http\Client\Response');
     $response->shouldReceive('status')->andReturn(200);
-    
+
     $responseEvent = new ResponseReceived($request, $response);
     Event::dispatch($responseEvent);
 
@@ -173,7 +173,7 @@ it('does not register collectors when tracing is disabled', function () {
     Config::set('logging.channels.github.tracing.enabled', false);
 
     $handler = new EventHandler;
-    
+
     // When tracing is disabled, subscribe should return early without registering listeners
     // We verify this by ensuring the method completes without error
     $handler->subscribe(Event::getFacadeRoot());
@@ -223,8 +223,9 @@ it('does not register individual collectors when disabled', function () {
 it('catches exceptions from collectors and does not propagate them', function () {
     // Test that the exception handling wrapper in EventHandler works correctly
     // by simulating what happens when a collector throws an exception
-    
-    $failingCollectorClass = get_class(new class implements \Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface {
+
+    $failingCollectorClass = get_class(new class implements \Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface
+    {
         public function isEnabled(): bool
         {
             return true;
@@ -253,7 +254,7 @@ it('catches exceptions from collectors and does not propagate them', function ()
 
     // This should not throw even if collector throws an exception
     Event::dispatch($event);
-    
+
     // Verify the event was dispatched successfully without throwing
     expect(true)->toBeTrue();
 });

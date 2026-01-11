@@ -141,7 +141,7 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
     /**
      * Reduce a frame to stable, high-signal identifiers.
      *
-     * @param array<string, mixed> $frame
+     * @param  array<string, mixed>  $frame
      * @return array{file:string, func:string}
      */
     private function frameSignature(array $frame): array
@@ -187,7 +187,7 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
     /**
      * Hash a payload array into a signature string
      *
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     private function hashPayload(array $payload): string
     {

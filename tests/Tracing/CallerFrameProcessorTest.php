@@ -1,6 +1,5 @@
 <?php
 
-use Monolog\Level;
 use Naoray\LaravelGithubMonolog\Tracing\CallerFrameProcessor;
 
 beforeEach(function () {

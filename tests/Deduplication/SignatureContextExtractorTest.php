@@ -1,6 +1,5 @@
 <?php
 
-use Monolog\Level;
 use Naoray\LaravelGithubMonolog\Deduplication\SignatureContextExtractor;
 use Naoray\LaravelGithubMonolog\Deduplication\SignatureContextKind;
 
