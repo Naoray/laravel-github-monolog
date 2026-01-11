@@ -23,6 +23,7 @@
 ```
 
 </details>
+<!-- stacktrace:end -->
 
 <!-- prev-stacktrace:start -->
 <details>
@@ -32,8 +33,6 @@
 
 </details>
 <!-- prev-stacktrace:end -->
-</details>
-<!-- stacktrace:end -->
 
 <!-- environment:start -->
 <details>
