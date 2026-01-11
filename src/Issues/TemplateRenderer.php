@@ -182,7 +182,7 @@ class TemplateRenderer
             return 'Unauthenticated';
         }
 
-        return 'User ID: '.$id;
+        return (string) $id;
     }
 
     private function extractEnvironmentName(LogRecord $record): string
