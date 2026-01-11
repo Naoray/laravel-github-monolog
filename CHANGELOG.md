@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.5.0 - 2026-01-11
+
+### What's Changed
+
+* feat(deduplication): add signature context extraction and message templating by @Naoray in https://github.com/Naoray/laravel-github-monolog/pull/26
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.4.2...v3.5.0
+
 ## v3.4.2 - 2026-01-10
 
 ### What's Changed
