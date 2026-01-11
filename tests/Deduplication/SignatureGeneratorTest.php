@@ -398,3 +398,131 @@ test('same exception message template produces same signature regardless of actu
     // Different UUIDs in exception message should produce same signature after templating
     expect($signature2)->toBe($signature1);
 });
+
+test('groups errors from same vendor class with different methods', function () {
+    // Simulate errors from the same vendor class (DefaultFileRemover) but different methods
+    // This tests that vendor frames are normalized to class name only
+
+    $exception1 = new \Exception('Disk [tracks] does not have a configured driver.');
+    $reflection1 = new \ReflectionClass($exception1);
+    $traceProperty1 = $reflection1->getProperty('trace');
+    $traceProperty1->setAccessible(true);
+    $fileProperty1 = $reflection1->getProperty('file');
+    $fileProperty1->setAccessible(true);
+    $lineProperty1 = $reflection1->getProperty('line');
+    $lineProperty1->setAccessible(true);
+
+    // Set exception file and line
+    $fileProperty1->setValue($exception1, base_path('vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemManager.php'));
+    $lineProperty1->setValue($exception1, 138);
+
+    // First error: through removeFromMediaDirectory
+    $traceProperty1->setValue($exception1, [
+        [
+            'file' => base_path('vendor/spatie/laravel-medialibrary/src/Support/FileRemover/DefaultFileRemover.php'),
+            'line' => 38,
+            'function' => 'removeFromMediaDirectory',
+            'class' => 'Spatie\\MediaLibrary\\Support\\FileRemover\\DefaultFileRemover',
+            'type' => '->',
+        ],
+        [
+            'file' => base_path('app/Nova/Track.php'),
+            'line' => 128,
+            'function' => 'fieldsForUpdate',
+            'class' => 'App\\Nova\\Track',
+            'type' => '->',
+        ],
+    ]);
+
+    $exception2 = new \Exception('Disk [tracks] does not have a configured driver.');
+    $reflection2 = new \ReflectionClass($exception2);
+    $traceProperty2 = $reflection2->getProperty('trace');
+    $traceProperty2->setAccessible(true);
+    $fileProperty2 = $reflection2->getProperty('file');
+    $fileProperty2->setAccessible(true);
+    $lineProperty2 = $reflection2->getProperty('line');
+    $lineProperty2->setAccessible(true);
+
+    // Set exception file and line
+    $fileProperty2->setValue($exception2, base_path('vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemManager.php'));
+    $lineProperty2->setValue($exception2, 138);
+
+    // Second error: through removeFromConversionsDirectory
+    $traceProperty2->setValue($exception2, [
+        [
+            'file' => base_path('vendor/spatie/laravel-medialibrary/src/Support/FileRemover/DefaultFileRemover.php'),
+            'line' => 64,
+            'function' => 'removeFromConversionsDirectory',
+            'class' => 'Spatie\\MediaLibrary\\Support\\FileRemover\\DefaultFileRemover',
+            'type' => '->',
+        ],
+        [
+            'file' => base_path('app/Nova/Track.php'),
+            'line' => 128,
+            'function' => 'fieldsForUpdate',
+            'class' => 'App\\Nova\\Track',
+            'type' => '->',
+        ],
+    ]);
+
+    $exception3 = new \Exception('Disk [tracks] does not have a configured driver.');
+    $reflection3 = new \ReflectionClass($exception3);
+    $traceProperty3 = $reflection3->getProperty('trace');
+    $traceProperty3->setAccessible(true);
+    $fileProperty3 = $reflection3->getProperty('file');
+    $fileProperty3->setAccessible(true);
+    $lineProperty3 = $reflection3->getProperty('line');
+    $lineProperty3->setAccessible(true);
+
+    // Set exception file and line
+    $fileProperty3->setValue($exception3, base_path('vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemManager.php'));
+    $lineProperty3->setValue($exception3, 138);
+
+    // Third error: through removeFromResponsiveImagesDirectory
+    $traceProperty3->setValue($exception3, [
+        [
+            'file' => base_path('vendor/spatie/laravel-medialibrary/src/Support/FileRemover/DefaultFileRemover.php'),
+            'line' => 96,
+            'function' => 'removeFromResponsiveImagesDirectory',
+            'class' => 'Spatie\\MediaLibrary\\Support\\FileRemover\\DefaultFileRemover',
+            'type' => '->',
+        ],
+        [
+            'file' => base_path('app/Nova/Track.php'),
+            'line' => 128,
+            'function' => 'fieldsForUpdate',
+            'class' => 'App\\Nova\\Track',
+            'type' => '->',
+        ],
+    ]);
+
+    $record1 = createLogRecord('Test', [
+        'request' => [
+            'route' => ['name' => 'nova.api.generated::t9axneyGDK4KlTRT'],
+            'method' => 'PUT',
+        ],
+    ], exception: $exception1);
+
+    $record2 = createLogRecord('Test', [
+        'request' => [
+            'route' => ['name' => 'nova.api.generated::t9axneyGDK4KlTRT'],
+            'method' => 'PUT',
+        ],
+    ], exception: $exception2);
+
+    $record3 = createLogRecord('Test', [
+        'request' => [
+            'route' => ['name' => 'nova.api.generated::t9axneyGDK4KlTRT'],
+            'method' => 'PUT',
+        ],
+    ], exception: $exception3);
+
+    $signature1 = $this->generator->generate($record1);
+    $signature2 = $this->generator->generate($record2);
+    $signature3 = $this->generator->generate($record3);
+
+    // All three errors should produce the same signature despite different vendor methods
+    // because they're from the same vendor class and have the same in-app frames
+    expect($signature2)->toBe($signature1);
+    expect($signature3)->toBe($signature1);
+});

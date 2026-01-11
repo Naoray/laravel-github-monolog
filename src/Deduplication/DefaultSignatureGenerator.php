@@ -68,6 +68,10 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
     {
         $frames = $this->inAppFrames($exception, $this->maxFrames);
 
+        // Include the first vendor frame before the first in-app frame (normalized to class name only)
+        // This helps group errors from the same vendor class that occur through different methods
+        $firstVendorFrame = $this->firstVendorFrameBeforeInApp($exception);
+
         // If we can't determine any in-app frames, fall back to the first frame in the trace
         if ($frames === []) {
             $first = $this->firstFrame($exception);
@@ -78,6 +82,13 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
 
         $context = $this->contextExtractor->extract($record);
 
+        // Build frames array: include normalized vendor frame first if found, then in-app frames
+        $allFrames = [];
+        if ($firstVendorFrame !== null) {
+            $allFrames[] = $firstVendorFrame;
+        }
+        $allFrames = array_merge($allFrames, $frames);
+
         $payload = [
             'v' => 2,
             'kind' => $context['kind'],
@@ -86,9 +97,9 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
                 'ex_chain' => $this->exceptionChainSignature($exception, $this->maxExceptionChainDepth),
                 'frames' => array_map(
                     fn (array $frame) => $this->frameSignature($frame),
-                    $frames
+                    $allFrames
                 ),
-                'culprit' => $frames[0] ? $this->frameSignature($frames[0]) : null,
+                'culprit' => $allFrames[0] ? $this->frameSignature($allFrames[0]) : null,
             ],
             'variant' => [
                 'msg_tpl' => $this->messageTemplate->template($exception->getMessage()),
@@ -139,6 +150,24 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
     }
 
     /**
+     * Find the first vendor frame before the first in-app frame.
+     * This helps group errors from the same vendor class that occur through different methods.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function firstVendorFrameBeforeInApp(Throwable $e): ?array
+    {
+        foreach ($e->getTrace() as $frame) {
+            if ($this->vendorFrameDetector->isVendorFrame($frame)) {
+                // Return the first vendor frame we encounter (before any in-app frames)
+                return $frame;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Reduce a frame to stable, high-signal identifiers.
      *
      * @param  array<string, mixed>  $frame
@@ -147,7 +176,17 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
     private function frameSignature(array $frame): array
     {
         $file = $this->normalizePath((string) ($frame['file'] ?? ''));
-        $func = (string) (($frame['class'] ?? '').($frame['type'] ?? '').($frame['function'] ?? ''));
+        $class = (string) ($frame['class'] ?? '');
+        $type = (string) ($frame['type'] ?? '');
+        $function = (string) ($frame['function'] ?? '');
+
+        // Normalize vendor frames to class name only (without method) to group errors
+        // from the same vendor class that occur through different methods
+        if ($this->vendorFrameDetector->isVendorFrame($frame) && $class !== '') {
+            $func = $class;
+        } else {
+            $func = $class.$type.$function;
+        }
 
         // Intentionally avoid line numbers; they change frequently and cause under-grouping.
         return [
