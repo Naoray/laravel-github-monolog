@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.6.0 - 2026-01-11
+
+### What's Changed
+
+* fix(issues): correct stack trace formatting and section mapping by @Naoray in https://github.com/Naoray/laravel-github-monolog/pull/27
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.5.0...v3.6.0
+
 ## v3.5.0 - 2026-01-11
 
 ### What's Changed
