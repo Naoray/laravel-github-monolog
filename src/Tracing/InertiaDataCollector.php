@@ -107,7 +107,7 @@ class InertiaDataCollector implements EventDrivenCollectorInterface
 
         // Try to parse component from JSON response
         $content = $response->getContent();
-        if (! $content || ! is_string($content)) {
+        if ($content === false || $content === '') {
             return null;
         }
 
