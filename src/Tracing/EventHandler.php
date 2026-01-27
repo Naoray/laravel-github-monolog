@@ -40,10 +40,10 @@ class EventHandler
         // Check package config first, then fall back to channel config
         $packageConfig = config('github-monolog.tracing', []);
         $channelConfig = config('logging.channels.github.tracing', []);
-        
+
         // Package config takes precedence
         $enabled = $packageConfig['enabled'] ?? $channelConfig['enabled'] ?? true;
-        
+
         if (! $enabled) {
             return;
         }
