@@ -22,6 +22,8 @@ class ContextFormatter
             'outgoing_requests',
             'session',
             'livewire',
+            'livewire_originating_page',
+            'inertia',
         ]);
 
         if (empty($context)) {

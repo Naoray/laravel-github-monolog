@@ -71,6 +71,15 @@
 </details>
 <!-- livewire:end -->
 
+<!-- inertia:start -->
+<details>
+<summary>🚀 Inertia Request</summary>
+
+{inertia}
+
+</details>
+<!-- inertia:end -->
+
 <!-- user:start -->
 <details>
 <summary>👤 User Details</summary>

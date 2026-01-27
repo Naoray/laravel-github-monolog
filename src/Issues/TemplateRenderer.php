@@ -108,6 +108,7 @@ class TemplateRenderer
             '{outgoing_requests}' => $this->outgoingRequestFormatter->format($record->context['outgoing_requests'] ?? null),
             '{session}' => $this->structuredDataFormatter->format($record->context['session'] ?? null),
             '{livewire}' => $this->structuredDataFormatter->format($record->context['livewire'] ?? null),
+            '{inertia}' => $this->structuredDataFormatter->format($record->context['inertia'] ?? null),
             '{context}' => $this->contextFormatter->format($record->context),
             '{extra}' => $this->extraFormatter->format(Arr::except($record->extra, ['github_issue_signature'])),
         ];

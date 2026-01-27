@@ -2,18 +2,21 @@
 
 namespace Naoray\LaravelGithubMonolog\Tracing;
 
+use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\RedactsData;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\ResolvesTracingConfig;
+use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
 
 /**
- * Livewire data collector.
+ * Livewire data collector (v3+ only).
  *
- * This collector is purely event-driven and captures Livewire component data
- * when Livewire lifecycle events fire. It does not support on-demand collection
- * because Livewire component instances are only available during their lifecycle.
+ * This collector detects Livewire requests by examining request headers and payload,
+ * without requiring the Livewire package as a dependency. It captures component data
+ * from the request structure.
  */
-class LivewireDataCollector
+class LivewireDataCollector implements EventDrivenCollectorInterface
 {
     use RedactsData;
     use ResolvesTracingConfig;
@@ -23,48 +26,53 @@ class LivewireDataCollector
         return $this->isTracingFeatureEnabled('livewire');
     }
 
-    /**
-     * Handle Livewire 3 hydrate event.
-     *
-     * @param  object  $component  Livewire component instance
-     */
-    public function hydrate(object $component): void
+    public function __invoke(RequestHandled $event): void
     {
-        $this->captureComponent($component);
+        if (! $this->isLivewireRequest($event->request)) {
+            return;
+        }
+
+        $this->captureFromRequest($event->request);
     }
 
     /**
-     * Handle Livewire 2 component.hydrate.subsequent event.
-     *
-     * @param  object  $component  Livewire component instance
+     * Detect if the current request is a Livewire request.
      */
-    public function componentHydrateSubsequent(object $component): void
+    protected function isLivewireRequest(Request $request): bool
     {
-        $this->captureComponent($component);
+        // Livewire 3+ sends X-Livewire header
+        if ($request->hasHeader('X-Livewire')) {
+            return true;
+        }
+
+        // Also check for Livewire update endpoint
+        $path = $request->path();
+
+        return str_contains($path, 'livewire/update')
+            || str_contains($path, 'livewire/message');
     }
 
     /**
-     * Capture Livewire component data.
-     *
-     * @param  object  $component  Livewire component instance
+     * Capture Livewire component data from the request.
      */
-    protected function captureComponent(object $component): void
+    protected function captureFromRequest(Request $request): void
     {
+        $payload = $request->json()->all();
+        $components = $this->extractComponents($payload);
+
+        if (empty($components)) {
+            return;
+        }
+
         $data = [
-            'component' => $component::class,
-            'component_name' => method_exists($component, 'getName') ? $component->getName() : $component::class,
+            'components' => $components,
+            'url' => $request->fullUrl(),
         ];
 
-        // Capture the URL accessed during the error (the Livewire endpoint)
-        $request = request();
-        $data['url'] = $request->fullUrl();
-
-        // Try to get the originating page from fingerprint (Livewire 3) or referrer
-        $originatingPage = $this->resolveOriginatingPage($component);
+        // Extract originating page from the first component
+        $originatingPage = $this->resolveOriginatingPage($payload, $request);
         if ($originatingPage !== null) {
             $data['originating_page'] = $originatingPage;
-
-            // Store originating page for route summary
             Context::add('livewire_originating_page', $originatingPage);
         }
 
@@ -72,29 +80,83 @@ class LivewireDataCollector
     }
 
     /**
-     * Resolve the originating page the user was on.
+     * Extract component information from the Livewire payload.
      *
-     * @param  object  $component  Livewire component instance
+     * @return array<int, array<string, mixed>>
      */
-    protected function resolveOriginatingPage(object $component): ?string
+    protected function extractComponents(array $payload): array
     {
-        // Livewire 3: Try to get path from component's snapshot/fingerprint
-        if (method_exists($component, 'getSnapshot')) {
-            /** @var array<string, mixed>|null $snapshot */
-            $snapshot = $component->getSnapshot();
-            if (isset($snapshot['memo']['path'])) {
-                return $snapshot['memo']['path'];
+        $components = [];
+
+        // Livewire 3 structure: components array with snapshot
+        foreach ($payload['components'] ?? [] as $component) {
+            $snapshot = $component['snapshot'] ?? [];
+            $memo = is_string($snapshot)
+                ? $this->decodeSnapshot($snapshot)['memo'] ?? []
+                : $snapshot['memo'] ?? [];
+
+            $componentData = [
+                'name' => $memo['name'] ?? null,
+                'id' => $memo['id'] ?? null,
+                'path' => $memo['path'] ?? null,
+            ];
+
+            // Extract method calls
+            $calls = $component['calls'] ?? [];
+            if (! empty($calls)) {
+                $componentData['methods'] = collect($calls)
+                    ->pluck('method')
+                    ->filter()
+                    ->values()
+                    ->toArray();
+            }
+
+            // Extract updated properties (wire:model updates)
+            $updates = $component['updates'] ?? [];
+            if (! empty($updates)) {
+                $componentData['updates'] = collect($updates)
+                    ->keys()
+                    ->toArray();
+            }
+
+            $components[] = array_filter($componentData);
+        }
+
+        return $components;
+    }
+
+    /**
+     * Decode a JSON-encoded snapshot string.
+     *
+     * @return array<string, mixed>
+     */
+    protected function decodeSnapshot(string $snapshot): array
+    {
+        $decoded = json_decode($snapshot, true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * Resolve the originating page the user was on.
+     */
+    protected function resolveOriginatingPage(array $payload, Request $request): ?string
+    {
+        // Try to get path from first component's snapshot
+        $firstComponent = $payload['components'][0] ?? null;
+        if ($firstComponent) {
+            $snapshot = $firstComponent['snapshot'] ?? [];
+            $memo = is_string($snapshot)
+                ? $this->decodeSnapshot($snapshot)['memo'] ?? []
+                : $snapshot['memo'] ?? [];
+
+            if (isset($memo['path'])) {
+                return $memo['path'];
             }
         }
 
-        // Livewire 2 & 3: Check for path in request data
-        $request = request();
-
-        // Livewire 3 sends fingerprint in request
-        $fingerprint = $request->input('components.0.snapshot.memo.path')
-            ?? $request->input('fingerprint.path')
-            ?? null;
-
+        // Legacy: check fingerprint.path
+        $fingerprint = $request->input('fingerprint.path');
         if ($fingerprint !== null) {
             return $fingerprint;
         }

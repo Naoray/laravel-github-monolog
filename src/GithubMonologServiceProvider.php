@@ -36,12 +36,23 @@ class GithubMonologServiceProvider extends ServiceProvider
     protected function registerContextDehydration(): void
     {
         Context::dehydrating(function ($context) {
-            foreach (['queries', 'outgoing_requests', 'session', 'request'] as $key) {
+            $keysToForget = [
+                'queries',
+                'outgoing_requests',
+                'session',
+                'request',
+                'livewire',
+                'livewire_originating_page',
+                'inertia',
+            ];
+
+            foreach ($keysToForget as $key) {
                 if ($context->has($key)) {
                     $context->forget($key);
                 }
             }
 
+            // Clean up prefixed keys
             foreach (array_keys($context->all()) as $key) {
                 if (str_starts_with($key, 'outgoing_request.')) {
                     $context->forget($key);

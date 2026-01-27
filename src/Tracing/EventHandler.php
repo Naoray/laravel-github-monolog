@@ -19,12 +19,19 @@ class EventHandler
     /**
      * Get all event-driven collectors mapped to their events.
      *
-     * @return array<string, class-string>
+     * Returns an array where keys are event classes and values are either
+     * a single collector class or an array of collector classes.
+     *
+     * @return array<string, class-string|array<class-string>>
      */
     protected static function getCollectors(): array
     {
         return [
-            RequestHandled::class => RequestDataCollector::class,
+            RequestHandled::class => [
+                RequestDataCollector::class,
+                LivewireDataCollector::class,
+                InertiaDataCollector::class,
+            ],
             RouteMatched::class => RouteDataCollector::class,
             Authenticated::class => UserDataCollector::class,
             QueryExecuted::class => QueryCollector::class,
@@ -48,17 +55,22 @@ class EventHandler
             return;
         }
 
-        foreach (self::getCollectors() as $eventClass => $collectorClass) {
-            /** @var EventDrivenCollectorInterface $collector */
-            $collector = new $collectorClass;
+        foreach (self::getCollectors() as $eventClass => $collectors) {
+            // Normalize to array for consistent handling
+            $collectors = is_array($collectors) ? $collectors : [$collectors];
 
-            if ($collector->isEnabled()) {
-                $events->listen($eventClass, function ($event) use ($collectorClass) {
-                    /** @var EventDrivenCollectorInterface $collectorInstance */
-                    $collectorInstance = new $collectorClass;
+            foreach ($collectors as $collectorClass) {
+                /** @var EventDrivenCollectorInterface $collector */
+                $collector = new $collectorClass;
 
-                    rescue(fn () => $collectorInstance($event));
-                });
+                if ($collector->isEnabled()) {
+                    $events->listen($eventClass, function ($event) use ($collectorClass) {
+                        /** @var EventDrivenCollectorInterface $collectorInstance */
+                        $collectorInstance = new $collectorClass;
+
+                        rescue(fn () => $collectorInstance($event));
+                    });
+                }
             }
         }
 

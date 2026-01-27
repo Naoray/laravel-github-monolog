@@ -140,8 +140,11 @@ return [
         // Collect outgoing HTTP request/response data
         'outgoing_requests' => true,
 
-        // Collect Livewire component context
+        // Collect Livewire component context (auto-detects Livewire requests)
         'livewire' => true,
+
+        // Collect Inertia.js request context (auto-detects Inertia requests)
+        'inertia' => true,
 
         /*
         |--------------------------------------------------------------------------
