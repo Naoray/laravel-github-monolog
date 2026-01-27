@@ -35,10 +35,6 @@ class GithubMonologServiceProvider extends ServiceProvider
      */
     protected function registerContextDehydration(): void
     {
-        if (! method_exists(Context::class, 'dehydrating')) {
-            return;
-        }
-
         Context::dehydrating(function ($context) {
             foreach (['queries', 'outgoing_requests', 'session', 'request'] as $key) {
                 if ($context->has($key)) {
