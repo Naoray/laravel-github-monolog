@@ -24,7 +24,7 @@ it('tracks outgoing request sending', function () {
     ($this->collector)($sendingEvent);
 
     $requestId = spl_object_hash($request);
-    $requestData = Context::get("outgoing_request.{$requestId}");
+    $requestData = Context::getHidden("outgoing_request.{$requestId}");
 
     expect($requestData)->not->toBeNull();
     expect($requestData)->toHaveKeys(['url', 'method', 'headers', 'body', 'started_at']);
@@ -43,5 +43,5 @@ it('does not track when disabled', function () {
     ($this->collector)($sendingEvent);
 
     $requestId = spl_object_hash($request);
-    expect(Context::has("outgoing_request.{$requestId}"))->toBeFalse();
+    expect(Context::hasHidden("outgoing_request.{$requestId}"))->toBeFalse();
 });

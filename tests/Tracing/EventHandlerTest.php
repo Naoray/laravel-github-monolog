@@ -42,8 +42,8 @@ it('registers request collector when enabled', function () {
 
     Event::dispatch($event);
 
-    expect(Context::get('request'))->not->toBeNull();
-    expect(Context::get('request')['url'])->toBe('https://example.com/test');
+    expect(Context::getHidden('request'))->not->toBeNull();
+    expect(Context::getHidden('request')['url'])->toBe('https://example.com/test');
 });
 
 it('registers route collector when enabled', function () {
@@ -97,8 +97,8 @@ it('registers query collector when enabled', function () {
 
     Event::dispatch($event);
 
-    expect(Context::get('queries'))->not->toBeNull();
-    expect(Context::get('queries'))->toHaveCount(1);
+    expect(Context::getHidden('queries'))->not->toBeNull();
+    expect(Context::getHidden('queries'))->toHaveCount(1);
 });
 
 it('registers job collector when enabled', function () {
@@ -151,7 +151,7 @@ it('registers outgoing request collectors when enabled', function () {
 
     // Check that outgoing request data was stored (using object hash as key)
     $requestId = spl_object_hash($request);
-    expect(Context::get("outgoing_request.{$requestId}"))->not->toBeNull();
+    expect(Context::getHidden("outgoing_request.{$requestId}"))->not->toBeNull();
 
     // Mock the same request object for the response event
     $request->shouldReceive('url')->andReturn('https://example.com/api');
@@ -163,7 +163,7 @@ it('registers outgoing request collectors when enabled', function () {
     $responseEvent = new ResponseReceived($request, $response);
     Event::dispatch($responseEvent);
 
-    $outgoingRequests = Context::get('outgoing_requests');
+    $outgoingRequests = Context::getHidden('outgoing_requests');
     expect($outgoingRequests)->toHaveCount(1);
     expect($outgoingRequests[0]['url'])->toBe('https://example.com/api');
     expect($outgoingRequests[0]['status'])->toBe(200);
@@ -216,7 +216,7 @@ it('does not register individual collectors when disabled', function () {
 
     // Queries collector is disabled, so it should not have collected data
     // (Note: Context might have data from previous tests, but queries should be empty or unchanged)
-    $queries = Context::get('queries', []);
+    $queries = Context::getHidden('queries') ?? [];
     expect($queries)->toBeEmpty();
 });
 

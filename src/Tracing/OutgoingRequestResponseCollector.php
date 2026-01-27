@@ -30,11 +30,11 @@ class OutgoingRequestResponseCollector implements EventDrivenCollectorInterface
         $config = config('logging.channels.github.tracing.outgoing_requests', []);
         $limit = $config['limit'] ?? self::DEFAULT_LIMIT;
 
-        $requestData = Context::get("outgoing_request.{$requestId}", []);
+        $requestData = Context::getHidden("outgoing_request.{$requestId}") ?? [];
         $startedAt = $requestData['started_at'] ?? microtime(true);
         $duration = (microtime(true) - $startedAt) * 1000; // Convert to milliseconds
 
-        $outgoingRequests = Context::get('outgoing_requests', []);
+        $outgoingRequests = Context::getHidden('outgoing_requests') ?? [];
 
         $outgoingRequests[] = [
             'url' => $request->url(),
@@ -49,7 +49,7 @@ class OutgoingRequestResponseCollector implements EventDrivenCollectorInterface
             $outgoingRequests = array_slice($outgoingRequests, -$limit);
         }
 
-        Context::add('outgoing_requests', $outgoingRequests);
-        Context::forget("outgoing_request.{$requestId}");
+        Context::addHidden('outgoing_requests', $outgoingRequests);
+        Context::forgetHidden("outgoing_request.{$requestId}");
     }
 }

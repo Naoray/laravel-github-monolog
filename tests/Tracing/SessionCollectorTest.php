@@ -20,7 +20,7 @@ it('collects session data when session is started', function () {
 
     $this->collector->collect();
 
-    $session = Context::get('session');
+    $session = Context::getHidden('session');
 
     expect($session)->toHaveKey('data');
     expect($session['data']['key'])->toBe('value');
@@ -30,5 +30,5 @@ it('collects session data when session is started', function () {
 it('does not collect when session is not started', function () {
     $this->collector->collect();
 
-    expect(Context::has('session'))->toBeFalse();
+    expect(Context::hasHidden('session'))->toBeFalse();
 });

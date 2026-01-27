@@ -28,7 +28,7 @@ class ContextProcessor implements ProcessorInterface
             $sessionCollector->collect();
         }
 
-        $contextData = Context::all();
+        $contextData = array_merge(Context::all(), Context::allHidden());
 
         if (empty($contextData)) {
             return $record;

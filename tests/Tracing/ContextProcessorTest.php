@@ -18,7 +18,7 @@ afterEach(function () {
 it('merges context data into log record context', function () {
     // Arrange
     Context::add('user', ['id' => 123, 'name' => 'John']);
-    Context::add('request', ['url' => 'https://example.com', 'method' => 'GET']);
+    Context::addHidden('request', ['url' => 'https://example.com', 'method' => 'GET']);
 
     $record = createLogRecord(
         'Test message',

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\QueryCollector;
 
 beforeEach(function () {
+    Context::flush();
     $this->collector = new QueryCollector;
     Config::set('logging.channels.github.tracing.queries', ['enabled' => true, 'limit' => 10]);
 });
@@ -27,7 +28,7 @@ it('collects query data', function () {
 
     ($this->collector)($event);
 
-    $queries = Context::get('queries');
+    $queries = Context::getHidden('queries');
 
     expect($queries)->toHaveCount(1);
     expect($queries[0])->toHaveKeys(['sql', 'bindings', 'time', 'connection']);
@@ -53,7 +54,7 @@ it('respects query limit', function () {
         ($this->collector)($event);
     }
 
-    $queries = Context::get('queries');
+    $queries = Context::getHidden('queries');
 
     expect($queries)->toHaveCount(2);
     expect($queries[0]['sql'])->toContain('id = 3');
@@ -75,5 +76,5 @@ it('does not collect when disabled', function () {
 
     ($this->collector)($event);
 
-    expect(Context::has('queries'))->toBeFalse();
+    expect(Context::hasHidden('queries'))->toBeFalse();
 });

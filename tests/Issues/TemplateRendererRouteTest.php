@@ -44,7 +44,7 @@ it('includes request route information in context section', function () {
     // Verify route and request data are in Context
     expect(Context::get('route'))->toHaveKey('name');
     expect(Context::get('route')['name'])->toBe('api.users.index');
-    expect(Context::get('request'))->toHaveKey('url');
+    expect(Context::getHidden('request'))->toHaveKey('url');
 
     $record = createLogRecord('Test error');
     $record = ($this->processor)($record);
@@ -87,7 +87,7 @@ it('includes both user and request data in context section', function () {
     expect(Context::get('user'))->toBe(['id' => 123, 'email' => 'user@example.com']);
     expect(Context::get('route'))->toHaveKey('name');
     expect(Context::get('route')['name'])->toBe('api.posts.store');
-    expect(Context::get('request'))->toHaveKey('url');
+    expect(Context::getHidden('request'))->toHaveKey('url');
 
     $record = createLogRecord('Test error');
     $record = ($this->processor)($record);

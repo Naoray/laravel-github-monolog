@@ -28,7 +28,7 @@ class RequestDataCollector implements EventDrivenCollectorInterface
             $files = null;
         }
 
-        Context::add('request', array_filter([
+        Context::addHidden('request', array_filter([
             'url' => $request->url(),
             'full_url' => $request->fullUrl(),
             'method' => $request->method(),

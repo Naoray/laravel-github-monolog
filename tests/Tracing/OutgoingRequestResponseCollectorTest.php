@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\OutgoingRequestResponseCollector;
 
 beforeEach(function () {
+    Context::flush();
     $this->collector = new OutgoingRequestResponseCollector;
     Config::set('logging.channels.github.tracing.outgoing_requests', ['enabled' => true, 'limit' => 5]);
 });
@@ -23,7 +24,7 @@ it('tracks outgoing request response', function () {
     $requestId = spl_object_hash($request);
 
     // Simulate request sending data
-    Context::add("outgoing_request.{$requestId}", [
+    Context::addHidden("outgoing_request.{$requestId}", [
         'url' => 'https://api.example.com/test',
         'method' => 'GET',
         'headers' => [],
@@ -37,7 +38,7 @@ it('tracks outgoing request response', function () {
     $receivedEvent = new ResponseReceived($request, $response);
     ($this->collector)($receivedEvent);
 
-    $requests = Context::get('outgoing_requests');
+    $requests = Context::getHidden('outgoing_requests');
 
     expect($requests)->toHaveCount(1);
     expect($requests[0])->toHaveKeys(['url', 'method', 'status', 'duration_ms']);
@@ -47,7 +48,7 @@ it('tracks outgoing request response', function () {
     expect($requests[0]['duration_ms'])->toBeNumeric();
 
     // Verify temporary request data is cleaned up
-    expect(Context::has("outgoing_request.{$requestId}"))->toBeFalse();
+    expect(Context::hasHidden("outgoing_request.{$requestId}"))->toBeFalse();
 });
 
 it('respects request limit', function () {
@@ -62,7 +63,7 @@ it('respects request limit', function () {
         $requestId = spl_object_hash($request);
 
         // Simulate request sending data
-        Context::add("outgoing_request.{$requestId}", [
+        Context::addHidden("outgoing_request.{$requestId}", [
             'url' => "https://api.example.com/test{$i}",
             'method' => 'GET',
             'headers' => [],
@@ -73,7 +74,7 @@ it('respects request limit', function () {
         ($this->collector)(new ResponseReceived($request, $response));
     }
 
-    $requests = Context::get('outgoing_requests');
+    $requests = Context::getHidden('outgoing_requests');
 
     expect($requests)->toHaveCount(2);
     expect($requests[0]['url'])->toContain('test3');
@@ -88,7 +89,7 @@ it('does not track when disabled', function () {
     $requestId = spl_object_hash($request);
 
     // Simulate request sending data
-    Context::add("outgoing_request.{$requestId}", [
+    Context::addHidden("outgoing_request.{$requestId}", [
         'url' => 'https://api.example.com/test',
         'method' => 'GET',
         'headers' => [],
@@ -100,5 +101,5 @@ it('does not track when disabled', function () {
 
     ($this->collector)(new ResponseReceived($request, $response));
 
-    expect(Context::has('outgoing_requests'))->toBeFalse();
+    expect(Context::hasHidden('outgoing_requests'))->toBeFalse();
 });

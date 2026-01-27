@@ -30,7 +30,7 @@ class QueryCollector implements EventDrivenCollectorInterface
 
         $limit = $config['limit'] ?? self::DEFAULT_LIMIT;
 
-        $queries = Context::get('queries', []);
+        $queries = Context::getHidden('queries') ?? [];
         $queries[] = [
             'sql' => $event->sql,
             'bindings' => $this->redactBindings($event->bindings),
@@ -43,6 +43,6 @@ class QueryCollector implements EventDrivenCollectorInterface
             $queries = array_slice($queries, -$limit);
         }
 
-        Context::add('queries', $queries);
+        Context::addHidden('queries', $queries);
     }
 }

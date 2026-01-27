@@ -27,7 +27,7 @@ class SessionCollector implements DataCollectorInterface
             return;
         }
 
-        Context::add('session', [
+        Context::addHidden('session', [
             'data' => $this->redactPayload(Session::all()),
             'flash' => [
                 'old' => Session::get('_flash.old', []),

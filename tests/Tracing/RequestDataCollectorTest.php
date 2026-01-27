@@ -30,7 +30,7 @@ it('collects request data', function () {
     ($this->collector)($event);
 
     // Assert
-    $requestData = Context::get('request');
+    $requestData = Context::getHidden('request');
     expect($requestData)->toHaveKeys(['url', 'full_url', 'method', 'ip', 'headers', 'cookies', 'query', 'body']);
     expect($requestData['url'])->toBe('https://example.com/test');
     expect($requestData['full_url'])->toBe('https://example.com/test?foo=bar');
@@ -50,7 +50,7 @@ it('filters sensitive headers', function () {
     ($this->collector)($event);
 
     // Assert
-    $requestData = Context::get('request');
+    $requestData = Context::getHidden('request');
     expect($requestData['headers']['authorization'][0])->toContain('Bearer');
     expect($requestData['headers']['authorization'][0])->toContain('bytes redacted');
     expect($requestData['headers']['safe-header'][0])->toBe('value');
@@ -72,7 +72,7 @@ it('handles deleted temporary files gracefully', function () {
     // Act & Assert - Should not throw exception
     ($this->collector)($event);
 
-    $requestData = Context::get('request');
+    $requestData = Context::getHidden('request');
     // When formatFiles() throws an exception, files are set to null and filtered out
     // So we check that the request data exists and files may or may not be present
     expect($requestData)->toBeArray();
@@ -105,7 +105,7 @@ it('collects file upload data using UploadedFile fake', function () {
     ($this->collector)($event);
 
     // Assert
-    $requestData = Context::get('request');
+    $requestData = Context::getHidden('request');
     expect($requestData)->toHaveKey('files');
     expect($requestData['files'])->toHaveKey('document');
     expect($requestData['files'])->toHaveKey('photo');
@@ -147,7 +147,7 @@ it('handles multiple files with same name using UploadedFile fake', function () 
     ($this->collector)($event);
 
     // Assert
-    $requestData = Context::get('request');
+    $requestData = Context::getHidden('request');
     expect($requestData['files'])->toHaveKey('files');
     expect($requestData['files']['files'])->toBeArray();
     expect($requestData['files']['files'])->toHaveCount(2);
