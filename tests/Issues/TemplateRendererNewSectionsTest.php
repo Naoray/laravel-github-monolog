@@ -10,6 +10,15 @@ beforeEach(function () {
     $this->renderer = resolve(TemplateRenderer::class);
     $this->processor = new ContextProcessor;
     Context::flush();
+    // Disable auto-collection so tests control their data
+    config(['logging.channels.github.tracing.environment' => false]);
+    config(['logging.channels.github.tracing.user' => false]);
+    config(['logging.channels.github.tracing.session' => false]);
+    config(['logging.channels.github.tracing.livewire' => false]);
+    config(['github-monolog.tracing.environment' => false]);
+    config(['github-monolog.tracing.user' => false]);
+    config(['github-monolog.tracing.session' => false]);
+    config(['github-monolog.tracing.livewire' => false]);
 });
 
 afterEach(function () {

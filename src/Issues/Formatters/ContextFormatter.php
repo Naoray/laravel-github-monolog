@@ -14,12 +14,14 @@ class ContextFormatter
             'environment',
             'request',
             'route',
+            'route_summary',
             'user',
             'queries',
             'job',
             'command',
             'outgoing_requests',
             'session',
+            'livewire',
         ]);
 
         if (empty($context)) {

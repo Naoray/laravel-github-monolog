@@ -29,12 +29,14 @@ it('excludes separate sections from formatted context', function () {
         'environment' => ['app_env' => 'testing'],
         'request' => ['url' => 'https://example.com'],
         'route' => ['name' => 'test.route'],
+        'route_summary' => '/dashboard',
         'user' => ['id' => 123],
         'queries' => [],
         'job' => ['name' => 'TestJob'],
         'command' => ['name' => 'test:command'],
         'outgoing_requests' => [],
         'session' => ['data' => []],
+        'livewire' => ['component' => 'App\\Livewire\\Counter'],
         'custom_key' => 'custom_value',
     ];
 
@@ -43,13 +45,15 @@ it('excludes separate sections from formatted context', function () {
     expect($result)
         ->not->toContain('environment')
         ->not->toContain('request')
-        ->not->toContain('route')
+        ->not->toContain('"route"')
+        ->not->toContain('route_summary')
         ->not->toContain('user')
         ->not->toContain('queries')
         ->not->toContain('job')
         ->not->toContain('command')
         ->not->toContain('outgoing_requests')
         ->not->toContain('session')
+        ->not->toContain('livewire')
         ->toContain('custom_key')
         ->toContain('custom_value');
 });

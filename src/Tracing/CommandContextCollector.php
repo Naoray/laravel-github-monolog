@@ -5,17 +5,17 @@ namespace Naoray\LaravelGithubMonolog\Tracing;
 use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\RedactsData;
+use Naoray\LaravelGithubMonolog\Tracing\Concerns\ResolvesTracingConfig;
 use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
 
 class CommandContextCollector implements EventDrivenCollectorInterface
 {
     use RedactsData;
+    use ResolvesTracingConfig;
 
     public function isEnabled(): bool
     {
-        $config = config('logging.channels.github.tracing', []);
-
-        return isset($config['commands']) && $config['commands'];
+        return $this->isTracingFeatureEnabled('commands');
     }
 
     public function __invoke(CommandStarting $event): void

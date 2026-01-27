@@ -3,15 +3,16 @@
 namespace Naoray\LaravelGithubMonolog\Tracing;
 
 use Illuminate\Support\Facades\Context;
+use Naoray\LaravelGithubMonolog\Tracing\Concerns\ResolvesTracingConfig;
 use Naoray\LaravelGithubMonolog\Tracing\Contracts\DataCollectorInterface;
 
 class EnvironmentCollector implements DataCollectorInterface
 {
+    use ResolvesTracingConfig;
+
     public function isEnabled(): bool
     {
-        $config = config('logging.channels.github.tracing', []);
-
-        return isset($config['environment']) && $config['environment'];
+        return $this->isTracingFeatureEnabled('environment');
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace Naoray\LaravelGithubMonolog\Tracing;
 
 use Illuminate\Auth\Events\Authenticated;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Events\QueryExecuted;
@@ -34,11 +35,16 @@ class EventHandler
         ];
     }
 
-    public function subscribe(Dispatcher $events)
+    public function subscribe(Dispatcher $events): void
     {
-        $config = config('logging.channels.github.tracing', []);
-
-        if (isset($config['enabled']) && ! $config['enabled']) {
+        // Check package config first, then fall back to channel config
+        $packageConfig = config('github-monolog.tracing', []);
+        $channelConfig = config('logging.channels.github.tracing', []);
+        
+        // Package config takes precedence
+        $enabled = $packageConfig['enabled'] ?? $channelConfig['enabled'] ?? true;
+        
+        if (! $enabled) {
             return;
         }
 
@@ -54,6 +60,14 @@ class EventHandler
                     rescue(fn () => $collectorInstance($event));
                 });
             }
+        }
+
+        // Register logout listener to remember user before logout
+        $userCollector = new UserDataCollector;
+        if ($userCollector->isEnabled()) {
+            $events->listen(Logout::class, function (Logout $event) {
+                rescue(fn () => (new UserDataCollector)->handleLogout($event));
+            });
         }
     }
 }

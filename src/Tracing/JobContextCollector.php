@@ -5,17 +5,17 @@ namespace Naoray\LaravelGithubMonolog\Tracing;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\RedactsData;
+use Naoray\LaravelGithubMonolog\Tracing\Concerns\ResolvesTracingConfig;
 use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
 
 class JobContextCollector implements EventDrivenCollectorInterface
 {
     use RedactsData;
+    use ResolvesTracingConfig;
 
     public function isEnabled(): bool
     {
-        $config = config('logging.channels.github.tracing', []);
-
-        return isset($config['jobs']) && $config['jobs'];
+        return $this->isTracingFeatureEnabled('jobs');
     }
 
     public function __invoke(JobExceptionOccurred $event): void

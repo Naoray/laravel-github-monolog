@@ -107,6 +107,7 @@ class TemplateRenderer
             '{command}' => $this->structuredDataFormatter->format($record->context['command'] ?? null),
             '{outgoing_requests}' => $this->outgoingRequestFormatter->format($record->context['outgoing_requests'] ?? null),
             '{session}' => $this->structuredDataFormatter->format($record->context['session'] ?? null),
+            '{livewire}' => $this->structuredDataFormatter->format($record->context['livewire'] ?? null),
             '{context}' => $this->contextFormatter->format($record->context),
             '{extra}' => $this->extraFormatter->format(Arr::except($record->extra, ['github_issue_signature'])),
         ];
@@ -136,6 +137,14 @@ class TemplateRenderer
 
     private function formatRouteSummary(LogRecord $record): string
     {
+        // Check if route_summary was pre-computed (e.g., for Livewire routes)
+        $routeSummary = $record->context['route_summary'] ?? null;
+        if (is_string($routeSummary) && $routeSummary !== '') {
+            $method = $this->extractMethodFromRequest($record);
+
+            return $method !== '' ? strtoupper($method).' '.$routeSummary : $routeSummary;
+        }
+
         $request = $record->context['request'] ?? null;
         $route = $record->context['route'] ?? null;
 
@@ -163,6 +172,17 @@ class TemplateRenderer
                     return strtoupper($method).' /'.$uri;
                 }
             }
+        }
+
+        return '';
+    }
+
+    private function extractMethodFromRequest(LogRecord $record): string
+    {
+        $request = $record->context['request'] ?? null;
+
+        if (is_array($request)) {
+            return $request['method'] ?? '';
         }
 
         return '';

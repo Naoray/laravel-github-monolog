@@ -18,7 +18,8 @@ test('it returns all sections when no replacements provided', function () {
         ->toContain('job')
         ->toContain('command')
         ->toContain('outgoing_requests')
-        ->toContain('session');
+        ->toContain('session')
+        ->toContain('livewire');
 });
 
 test('it returns empty sections based on empty replacements', function () {
@@ -49,7 +50,8 @@ test('it returns remaining sections after removing empty ones', function () {
         ->toContain('job')
         ->toContain('command')
         ->toContain('outgoing_requests')
-        ->toContain('session');
+        ->toContain('session')
+        ->toContain('livewire');
 });
 
 test('it returns correct pattern for removing section content', function () {
@@ -75,7 +77,8 @@ test('it returns correct pattern for standalone flags', function () {
         ->toContain('job')
         ->toContain('command')
         ->toContain('outgoing_requests')
-        ->toContain('session');
+        ->toContain('session')
+        ->toContain('livewire');
 });
 
 test('it handles new section placeholders correctly', function () {
@@ -94,4 +97,26 @@ test('it handles new section placeholders correctly', function () {
         ->toContain('user')
         ->toContain('queries')
         ->not->toContain('request');
+});
+
+test('it handles livewire section placeholder', function () {
+    $replacements = [
+        '{livewire}' => '',
+        '{route}' => 'some route',
+    ];
+
+    $sections = SectionMapping::getSectionsToRemove($replacements);
+
+    expect($sections)->toContain('livewire')
+        ->not->toContain('route');
+});
+
+test('it keeps livewire section when content present', function () {
+    $replacements = [
+        '{livewire}' => json_encode(['component' => 'App\\Livewire\\Counter']),
+    ];
+
+    $sections = SectionMapping::getSectionsToRemove($replacements);
+
+    expect($sections)->not->toContain('livewire');
 });
