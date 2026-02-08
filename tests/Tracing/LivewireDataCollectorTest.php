@@ -52,8 +52,10 @@ it('detects livewire request via X-Livewire header', function () {
     expect($livewireData)->toHaveKey('components');
     expect($livewireData['components'][0])->toHaveKey('name');
     expect($livewireData['components'][0]['name'])->toBe('user-profile');
-    expect($livewireData['components'][0]['methods'])->toBe(['save']);
-    expect($livewireData['components'][0]['updates'])->toBe(['name']);
+    expect($livewireData['components'][0]['methods'])->toBe([
+        ['method' => 'save', 'params' => []],
+    ]);
+    expect($livewireData['components'][0]['updates'])->toBe(['name' => 'John Doe']);
 });
 
 it('detects livewire request via path containing livewire/update', function () {
@@ -208,6 +210,144 @@ it('redacts sensitive data in component updates', function () {
     $this->collector->__invoke($event);
 
     $livewireData = Context::get('livewire');
-    // Updates should only contain keys, not values (by design)
-    expect($livewireData['components'][0]['updates'])->toBe(['email', 'password']);
+    // Updates now include values, with sensitive fields redacted
+    expect($livewireData['components'][0]['updates']['email'])->toBe('test@example.com');
+    expect($livewireData['components'][0]['updates']['password'])->toBe('[9 bytes redacted]');
+});
+
+it('captures method call parameters', function () {
+    $request = Request::create('/livewire/update', 'POST');
+    $request->headers->set('X-Livewire', 'true');
+    $request->headers->set('Content-Type', 'application/json');
+
+    $payload = [
+        'components' => [
+            [
+                'snapshot' => json_encode([
+                    'memo' => [
+                        'name' => 'user-profile',
+                        'id' => 'abc123',
+                    ],
+                ]),
+                'calls' => [
+                    ['method' => 'save', 'params' => ['draft' => true]],
+                    ['method' => 'validate', 'params' => ['name', 'email']],
+                ],
+            ],
+        ],
+    ];
+
+    $request->merge($payload);
+    app()->instance('request', $request);
+
+    $event = new RequestHandled($request, new Response);
+    $this->collector->__invoke($event);
+
+    $livewireData = Context::get('livewire');
+    expect($livewireData['components'][0]['methods'])->toBe([
+        ['method' => 'save', 'params' => ['draft' => true]],
+        ['method' => 'validate', 'params' => ['name', 'email']],
+    ]);
+});
+
+it('captures update values alongside keys', function () {
+    $request = Request::create('/livewire/update', 'POST');
+    $request->headers->set('X-Livewire', 'true');
+    $request->headers->set('Content-Type', 'application/json');
+
+    $payload = [
+        'components' => [
+            [
+                'snapshot' => json_encode([
+                    'memo' => [
+                        'name' => 'contact-form',
+                        'id' => 'def456',
+                    ],
+                ]),
+                'updates' => [
+                    'name' => 'Jane Smith',
+                    'email' => 'jane@example.com',
+                    'message' => 'Hello there',
+                ],
+            ],
+        ],
+    ];
+
+    $request->merge($payload);
+    app()->instance('request', $request);
+
+    $event = new RequestHandled($request, new Response);
+    $this->collector->__invoke($event);
+
+    $livewireData = Context::get('livewire');
+    expect($livewireData['components'][0]['updates'])->toBe([
+        'name' => 'Jane Smith',
+        'email' => 'jane@example.com',
+        'message' => 'Hello there',
+    ]);
+});
+
+it('redacts sensitive data in method params', function () {
+    $request = Request::create('/livewire/update', 'POST');
+    $request->headers->set('X-Livewire', 'true');
+    $request->headers->set('Content-Type', 'application/json');
+
+    $payload = [
+        'components' => [
+            [
+                'snapshot' => json_encode([
+                    'memo' => [
+                        'name' => 'auth-form',
+                        'id' => 'auth123',
+                    ],
+                ]),
+                'calls' => [
+                    ['method' => 'login', 'params' => ['password' => 'my-secret-pw']],
+                ],
+            ],
+        ],
+    ];
+
+    $request->merge($payload);
+    app()->instance('request', $request);
+
+    $event = new RequestHandled($request, new Response);
+    $this->collector->__invoke($event);
+
+    $livewireData = Context::get('livewire');
+    expect($livewireData['components'][0]['methods'][0]['method'])->toBe('login');
+    expect($livewireData['components'][0]['methods'][0]['params']['password'])->toBe('[12 bytes redacted]');
+});
+
+it('defaults to empty params array when calls have no params key', function () {
+    $request = Request::create('/livewire/update', 'POST');
+    $request->headers->set('X-Livewire', 'true');
+    $request->headers->set('Content-Type', 'application/json');
+
+    $payload = [
+        'components' => [
+            [
+                'snapshot' => json_encode([
+                    'memo' => [
+                        'name' => 'counter',
+                        'id' => 'cnt123',
+                    ],
+                ]),
+                'calls' => [
+                    ['method' => 'increment'],
+                ],
+            ],
+        ],
+    ];
+
+    $request->merge($payload);
+    app()->instance('request', $request);
+
+    $event = new RequestHandled($request, new Response);
+    $this->collector->__invoke($event);
+
+    $livewireData = Context::get('livewire');
+    expect($livewireData['components'][0]['methods'])->toBe([
+        ['method' => 'increment', 'params' => []],
+    ]);
 });

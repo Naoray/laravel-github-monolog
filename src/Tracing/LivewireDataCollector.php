@@ -101,22 +101,23 @@ class LivewireDataCollector implements EventDrivenCollectorInterface
                 'path' => $memo['path'] ?? null,
             ];
 
-            // Extract method calls
+            // Extract method calls with parameters
             $calls = $component['calls'] ?? [];
             if (! empty($calls)) {
                 $componentData['methods'] = collect($calls)
-                    ->pluck('method')
-                    ->filter()
+                    ->filter(fn ($call) => isset($call['method']))
+                    ->map(fn ($call) => [
+                        'method' => $call['method'],
+                        'params' => $call['params'] ?? [],
+                    ])
                     ->values()
                     ->toArray();
             }
 
-            // Extract updated properties (wire:model updates)
+            // Extract updated properties with values (wire:model updates)
             $updates = $component['updates'] ?? [];
             if (! empty($updates)) {
-                $componentData['updates'] = collect($updates)
-                    ->keys()
-                    ->toArray();
+                $componentData['updates'] = $updates;
             }
 
             $components[] = array_filter($componentData);
