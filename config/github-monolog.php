@@ -146,6 +146,9 @@ return [
         // Collect Inertia.js request context (auto-detects Inertia requests)
         'inertia' => true,
 
+        // Auto-detect git information (hash, branch, tag, dirty status)
+        'git' => true,
+
         /*
         |--------------------------------------------------------------------------
         | Query Collector Settings
