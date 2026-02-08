@@ -27,12 +27,23 @@ class SessionCollector implements DataCollectorInterface
             return;
         }
 
-        Context::addHidden('session', [
-            'data' => $this->redactPayload(Session::all()),
-            'flash' => [
-                'old' => Session::get('_flash.old', []),
-                'new' => Session::get('_flash.new', []),
-            ],
-        ]);
+        $data = collect(Session::all())
+            ->except(['_token', '_flash'])
+            ->toArray();
+
+        $session = [
+            'data' => $this->redactPayload($data),
+        ];
+
+        $flash = [
+            'old' => Session::get('_flash.old', []),
+            'new' => Session::get('_flash.new', []),
+        ];
+
+        if (! empty($flash['old']) || ! empty($flash['new'])) {
+            $session['flash'] = $flash;
+        }
+
+        Context::addHidden('session', $session);
     }
 }
