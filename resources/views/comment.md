@@ -21,23 +21,8 @@
 {simplified_stack_trace}
 ```
 
-<details>
-<summary>📋 View Complete Stack Trace</summary>
+> Full stack trace and previous exceptions available in the original issue above.
 
-```shell
-{full_stack_trace}
-```
-
-</details>
-
-<!-- prev-stacktrace:start -->
-<details>
-<summary>🔍 View Previous Exceptions</summary>
-
-{previous_exceptions}
-
-</details>
-<!-- prev-stacktrace:end -->
 </details>
 <!-- stacktrace:end -->
 
@@ -96,16 +81,5 @@
 
 </details>
 <!-- context:end -->
-
-<!-- extra:start -->
-<details>
-<summary>➕ Extra Data</summary>
-
-```json
-{extra}
-```
-
-</details>
-<!-- extra:end -->
 
 <!-- Signature: {signature} -->
