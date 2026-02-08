@@ -20,6 +20,7 @@
 ```shell
 {simplified_stack_trace}
 ```
+</details>
 
 <details>
 <summary>📋 View Complete Stack Trace</summary>
@@ -29,6 +30,7 @@
 ```
 
 </details>
+<!-- stacktrace:end -->
 
 <!-- prev-stacktrace:start -->
 <details>
@@ -38,8 +40,6 @@
 
 </details>
 <!-- prev-stacktrace:end -->
-</details>
-<!-- stacktrace:end -->
 
 <!-- queries:start -->
 <details>

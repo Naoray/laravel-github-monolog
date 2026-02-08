@@ -81,6 +81,37 @@ test('it handles nested stack traces in previous exceptions correctly', function
         ->toContain('View Previous Exceptions');
 });
 
+test('comment template has stack trace details as siblings not nested', function () {
+    $template = $this->stubLoader->load('comment');
+
+    // Verify in the raw template that the stacktrace section contains exactly 2 sibling
+    // <details> blocks (Stack Trace + View Complete Stack Trace), not nested ones.
+    $stackTraceStart = strpos($template, '<!-- stacktrace:start -->');
+    $stackTraceEnd = strpos($template, '<!-- stacktrace:end -->');
+
+    expect($stackTraceStart)->not->toBeFalse();
+    expect($stackTraceEnd)->not->toBeFalse();
+
+    $stackTraceSection = substr($template, $stackTraceStart, $stackTraceEnd - $stackTraceStart + strlen('<!-- stacktrace:end -->'));
+
+    // Count details tags in the stacktrace section - should be 2 sibling blocks
+    preg_match_all('/<details>/', $stackTraceSection, $openTags);
+    preg_match_all('/<\/details>/', $stackTraceSection, $closeTags);
+
+    expect(count($openTags[0]))->toBe(2)
+        ->and(count($closeTags[0]))->toBe(2);
+
+    // The first </details> should appear BEFORE the second <details>,
+    // proving they are siblings, not nested.
+    $firstClose = strpos($stackTraceSection, '</details>');
+    $secondOpen = strpos($stackTraceSection, '<details>', strpos($stackTraceSection, '<details>') + 1);
+    expect($firstClose)->toBeLessThan($secondOpen);
+
+    // Verify previous exceptions section is outside the stacktrace markers
+    $prevStart = strpos($template, '<!-- prev-stacktrace:start -->');
+    expect($prevStart)->toBeGreaterThan($stackTraceEnd);
+});
+
 test('it cleans all empty sections', function () {
     $record = createLogRecord('');
 
