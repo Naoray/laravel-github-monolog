@@ -2,6 +2,8 @@
 
 namespace Naoray\LaravelGithubMonolog\Tracing;
 
+use Illuminate\Support\Facades\Process;
+
 class GitInfoDetector
 {
     /**
@@ -56,57 +58,13 @@ class GitInfoDetector
      */
     protected function runGitCommand(string $command): ?string
     {
-        $descriptors = [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ];
+        try {
+            $result = Process::timeout(1)->path(base_path())->run($command);
 
-        $process = @proc_open($command, $descriptors, $pipes, base_path());
-
-        if (! is_resource($process)) {
+            return $result->successful() ? trim($result->output()) : null;
+        } catch (\Throwable) {
             return null;
         }
-
-        fclose($pipes[0]);
-
-        stream_set_blocking($pipes[1], false);
-
-        $output = '';
-        $startTime = microtime(true);
-        $timeoutSeconds = 1.0;
-
-        while (! feof($pipes[1])) {
-            $elapsed = microtime(true) - $startTime;
-            if ($elapsed >= $timeoutSeconds) {
-                fclose($pipes[1]);
-                fclose($pipes[2]);
-                proc_terminate($process);
-                proc_close($process);
-
-                return null;
-            }
-
-            $chunk = fread($pipes[1], 8192);
-            if ($chunk !== false) {
-                $output .= $chunk;
-            }
-
-            if ($chunk === '' || $chunk === false) {
-                usleep(10000); // 10ms
-            }
-        }
-
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-
-        $exitCode = proc_close($process);
-
-        if ($exitCode !== 0) {
-            return null;
-        }
-
-        return trim($output);
     }
 
     /**
