@@ -4,6 +4,7 @@ namespace Naoray\LaravelGithubMonolog\Tracing;
 
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Support\Facades\Context;
+use Illuminate\Support\Str;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\RedactsData;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\ResolvesTracingConfig;
 use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
@@ -68,7 +69,7 @@ class JobContextCollector implements EventDrivenCollectorInterface
             if (is_array($value)) {
                 $result[$key] = $this->truncateSerializedValues($value);
             } elseif (is_string($value) && strlen($value) > self::MAX_SERIALIZED_LENGTH) {
-                $result[$key] = substr($value, 0, self::MAX_SERIALIZED_LENGTH).'... [truncated]';
+                $result[$key] = Str::limit($value, self::MAX_SERIALIZED_LENGTH, '... [truncated]');
             } else {
                 $result[$key] = $value;
             }
