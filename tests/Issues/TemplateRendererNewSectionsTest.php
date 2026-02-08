@@ -219,6 +219,7 @@ it('removes empty sections from rendered template', function () {
         ->not->toContain('<!-- job:start -->')
         ->not->toContain('<!-- command:start -->')
         ->not->toContain('<!-- outgoing_requests:start -->')
+        ->not->toContain('<!-- breadcrumbs:start -->')
         ->not->toContain('<!-- session:start -->');
 });
 
@@ -278,4 +279,60 @@ it('formats multiple outgoing requests correctly', function () {
         ->toContain('201')
         ->toContain('100')
         ->toContain('250.5');
+});
+
+it('renders breadcrumbs section when breadcrumbs exist', function () {
+    Context::addHidden('breadcrumbs', [
+        [
+            'timestamp' => '14:30:15.100',
+            'category' => 'log',
+            'message' => '[info] User authenticated',
+            'metadata' => [],
+        ],
+        [
+            'timestamp' => '14:30:15.200',
+            'category' => 'cache',
+            'message' => 'Cache hit: user.permissions',
+            'metadata' => ['store' => 'redis'],
+        ],
+        [
+            'timestamp' => '14:30:15.300',
+            'category' => 'log',
+            'message' => '[warning] Deprecated method called',
+            'metadata' => [],
+        ],
+    ]);
+
+    $record = createLogRecord('Test message');
+    $record = ($this->processor)($record);
+
+    $rendered = $this->renderer->render($this->stubLoader->load('issue'), $record);
+
+    expect($rendered)
+        ->toContain('Breadcrumbs')
+        ->toContain('| Time | Category | Message | Details |')
+        ->toContain('User authenticated')
+        ->toContain('Cache hit: user.permissions')
+        ->toContain('store: redis')
+        ->toContain('Deprecated method called');
+});
+
+it('renders breadcrumbs in comment template', function () {
+    Context::addHidden('breadcrumbs', [
+        [
+            'timestamp' => '14:30:15.100',
+            'category' => 'log',
+            'message' => '[info] Processing request',
+            'metadata' => [],
+        ],
+    ]);
+
+    $record = createLogRecord('Test message');
+    $record = ($this->processor)($record);
+
+    $rendered = $this->renderer->render($this->stubLoader->load('comment'), $record);
+
+    expect($rendered)
+        ->toContain('Breadcrumbs')
+        ->toContain('Processing request');
 });

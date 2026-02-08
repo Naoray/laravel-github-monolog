@@ -39,6 +39,7 @@ class GithubMonologServiceProvider extends ServiceProvider
             $keysToForget = [
                 'queries',
                 'outgoing_requests',
+                'breadcrumbs',
                 'session',
                 'request',
                 'livewire',

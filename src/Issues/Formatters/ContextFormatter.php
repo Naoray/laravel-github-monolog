@@ -20,6 +20,7 @@ class ContextFormatter
             'job',
             'command',
             'outgoing_requests',
+            'breadcrumbs',
             'session',
             'livewire',
             'livewire_originating_page',

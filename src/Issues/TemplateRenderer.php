@@ -5,6 +5,7 @@ namespace Naoray\LaravelGithubMonolog\Issues;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Monolog\LogRecord;
+use Naoray\LaravelGithubMonolog\Issues\Formatters\BreadcrumbFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Formatters\ContextFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Formatters\ExceptionFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Formatters\ExtraFormatter;
@@ -30,6 +31,7 @@ class TemplateRenderer
         private readonly StructuredDataFormatter $structuredDataFormatter,
         private readonly QueryFormatter $queryFormatter,
         private readonly OutgoingRequestFormatter $outgoingRequestFormatter,
+        private readonly BreadcrumbFormatter $breadcrumbFormatter,
         private readonly ContextFormatter $contextFormatter,
         private readonly ExtraFormatter $extraFormatter,
         private readonly TemplateSectionCleaner $sectionCleaner,
@@ -107,6 +109,7 @@ class TemplateRenderer
             '{job}' => $this->structuredDataFormatter->format($record->context['job'] ?? null),
             '{command}' => $this->structuredDataFormatter->format($record->context['command'] ?? null),
             '{outgoing_requests}' => $this->outgoingRequestFormatter->format($record->context['outgoing_requests'] ?? null),
+            '{breadcrumbs}' => $this->breadcrumbFormatter->format($record->context['breadcrumbs'] ?? null),
             '{session}' => $this->structuredDataFormatter->format($record->context['session'] ?? null),
             '{livewire}' => $this->structuredDataFormatter->format($record->context['livewire'] ?? null),
             '{inertia}' => $this->structuredDataFormatter->format($record->context['inertia'] ?? null),

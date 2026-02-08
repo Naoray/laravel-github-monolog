@@ -153,12 +153,22 @@ return [
         // Auto-detect git information (hash, branch, tag, dirty status)
         'git' => true,
 
+        // Collect breadcrumbs (ordered trail of events before the error)
+        'breadcrumbs' => true,
+
         /*
         |--------------------------------------------------------------------------
         | Query Collector Settings
         |--------------------------------------------------------------------------
         */
         'query_limit' => 50,
+
+        /*
+        |--------------------------------------------------------------------------
+        | Breadcrumb Collector Settings
+        |--------------------------------------------------------------------------
+        */
+        'breadcrumb_limit' => 40,
 
         /*
         |--------------------------------------------------------------------------

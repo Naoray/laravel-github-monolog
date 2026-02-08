@@ -28,6 +28,12 @@ class ContextProcessor implements ProcessorInterface
             $sessionCollector->collect();
         }
 
+        // Collect breadcrumbs if enabled
+        $breadcrumbCollector = new BreadcrumbCollector;
+        if ($breadcrumbCollector->isEnabled()) {
+            $breadcrumbCollector->collect();
+        }
+
         $contextData = array_merge(Context::all(), Context::allHidden());
 
         if (empty($contextData)) {

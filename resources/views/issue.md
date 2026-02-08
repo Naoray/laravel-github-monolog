@@ -125,6 +125,15 @@
 </details>
 <!-- outgoing_requests:end -->
 
+<!-- breadcrumbs:start -->
+<details>
+<summary>🍞 Breadcrumbs</summary>
+
+{breadcrumbs}
+
+</details>
+<!-- breadcrumbs:end -->
+
 <!-- session:start -->
 <details>
 <summary>🔐 Session</summary>

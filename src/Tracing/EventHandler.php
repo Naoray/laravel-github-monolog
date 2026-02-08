@@ -4,12 +4,15 @@ namespace Naoray\LaravelGithubMonolog\Tracing;
 
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Cache\Events\CacheHit;
+use Illuminate\Cache\Events\CacheMissed;
 use Illuminate\Console\Events\CommandStarting;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Client\Events\RequestSending;
 use Illuminate\Http\Client\Events\ResponseReceived;
+use Illuminate\Log\Events\MessageLogged;
 use Illuminate\Queue\Events\JobExceptionOccurred;
 use Illuminate\Routing\Events\RouteMatched;
 use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
@@ -79,6 +82,22 @@ class EventHandler
         if ($userCollector->isEnabled()) {
             $events->listen(Logout::class, function (Logout $event) {
                 rescue(fn () => (new UserDataCollector)->handleLogout($event));
+            });
+        }
+
+        // Register breadcrumb listeners for log and cache events
+        $breadcrumbCollector = new BreadcrumbCollector;
+        if ($breadcrumbCollector->isEnabled()) {
+            $events->listen(MessageLogged::class, function (MessageLogged $event) {
+                rescue(fn () => (new BreadcrumbCollector)->handleMessageLogged($event));
+            });
+
+            $events->listen(CacheHit::class, function (CacheHit $event) {
+                rescue(fn () => (new BreadcrumbCollector)->handleCacheHit($event));
+            });
+
+            $events->listen(CacheMissed::class, function (CacheMissed $event) {
+                rescue(fn () => (new BreadcrumbCollector)->handleCacheMissed($event));
             });
         }
     }

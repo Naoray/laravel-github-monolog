@@ -35,6 +35,7 @@ it('excludes separate sections from formatted context', function () {
         'job' => ['name' => 'TestJob'],
         'command' => ['name' => 'test:command'],
         'outgoing_requests' => [],
+        'breadcrumbs' => [['timestamp' => '14:30:15.123', 'category' => 'log', 'message' => 'test', 'metadata' => []]],
         'session' => ['data' => []],
         'livewire' => ['component' => 'App\\Livewire\\Counter'],
         'custom_key' => 'custom_value',
@@ -52,6 +53,7 @@ it('excludes separate sections from formatted context', function () {
         ->not->toContain('job')
         ->not->toContain('command')
         ->not->toContain('outgoing_requests')
+        ->not->toContain('breadcrumbs')
         ->not->toContain('session')
         ->not->toContain('livewire')
         ->toContain('custom_key')

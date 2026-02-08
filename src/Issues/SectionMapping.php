@@ -18,6 +18,7 @@ class SectionMapping
         '{job}' => 'job',
         '{command}' => 'command',
         '{outgoing_requests}' => 'outgoing_requests',
+        '{breadcrumbs}' => 'breadcrumbs',
         '{session}' => 'session',
         '{livewire}' => 'livewire',
         '{inertia}' => 'inertia',
@@ -62,6 +63,6 @@ class SectionMapping
 
     public static function getStandaloneFlagPattern(): string
     {
-        return '/<!-- (stacktrace|prev-stacktrace|context|extra|prev-exception|prev-exception-stacktrace|environment|request|route|user|queries|job|command|outgoing_requests|session|livewire|inertia):(start|end) -->\n?/s';
+        return '/<!-- (stacktrace|prev-stacktrace|context|extra|prev-exception|prev-exception-stacktrace|environment|request|route|user|queries|job|command|outgoing_requests|breadcrumbs|session|livewire|inertia):(start|end) -->\n?/s';
     }
 }
