@@ -80,6 +80,16 @@ class LivewireDataCollector implements EventDrivenCollectorInterface
     }
 
     /**
+     * Maximum number of keys to include from component state.
+     */
+    protected const MAX_STATE_KEYS = 50;
+
+    /**
+     * Maximum serialized size (in bytes) for component state.
+     */
+    protected const MAX_STATE_SIZE = 8192;
+
+    /**
      * Extract component information from the Livewire payload.
      *
      * @return array<int, array<string, mixed>>
@@ -90,16 +100,23 @@ class LivewireDataCollector implements EventDrivenCollectorInterface
 
         // Livewire 3 structure: components array with snapshot
         foreach ($payload['components'] ?? [] as $component) {
-            $snapshot = $component['snapshot'] ?? [];
-            $memo = is_string($snapshot)
-                ? $this->decodeSnapshot($snapshot)['memo'] ?? []
-                : $snapshot['memo'] ?? [];
+            $snapshot = is_string($component['snapshot'] ?? null)
+                ? $this->decodeSnapshot($component['snapshot'])
+                : ($component['snapshot'] ?? []);
+
+            $memo = $snapshot['memo'] ?? [];
 
             $componentData = [
                 'name' => $memo['name'] ?? null,
                 'id' => $memo['id'] ?? null,
                 'path' => $memo['path'] ?? null,
             ];
+
+            // Extract component state from snapshot data
+            $state = $snapshot['data'] ?? [];
+            if (! empty($state)) {
+                $componentData['state'] = $this->truncateState($state);
+            }
 
             // Extract method calls with parameters
             $calls = $component['calls'] ?? [];
@@ -124,6 +141,49 @@ class LivewireDataCollector implements EventDrivenCollectorInterface
         }
 
         return $components;
+    }
+
+    /**
+     * Truncate component state to prevent excessive data capture.
+     *
+     * Limits both the number of keys and the total serialized size.
+     *
+     * @param  array<string, mixed>  $state
+     * @return array<string, mixed>
+     */
+    protected function truncateState(array $state): array
+    {
+        $totalKeys = count($state);
+
+        // Limit number of keys
+        if ($totalKeys > self::MAX_STATE_KEYS) {
+            $state = array_slice($state, 0, self::MAX_STATE_KEYS, true);
+            $state['__truncated'] = sprintf('Showing %d of %d keys', self::MAX_STATE_KEYS, $totalKeys);
+        }
+
+        // Check serialized size and trim if needed
+        $serialized = json_encode($state);
+        if ($serialized !== false && strlen($serialized) > self::MAX_STATE_SIZE) {
+            $truncated = [];
+            $currentSize = 2; // account for {} wrapper
+
+            foreach ($state as $key => $value) {
+                $encoded = json_encode([$key => $value]);
+                $entrySize = $encoded !== false ? strlen($encoded) - 2 : 0; // subtract {} wrapper
+
+                if ($currentSize + $entrySize > self::MAX_STATE_SIZE) {
+                    $truncated['__truncated'] = sprintf('State truncated from %d bytes to ~%d bytes', strlen($serialized), $currentSize);
+                    break;
+                }
+
+                $truncated[$key] = $value;
+                $currentSize += $entrySize + 1; // +1 for comma separator
+            }
+
+            return $truncated;
+        }
+
+        return $state;
     }
 
     /**
