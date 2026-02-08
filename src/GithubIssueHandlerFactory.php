@@ -83,7 +83,8 @@ class GithubIssueHandlerFactory
             ttl: $this->getDeduplicationTime($config),
             level: Arr::get($config, 'level', Level::Error),
             bufferLimit: Arr::get($config, 'buffer.limit', 0),
-            flushOnOverflow: Arr::get($config, 'buffer.flush_on_overflow', true)
+            flushOnOverflow: Arr::get($config, 'buffer.flush_on_overflow', true),
+            trackOccurrences: Arr::get($deduplication, 'track_occurrences', true),
         );
     }
 

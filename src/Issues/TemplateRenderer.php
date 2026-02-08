@@ -92,6 +92,7 @@ class TemplateRenderer
             '{class}' => $class,
             '{signature}' => $signature ?? '',
             '{timestamp}' => $this->formatTimestamp($record),
+            '{occurrence_count}' => (string) ($record->extra['github_occurrence_count'] ?? 1),
             '{route_summary}' => $this->formatRouteSummary($record),
             '{user_summary}' => $this->formatUserSummary($record),
             '{environment_name}' => $this->extractEnvironmentName($record),
@@ -110,7 +111,7 @@ class TemplateRenderer
             '{livewire}' => $this->structuredDataFormatter->format($record->context['livewire'] ?? null),
             '{inertia}' => $this->structuredDataFormatter->format($record->context['inertia'] ?? null),
             '{context}' => $this->contextFormatter->format($record->context),
-            '{extra}' => $this->extraFormatter->format(Arr::except($record->extra, ['github_issue_signature'])),
+            '{extra}' => $this->extraFormatter->format(Arr::except($record->extra, ['github_issue_signature', 'github_occurrence_count'])),
         ];
     }
 

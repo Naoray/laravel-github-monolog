@@ -142,6 +142,31 @@ test('it uses same signature generator across components', function () {
         ->toBeInstanceOf(DefaultSignatureGenerator::class);
 });
 
+test('it enables occurrence tracking by default', function () {
+    $logger = ($this->factory)($this->config);
+
+    /** @var DeduplicationHandler $handler */
+    $handler = $logger->getHandlers()[0];
+    $trackOccurrences = (new ReflectionProperty($handler, 'trackOccurrences'))->getValue($handler);
+
+    expect($trackOccurrences)->toBeTrue();
+});
+
+test('it respects track_occurrences config', function () {
+    $logger = ($this->factory)([
+        ...$this->config,
+        'deduplication' => [
+            'track_occurrences' => false,
+        ],
+    ]);
+
+    /** @var DeduplicationHandler $handler */
+    $handler = $logger->getHandlers()[0];
+    $trackOccurrences = (new ReflectionProperty($handler, 'trackOccurrences'))->getValue($handler);
+
+    expect($trackOccurrences)->toBeFalse();
+});
+
 test('it throws exception for invalid deduplication time', function () {
     expect(fn () => ($this->factory)([
         ...$this->config,

@@ -370,6 +370,36 @@ test('comment template does not include environment section', function () {
         ->not->toContain('<!-- environment:start -->');
 });
 
+test('comment template renders occurrence count from extra data', function () {
+    $record = createLogRecord('Test message', extra: ['github_occurrence_count' => 5]);
+
+    $rendered = $this->renderer->render($this->stubLoader->load('comment'), $record);
+
+    expect($rendered)->toContain('**Occurrence:** #5');
+});
+
+test('comment template renders occurrence count as 1 when not provided', function () {
+    $record = createLogRecord('Test message');
+
+    $rendered = $this->renderer->render($this->stubLoader->load('comment'), $record);
+
+    expect($rendered)->toContain('**Occurrence:** #1');
+});
+
+test('occurrence count is not leaked into extra data section', function () {
+    $record = createLogRecord('Test message', extra: [
+        'github_occurrence_count' => 3,
+        'request_id' => 'abc123',
+    ]);
+
+    $rendered = $this->renderer->render($this->stubLoader->load('comment'), $record);
+
+    expect($rendered)
+        ->toContain('**Occurrence:** #3')
+        ->toContain('"request_id": "abc123"')
+        ->not->toContain('"github_occurrence_count"');
+});
+
 test('triage header renders correctly with missing optional data', function () {
     $record = createLogRecord('Test message');
 

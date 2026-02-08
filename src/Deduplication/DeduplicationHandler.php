@@ -22,6 +22,7 @@ class DeduplicationHandler extends BufferHandler
         int $bufferLimit = 0,
         bool $bubble = true,
         bool $flushOnOverflow = false,
+        private bool $trackOccurrences = true,
     ) {
         parent::__construct(
             handler: $handler,
@@ -44,8 +45,16 @@ class DeduplicationHandler extends BufferHandler
             ->map(function (LogRecord $record) {
                 $signature = $this->signatureGenerator->generate($record);
 
-                // Create new record with signature in extra data
-                $record = $record->with(extra: ['github_issue_signature' => $signature] + $record->extra);
+                $extra = ['github_issue_signature' => $signature] + $record->extra;
+
+                // Track occurrence count when enabled
+                if ($this->trackOccurrences) {
+                    $occurrenceCount = $this->cache->incrementOccurrenceCount($signature);
+                    $extra['github_occurrence_count'] = $occurrenceCount;
+                }
+
+                // Create new record with signature and occurrence data in extra
+                $record = $record->with(extra: $extra);
 
                 // If the record is a duplicate, we don't want to process it
                 if ($this->cache->has($signature)) {

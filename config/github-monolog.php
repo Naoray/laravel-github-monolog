@@ -71,6 +71,10 @@ return [
 
         // Time in seconds before an error can create a new issue (default: 1 hour)
         'time' => 3600,
+
+        // Track how many times each error signature has been seen and include
+        // the occurrence number in issue comments (default: true)
+        'track_occurrences' => true,
     ],
 
     /*

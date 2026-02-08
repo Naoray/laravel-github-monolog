@@ -1,6 +1,7 @@
 - **Type:** {level}
 - **Message:** {message}
 - **Timestamp:** {timestamp}
+- **Occurrence:** #{occurrence_count}
 
 <!-- request:start -->
 <details>
