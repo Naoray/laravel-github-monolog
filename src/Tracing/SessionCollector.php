@@ -2,6 +2,7 @@
 
 namespace Naoray\LaravelGithubMonolog\Tracing;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Session;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\RedactsData;
@@ -27,9 +28,7 @@ class SessionCollector implements DataCollectorInterface
             return;
         }
 
-        $data = collect(Session::all())
-            ->except(['_token', '_flash'])
-            ->toArray();
+        $data = Arr::except(Session::all(), ['_token', '_flash']);
 
         $session = [
             'data' => $this->redactPayload($data),
