@@ -2,6 +2,12 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## Unreleased
+
+### What's Changed
+
+* Add Laravel 13 support
+
 ## v3.8.0 - 2026-02-08
 
 ### What's Changed
