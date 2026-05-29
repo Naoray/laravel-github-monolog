@@ -2,6 +2,21 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.9.0 - 2026-05-29
+
+### What's Changed
+
+* chore(deps): bump ramsey/composer-install from 3 to 4 by @dependabot[bot] in https://github.com/Naoray/laravel-github-monolog/pull/51
+* chore(deps): bump dependabot/fetch-metadata from 2.5.0 to 3.0.0 by @dependabot[bot] in https://github.com/Naoray/laravel-github-monolog/pull/52
+* chore(deps): bump dependabot/fetch-metadata from 3.0.0 to 3.1.0 by @dependabot[bot] in https://github.com/Naoray/laravel-github-monolog/pull/54
+* Add Laravel 13 support by @1stevengrant in https://github.com/Naoray/laravel-github-monolog/pull/53
+
+### New Contributors
+
+* @1stevengrant made their first contribution in https://github.com/Naoray/laravel-github-monolog/pull/53
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.8.0...v3.9.0
+
 ## Unreleased
 
 ### What's Changed
@@ -36,26 +51,30 @@ All notable changes to `laravel-github-monolog` will be documented in this file.
 #### New Features
 
 * **feat(tracing): add Livewire and Inertia.js support** - Add request-based detection for Livewire v3+ and Inertia.js requests, capturing component data for enhanced debugging context.
-
+  
   **Key Design Decisions:**
+  
   - **Request-based detection** - No package dependencies required. Collectors detect Livewire/Inertia requests by examining headers and request payload.
   - **Livewire v3+ only** - Targets Livewire v3+ request structure only.
   - **Per-request accuracy** - Only captures data when the request is actually Livewire/Inertia.
-
+  
   **Livewire Data Captured:**
+  
   - Component name, id, path
   - Methods called (e.g., `save`, `delete`)
   - Updated properties (wire:model bindings)
   - Originating page URL
-
+  
   **Inertia Data Captured:**
+  
   - Component name (Vue/React page)
   - Inertia version
   - Partial reload status
   - Partial data keys requested/excluded
   - Request URL
-
+  
   **Changes:**
+  
   - Add `LivewireDataCollector` with request-based detection
   - Add `InertiaDataCollector` with request-based detection
   - Add `ResolvesTracingConfig` trait for consistent config resolution
@@ -64,6 +83,7 @@ All notable changes to `laravel-github-monolog` will be documented in this file.
   - Add comprehensive default configuration file
   - Enhance `RouteDataCollector` with Livewire route detection
   - Enhance `UserDataCollector` with logout handling and caching
+  
 
 **Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.6.1...v3.7.0
 
