@@ -158,7 +158,7 @@ test('detects Other context when no specific context is present', function () {
 });
 
 test('excludes level from Other context when exception is present', function () {
-    $record = createLogRecord('Test', [], exception: new \Exception('Test exception'));
+    $record = createLogRecord('Test', [], exception: new Exception('Test exception'));
 
     $context = $this->extractor->extract($record);
 

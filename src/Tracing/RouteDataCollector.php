@@ -3,6 +3,7 @@
 namespace Naoray\LaravelGithubMonolog\Tracing;
 
 use Illuminate\Routing\Events\RouteMatched;
+use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\ResolvesTracingConfig;
 use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
@@ -53,7 +54,7 @@ class RouteDataCollector implements EventDrivenCollectorInterface
      *
      * For Livewire internal routes, this returns the originating page instead.
      */
-    protected function buildRouteSummary(\Illuminate\Routing\Route $route, string $uri): string
+    protected function buildRouteSummary(Route $route, string $uri): string
     {
         // Check if this is a Livewire internal route
         if ($this->isLivewireRoute($uri)) {

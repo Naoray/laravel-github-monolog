@@ -18,7 +18,7 @@ function createLogRecord(
     $context = Arr::has($context, 'exception') ? $context : array_merge($context, ['exception' => $exception]);
 
     return new LogRecord(
-        datetime: new \DateTimeImmutable,
+        datetime: new DateTimeImmutable,
         channel: 'test',
         level: $level,
         message: $message,

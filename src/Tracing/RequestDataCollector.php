@@ -3,6 +3,7 @@
 namespace Naoray\LaravelGithubMonolog\Tracing;
 
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\RedactsData;
 use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
@@ -47,7 +48,7 @@ class RequestDataCollector implements EventDrivenCollectorInterface
     /**
      * Format uploaded files metadata.
      *
-     * @param  array<string, \Illuminate\Http\UploadedFile|array>  $files
+     * @param  array<string, UploadedFile|array>  $files
      * @return array<string, mixed>
      */
     private function formatFiles(array $files): array
@@ -58,7 +59,7 @@ class RequestDataCollector implements EventDrivenCollectorInterface
                     return $this->formatFiles($file);
                 }
 
-                /** @var \Illuminate\Http\UploadedFile $file */
+                /** @var UploadedFile $file */
                 $name = $file->getClientOriginalName();
                 $mimeType = $file->getMimeType();
                 $size = $file->getSize();

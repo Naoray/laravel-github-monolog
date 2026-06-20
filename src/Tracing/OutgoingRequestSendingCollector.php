@@ -6,6 +6,7 @@ use Illuminate\Http\Client\Events\RequestSending;
 use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\RedactsData;
 use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
+use Symfony\Component\HttpFoundation\HeaderBag;
 
 class OutgoingRequestSendingCollector implements EventDrivenCollectorInterface
 {
@@ -29,7 +30,7 @@ class OutgoingRequestSendingCollector implements EventDrivenCollectorInterface
 
         // Store request start time
         $headers = $request->headers();
-        $headerBag = new \Symfony\Component\HttpFoundation\HeaderBag($headers);
+        $headerBag = new HeaderBag($headers);
 
         Context::addHidden("outgoing_request.{$requestId}", [
             'url' => $request->url(),

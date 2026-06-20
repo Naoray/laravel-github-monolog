@@ -1,5 +1,7 @@
 <?php
 
+use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -102,7 +104,7 @@ return [
     | your own implementation by implementing SignatureGeneratorInterface.
     |
     */
-    'signature_generator' => \Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator::class,
+    'signature_generator' => DefaultSignatureGenerator::class,
 
     /*
     |--------------------------------------------------------------------------

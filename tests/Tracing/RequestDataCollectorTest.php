@@ -64,7 +64,7 @@ it('handles deleted temporary files gracefully', function () {
     $file = Mockery::mock('Illuminate\Http\UploadedFile');
     $file->shouldReceive('getClientOriginalName')->andReturn('test.txt');
     $file->shouldReceive('getMimeType')->andReturn('text/plain');
-    $file->shouldReceive('getSize')->andThrow(new \RuntimeException('stat failed'));
+    $file->shouldReceive('getSize')->andThrow(new RuntimeException('stat failed'));
 
     $request->files->set('file', $file);
     $event = new RequestHandled($request, Mockery::mock('Illuminate\Http\Response'));

@@ -1,5 +1,6 @@
 <?php
 
+use Monolog\LogRecord;
 use Naoray\LaravelGithubMonolog\Tracing\CallerFrameProcessor;
 
 beforeEach(function () {
@@ -7,7 +8,7 @@ beforeEach(function () {
 });
 
 test('skips processing when exception is present', function () {
-    $record = createLogRecord('Test', exception: new \Exception('Test'));
+    $record = createLogRecord('Test', exception: new Exception('Test'));
     $processed = ($this->processor)($record);
 
     expect($processed->extra)->not->toHaveKey('caller');
@@ -20,7 +21,7 @@ test('captures caller frame for message-only records', function () {
     // Caller should be captured if a non-vendor frame exists
     // Note: In test environment, the caller might be from the test framework
     // So we just verify the processor runs without error
-    expect($processed)->toBeInstanceOf(\Monolog\LogRecord::class);
+    expect($processed)->toBeInstanceOf(LogRecord::class);
 });
 
 test('normalizes file paths in caller frame', function () {
@@ -37,7 +38,7 @@ test('normalizes file paths in caller frame', function () {
     // the processor handles records correctly
     $processed = ($this->processor)($record);
 
-    expect($processed)->toBeInstanceOf(\Monolog\LogRecord::class);
+    expect($processed)->toBeInstanceOf(LogRecord::class);
 });
 
 test('filters out vendor frames', function () {
@@ -47,7 +48,7 @@ test('filters out vendor frames', function () {
     // Processor should skip vendor frames
     // In test environment, actual caller detection is hard to test
     // but we verify the processor doesn't crash
-    expect($processed)->toBeInstanceOf(\Monolog\LogRecord::class);
+    expect($processed)->toBeInstanceOf(LogRecord::class);
 });
 
 test('filters out package frames', function () {
@@ -55,5 +56,5 @@ test('filters out package frames', function () {
     $processed = ($this->processor)($record);
 
     // Processor should skip laravel-github-monolog package frames
-    expect($processed)->toBeInstanceOf(\Monolog\LogRecord::class);
+    expect($processed)->toBeInstanceOf(LogRecord::class);
 });

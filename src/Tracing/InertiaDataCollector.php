@@ -4,6 +4,7 @@ namespace Naoray\LaravelGithubMonolog\Tracing;
 
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Context;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\RedactsData;
 use Naoray\LaravelGithubMonolog\Tracing\Concerns\ResolvesTracingConfig;
@@ -46,7 +47,7 @@ class InertiaDataCollector implements EventDrivenCollectorInterface
     /**
      * Capture Inertia request data.
      *
-     * @param  \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\Response  $response
+     * @param  Response|\Symfony\Component\HttpFoundation\Response  $response
      */
     protected function captureFromRequest(Request $request, $response): void
     {
@@ -96,7 +97,7 @@ class InertiaDataCollector implements EventDrivenCollectorInterface
     /**
      * Extract the Inertia component name from the response.
      *
-     * @param  \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\Response  $response
+     * @param  Response|\Symfony\Component\HttpFoundation\Response  $response
      */
     protected function extractComponentFromResponse($response): ?string
     {

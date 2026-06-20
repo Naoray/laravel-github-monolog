@@ -13,6 +13,7 @@ use Illuminate\Routing\Events\RouteMatched;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Event;
+use Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface;
 use Naoray\LaravelGithubMonolog\Tracing\EventHandler;
 
 beforeEach(function () {
@@ -112,7 +113,7 @@ it('registers job collector when enabled', function () {
     $job->shouldReceive('getConnectionName')->andReturn('sync');
     $job->shouldReceive('attempts')->andReturn(1);
 
-    $event = new JobExceptionOccurred('connection', $job, new \RuntimeException('Test exception'));
+    $event = new JobExceptionOccurred('connection', $job, new RuntimeException('Test exception'));
 
     Event::dispatch($event);
 
@@ -224,7 +225,7 @@ it('catches exceptions from collectors and does not propagate them', function ()
     // Test that the exception handling wrapper in EventHandler works correctly
     // by simulating what happens when a collector throws an exception
 
-    $failingCollectorClass = get_class(new class implements \Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface
+    $failingCollectorClass = get_class(new class implements EventDrivenCollectorInterface
     {
         public function isEnabled(): bool
         {
@@ -233,17 +234,17 @@ it('catches exceptions from collectors and does not propagate them', function ()
 
         public function __invoke($event): void
         {
-            throw new \RuntimeException('Collector error');
+            throw new RuntimeException('Collector error');
         }
     });
 
     // Register a listener using the same pattern as EventHandler (wrapped in try-catch)
-    Event::listen(\Illuminate\Foundation\Http\Events\RequestHandled::class, function ($event) use ($failingCollectorClass) {
+    Event::listen(RequestHandled::class, function ($event) use ($failingCollectorClass) {
         try {
-            /** @var \Naoray\LaravelGithubMonolog\Tracing\Contracts\EventDrivenCollectorInterface $collectorInstance */
+            /** @var EventDrivenCollectorInterface $collectorInstance */
             $collectorInstance = new $failingCollectorClass;
             $collectorInstance($event);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Silently ignore exceptions from collectors to prevent
             // masking the original exception being reported
         }

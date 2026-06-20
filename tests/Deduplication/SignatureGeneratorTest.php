@@ -30,7 +30,7 @@ test('generates signature from message', function () {
 });
 
 test('generates signature from exception', function () {
-    $exception = new \Exception('Test exception');
+    $exception = new Exception('Test exception');
     $record = createLogRecord('Test message', exception: $exception);
 
     $signature1 = $this->generator->generate($record);
@@ -42,7 +42,7 @@ test('generates signature from exception', function () {
     expect($signature2)->toBe($signature1);
 
     // Different exception class should generate different signature
-    $differentException = new \RuntimeException('Different exception');
+    $differentException = new RuntimeException('Different exception');
     $record3 = createLogRecord('Test message', exception: $differentException);
     $signature3 = $this->generator->generate($record3);
     expect($signature3)->not->toBe($signature1);
@@ -50,8 +50,8 @@ test('generates signature from exception', function () {
 
 test('signature is stable across deploys - same exception at different line numbers produces same signature', function () {
     // Create an exception with a custom trace that simulates different line numbers
-    $exception1 = new \Exception('Test exception');
-    $reflection = new \ReflectionClass($exception1);
+    $exception1 = new Exception('Test exception');
+    $reflection = new ReflectionClass($exception1);
     $traceProperty = $reflection->getProperty('trace');
     $traceProperty->setAccessible(true);
 
@@ -67,8 +67,8 @@ test('signature is stable across deploys - same exception at different line numb
     $signature1 = $this->generator->generate($record1);
 
     // Create same exception but with different line number (simulating code change)
-    $exception2 = new \Exception('Test exception');
-    $reflection2 = new \ReflectionClass($exception2);
+    $exception2 = new Exception('Test exception');
+    $reflection2 = new ReflectionClass($exception2);
     $traceProperty2 = $reflection2->getProperty('trace');
     $traceProperty2->setAccessible(true);
 
@@ -90,8 +90,8 @@ test('signature is stable across deploys - same exception at different line numb
 test('prefers in-app frame over vendor frame for exception signatures', function () {
     // Create exception with vendor frame first, then app frame
     // This simulates an exception thrown from vendor code but originating from app code
-    $exception = new \Exception('Test exception');
-    $reflection = new \ReflectionClass($exception);
+    $exception = new Exception('Test exception');
+    $reflection = new ReflectionClass($exception);
     $traceProperty = $reflection->getProperty('trace');
     $traceProperty->setAccessible(true);
     $fileProperty = $reflection->getProperty('file');
@@ -227,8 +227,8 @@ test('includes command name in signature when available', function () {
 });
 
 test('falls back gracefully when no in-app frame exists', function () {
-    $exception = new \Exception('Test exception');
-    $reflection = new \ReflectionClass($exception);
+    $exception = new Exception('Test exception');
+    $reflection = new ReflectionClass($exception);
     $traceProperty = $reflection->getProperty('trace');
     $traceProperty->setAccessible(true);
 
@@ -264,8 +264,8 @@ test('uses sha256 hash algorithm instead of md5', function () {
 });
 
 test('normalizes paths by stripping base path', function () {
-    $exception = new \Exception('Test exception');
-    $reflection = new \ReflectionClass($exception);
+    $exception = new Exception('Test exception');
+    $reflection = new ReflectionClass($exception);
     $traceProperty = $reflection->getProperty('trace');
     $traceProperty->setAccessible(true);
 
@@ -281,8 +281,8 @@ test('normalizes paths by stripping base path', function () {
     $signature1 = $this->generator->generate($record1);
 
     // Create exception with same relative path but different line number
-    $exception2 = new \Exception('Test exception');
-    $reflection2 = new \ReflectionClass($exception2);
+    $exception2 = new Exception('Test exception');
+    $reflection2 = new ReflectionClass($exception2);
     $traceProperty2 = $reflection2->getProperty('trace');
     $traceProperty2->setAccessible(true);
 
@@ -302,8 +302,8 @@ test('normalizes paths by stripping base path', function () {
 });
 
 test('same exception with different tmp file paths produces same signature', function () {
-    $exception1 = new \Exception('Failed to move file from /tmp/phpABC123');
-    $exception2 = new \Exception('Failed to move file from /tmp/phpXYZ789');
+    $exception1 = new Exception('Failed to move file from /tmp/phpABC123');
+    $exception2 = new Exception('Failed to move file from /tmp/phpXYZ789');
 
     $record1 = createLogRecord('Test', exception: $exception1);
     $record2 = createLogRecord('Test', exception: $exception2);
@@ -316,8 +316,8 @@ test('same exception with different tmp file paths produces same signature', fun
 });
 
 test('same stack trace but different route produces different signature', function () {
-    $exception = new \Exception('Test exception');
-    $reflection = new \ReflectionClass($exception);
+    $exception = new Exception('Test exception');
+    $reflection = new ReflectionClass($exception);
     $traceProperty = $reflection->getProperty('trace');
     $traceProperty->setAccessible(true);
 
@@ -351,8 +351,8 @@ test('same stack trace but different route produces different signature', functi
 });
 
 test('same exception with different HTTP methods produces different signature', function () {
-    $exception = new \Exception('Test exception');
-    $reflection = new \ReflectionClass($exception);
+    $exception = new Exception('Test exception');
+    $reflection = new ReflectionClass($exception);
     $traceProperty = $reflection->getProperty('trace');
     $traceProperty->setAccessible(true);
 
@@ -386,8 +386,8 @@ test('same exception with different HTTP methods produces different signature', 
 });
 
 test('same exception message template produces same signature regardless of actual values', function () {
-    $exception1 = new \Exception('User 550e8400-e29b-41d4-a716-446655440000 failed to login');
-    $exception2 = new \Exception('User 123e4567-e89b-12d3-a456-426614174000 failed to login');
+    $exception1 = new Exception('User 550e8400-e29b-41d4-a716-446655440000 failed to login');
+    $exception2 = new Exception('User 123e4567-e89b-12d3-a456-426614174000 failed to login');
 
     $record1 = createLogRecord('Test', exception: $exception1);
     $record2 = createLogRecord('Test', exception: $exception2);
@@ -403,8 +403,8 @@ test('groups errors from same vendor class with different methods', function () 
     // Simulate errors from the same vendor class (DefaultFileRemover) but different methods
     // This tests that vendor frames are normalized to class name only
 
-    $exception1 = new \Exception('Disk [tracks] does not have a configured driver.');
-    $reflection1 = new \ReflectionClass($exception1);
+    $exception1 = new Exception('Disk [tracks] does not have a configured driver.');
+    $reflection1 = new ReflectionClass($exception1);
     $traceProperty1 = $reflection1->getProperty('trace');
     $traceProperty1->setAccessible(true);
     $fileProperty1 = $reflection1->getProperty('file');
@@ -434,8 +434,8 @@ test('groups errors from same vendor class with different methods', function () 
         ],
     ]);
 
-    $exception2 = new \Exception('Disk [tracks] does not have a configured driver.');
-    $reflection2 = new \ReflectionClass($exception2);
+    $exception2 = new Exception('Disk [tracks] does not have a configured driver.');
+    $reflection2 = new ReflectionClass($exception2);
     $traceProperty2 = $reflection2->getProperty('trace');
     $traceProperty2->setAccessible(true);
     $fileProperty2 = $reflection2->getProperty('file');
@@ -465,8 +465,8 @@ test('groups errors from same vendor class with different methods', function () 
         ],
     ]);
 
-    $exception3 = new \Exception('Disk [tracks] does not have a configured driver.');
-    $reflection3 = new \ReflectionClass($exception3);
+    $exception3 = new Exception('Disk [tracks] does not have a configured driver.');
+    $reflection3 = new ReflectionClass($exception3);
     $traceProperty3 = $reflection3->getProperty('trace');
     $traceProperty3->setAccessible(true);
     $fileProperty3 = $reflection3->getProperty('file');

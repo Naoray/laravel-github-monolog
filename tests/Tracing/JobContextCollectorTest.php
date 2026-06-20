@@ -23,7 +23,7 @@ it('collects job context', function () {
         'data' => ['key' => 'value'],
     ]);
 
-    $event = new JobExceptionOccurred('redis', $job, new \RuntimeException('Test exception'));
+    $event = new JobExceptionOccurred('redis', $job, new RuntimeException('Test exception'));
 
     ($this->collector)($event);
 
@@ -56,7 +56,7 @@ it('truncates long serialized command strings in payload', function () {
         ],
     ]);
 
-    $event = new JobExceptionOccurred('redis', $job, new \RuntimeException('Test exception'));
+    $event = new JobExceptionOccurred('redis', $job, new RuntimeException('Test exception'));
 
     ($this->collector)($event);
 
@@ -93,7 +93,7 @@ it('does not truncate short string values in payload', function () {
         ],
     ]);
 
-    $event = new JobExceptionOccurred('redis', $job, new \RuntimeException('Test exception'));
+    $event = new JobExceptionOccurred('redis', $job, new RuntimeException('Test exception'));
 
     ($this->collector)($event);
 
@@ -122,7 +122,7 @@ it('preserves non-string values in payload during truncation', function () {
         ],
     ]);
 
-    $event = new JobExceptionOccurred('redis', $job, new \RuntimeException('Test exception'));
+    $event = new JobExceptionOccurred('redis', $job, new RuntimeException('Test exception'));
 
     ($this->collector)($event);
 
