@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.9.1 - 2026-06-20
+
+### What's Changed
+
+* fix: strip hidden tracing context during dehydration by @1stevengrant in https://github.com/Naoray/laravel-github-monolog/pull/57
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.9.0...v3.9.1
+
 ## v3.9.0 - 2026-05-29
 
 ### What's Changed
