@@ -47,16 +47,30 @@ class GithubMonologServiceProvider extends ServiceProvider
                 'inertia',
             ];
 
+            // Tracing collectors store most of their payloads as hidden
+            // context, so we have to clear both the visible and hidden stores.
+            // Otherwise the request payload (which may contain an unserializable
+            // UploadedFile) is serialized into job payloads and throws.
             foreach ($keysToForget as $key) {
                 if ($context->has($key)) {
                     $context->forget($key);
                 }
+
+                if ($context->hasHidden($key)) {
+                    $context->forgetHidden($key);
+                }
             }
 
-            // Clean up prefixed keys
+            // Clean up prefixed keys from both the visible and hidden stores.
             foreach (array_keys($context->all()) as $key) {
                 if (str_starts_with($key, 'outgoing_request.')) {
                     $context->forget($key);
+                }
+            }
+
+            foreach (array_keys($context->allHidden()) as $key) {
+                if (str_starts_with($key, 'outgoing_request.')) {
+                    $context->forgetHidden($key);
                 }
             }
         });
