@@ -31,9 +31,38 @@ return [
     |--------------------------------------------------------------------------
     |
     | A GitHub personal access token with 'repo' scope for creating issues.
+    | Not required if 'github_app' below is configured instead.
     |
     */
     'token' => env('GITHUB_MONOLOG_TOKEN'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | GitHub App Authentication
+    |--------------------------------------------------------------------------
+    |
+    | As an alternative to a personal access token, you can authenticate as
+    | a GitHub App installation. The package exchanges these credentials for
+    | a short-lived installation access token (cached until shortly before
+    | it expires). This takes precedence over 'token' above when 'id',
+    | 'installation_id' and either 'private_key' or 'private_key_path' are
+    | all set.
+    |
+    */
+    'github_app' => [
+        // The GitHub App ID (see the app's "General" settings page)
+        'id' => env('GITHUB_MONOLOG_APP_ID'),
+
+        // The installation ID for the app on the target account/repo
+        'installation_id' => env('GITHUB_MONOLOG_APP_INSTALLATION_ID'),
+
+        // PEM contents of the app's private key. May be base64-encoded to
+        // make it easier to store as a single-line .env value.
+        'private_key' => env('GITHUB_MONOLOG_APP_PRIVATE_KEY'),
+
+        // Alternatively, a path to the private key .pem file on disk
+        'private_key_path' => env('GITHUB_MONOLOG_APP_PRIVATE_KEY_PATH'),
+    ],
 
     /*
     |--------------------------------------------------------------------------
