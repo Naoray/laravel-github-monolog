@@ -17,7 +17,7 @@ class GithubAppTokenProvider implements TokenProviderInterface
     private const CACHE_TTL = 50 * 60;
 
     public function __construct(
-        private readonly string $appId,
+        private readonly string $clientId,
         private readonly string $installationId,
         private readonly string $privateKey,
         private readonly ?string $cacheStore = null,
@@ -27,7 +27,7 @@ class GithubAppTokenProvider implements TokenProviderInterface
     public function getToken(): string
     {
         return Cache::store($this->cacheStore)->remember(
-            "{$this->cachePrefix}app-token:{$this->appId}:{$this->installationId}",
+            "{$this->cachePrefix}app-token:{$this->clientId}:{$this->installationId}",
             self::CACHE_TTL,
             fn () => $this->requestInstallationToken(),
         );
@@ -54,7 +54,9 @@ class GithubAppTokenProvider implements TokenProviderInterface
 
     /**
      * Build a short-lived RS256 JWT identifying the GitHub App, as required
-     * to request an installation access token.
+     * to request an installation access token. The 'iss' claim accepts
+     * either the app's client ID (recommended by GitHub) or its numeric
+     * app ID.
      *
      * @see https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/generating-a-json-web-token-jwt-for-a-github-app
      */
@@ -67,7 +69,7 @@ class GithubAppTokenProvider implements TokenProviderInterface
             // Allow for a bit of clock drift between us and GitHub's servers.
             'iat' => $now - 60,
             'exp' => $now + 600,
-            'iss' => $this->appId,
+            'iss' => $this->clientId,
         ], JSON_THROW_ON_ERROR));
 
         $signingInput = "{$header}.{$payload}";
