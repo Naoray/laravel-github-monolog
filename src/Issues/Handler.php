@@ -18,7 +18,7 @@ class Handler extends AbstractProcessingHandler
 
     /**
      * @param  string  $repo  The GitHub repository in "owner/repo" format
-     * @param  string  $token  Your GitHub Personal Access Token
+     * @param  string  $token  A GitHub API token (personal access token or a resolved GitHub App installation token)
      * @param  array  $labels  Labels to be applied to GitHub issues (default: ['github-issue-logger'])
      * @param  int|string|Level  $level  Log level (default: ERROR)
      * @param  bool  $bubble  Whether the messages that are handled can bubble up the stack

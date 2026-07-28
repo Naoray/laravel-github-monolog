@@ -89,6 +89,45 @@ To obtain a Personal Access Token:
 
 > **Note**: The token requires the `repo` scope to create issues in both public and private repositories.
 
+### Authenticating with a GitHub App Instead
+
+As an alternative to a personal access token, you can authenticate as a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/about-apps/about-creating-github-apps) installation. The package exchanges your app credentials for a short-lived installation access token automatically, and caches it until shortly before it expires.
+
+```php
+'github' => [
+    'driver' => 'custom',
+    'via' => \Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory::class,
+    'repo' => env('GITHUB_REPO'),
+
+    'github_app' => [
+        'id' => env('GITHUB_APP_ID'),
+        'installation_id' => env('GITHUB_APP_INSTALLATION_ID'),
+        'private_key' => env('GITHUB_APP_PRIVATE_KEY'),
+        // or, alternatively, a path to the .pem file:
+        // 'private_key_path' => env('GITHUB_APP_PRIVATE_KEY_PATH'),
+    ],
+
+    'level' => env('LOG_LEVEL', 'error'),
+    'labels' => ['bug'],
+],
+```
+
+```
+GITHUB_REPO=username/repository
+GITHUB_APP_ID=123456
+GITHUB_APP_INSTALLATION_ID=987654
+GITHUB_APP_PRIVATE_KEY="base64-encoded-contents-of-your-private-key.pem"
+```
+
+To set this up:
+
+1. [Create a GitHub App](https://github.com/settings/apps/new) (or use an existing one) with the "Issues" repository permission set to "Read and write".
+2. Install the app on the account/repository you want to log issues to, and note the installation ID from the URL (`https://github.com/settings/installations/<installation_id>`).
+3. Generate a private key for the app and download the `.pem` file.
+4. Provide the PEM contents via `GITHUB_APP_PRIVATE_KEY` (base64-encoding it avoids issues with the multi-line format in `.env` files — the package auto-detects and decodes it) or point `private_key_path` at the file on disk.
+
+If both `token` and `github_app` are configured, `github_app` takes precedence.
+
 ## Usage
 
 Whenever an exception is thrown it will be logged as an issue to your repository.
