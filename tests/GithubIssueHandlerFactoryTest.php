@@ -205,7 +205,7 @@ test('it creates a handler using github app credentials instead of a token', fun
     $logger = ($this->factory)([
         'repo' => 'test/repo',
         'github_app' => [
-            'id' => '12345',
+            'client_id' => '12345',
             'installation_id' => '67890',
             'private_key' => generateFactoryTestPrivateKey(),
         ],
@@ -232,7 +232,7 @@ test('github_app config takes precedence over token when both are present', func
         'repo' => 'test/repo',
         'token' => 'test-token',
         'github_app' => [
-            'id' => '12345',
+            'client_id' => '12345',
             'installation_id' => '67890',
             'private_key' => generateFactoryTestPrivateKey(),
         ],
@@ -248,7 +248,7 @@ test('it throws when github_app config is incomplete and no token is set', funct
     expect(fn () => ($this->factory)([
         'repo' => 'test/repo',
         'github_app' => [
-            'id' => '12345',
+            'client_id' => '12345',
         ],
     ]))->toThrow(InvalidArgumentException::class);
 });
@@ -266,7 +266,7 @@ test('it reads the github app private key from a file path', function () {
         $logger = ($this->factory)([
             'repo' => 'test/repo',
             'github_app' => [
-                'id' => '12345',
+                'client_id' => '12345',
                 'installation_id' => '67890',
                 'private_key_path' => $path,
             ],

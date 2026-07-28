@@ -45,14 +45,14 @@ class GithubIssueHandlerFactory
 
         if (blank(Arr::get($config, 'token')) && ! $this->hasGithubAppConfig($config)) {
             throw new InvalidArgumentException(
-                'A GitHub token or GitHub App credentials (github_app.id, github_app.installation_id and github_app.private_key or github_app.private_key_path) are required'
+                'A GitHub token or GitHub App credentials (github_app.client_id, github_app.installation_id and github_app.private_key or github_app.private_key_path) are required'
             );
         }
     }
 
     protected function hasGithubAppConfig(array $config): bool
     {
-        return filled(Arr::get($config, 'github_app.id'))
+        return filled(Arr::get($config, 'github_app.client_id'))
             && filled(Arr::get($config, 'github_app.installation_id'))
             && (filled(Arr::get($config, 'github_app.private_key')) || filled(Arr::get($config, 'github_app.private_key_path')));
     }
@@ -76,7 +76,7 @@ class GithubIssueHandlerFactory
     {
         if ($this->hasGithubAppConfig($config)) {
             return new GithubAppTokenProvider(
-                appId: (string) $config['github_app']['id'],
+                clientId: (string) $config['github_app']['client_id'],
                 installationId: (string) $config['github_app']['installation_id'],
                 privateKey: $this->resolvePrivateKey($config['github_app']),
                 cacheStore: Arr::get($config, 'deduplication.store', config('cache.default')),

@@ -44,16 +44,20 @@ return [
     | As an alternative to a personal access token, you can authenticate as
     | a GitHub App installation. The package exchanges these credentials for
     | a short-lived installation access token (cached until shortly before
-    | it expires). This takes precedence over 'token' above when 'id',
+    | it expires). This takes precedence over 'token' above when 'client_id',
     | 'installation_id' and either 'private_key' or 'private_key_path' are
     | all set.
     |
     */
     'github_app' => [
-        // The GitHub App ID (see the app's "General" settings page)
-        'id' => env('GITHUB_MONOLOG_APP_ID'),
+        // The GitHub App's Client ID (see the app's "General" settings
+        // page, under "Client ID" — the numeric "App ID" also still works)
+        'client_id' => env('GITHUB_MONOLOG_APP_CLIENT_ID'),
 
-        // The installation ID for the app on the target account/repo
+        // The installation ID for the app on the target account/repo (see
+        // https://github.com/settings/installations, or for an
+        // organization-owned app https://github.com/organizations/<org>/settings/installations
+        // — open the installation and read the ID from the URL)
         'installation_id' => env('GITHUB_MONOLOG_APP_INSTALLATION_ID'),
 
         // PEM contents of the app's private key. May be base64-encoded to

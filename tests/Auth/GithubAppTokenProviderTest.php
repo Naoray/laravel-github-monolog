@@ -28,7 +28,7 @@ test('it requests and returns an installation access token', function () {
     ]);
 
     $provider = new GithubAppTokenProvider(
-        appId: '12345',
+        clientId: '12345',
         installationId: '67890',
         privateKey: generateTestPrivateKey(),
         cacheStore: 'array',
@@ -51,7 +51,7 @@ test('it signs the JWT used to request the installation token', function () {
     $publicKey = openssl_pkey_get_details(openssl_pkey_get_private($privateKey))['key'];
 
     $provider = new GithubAppTokenProvider(
-        appId: '12345',
+        clientId: '12345',
         installationId: '67890',
         privateKey: $privateKey,
         cacheStore: 'array',
@@ -82,7 +82,7 @@ test('it caches the installation token', function () {
     ]);
 
     $provider = new GithubAppTokenProvider(
-        appId: '12345',
+        clientId: '12345',
         installationId: '67890',
         privateKey: generateTestPrivateKey(),
         cacheStore: 'array',
@@ -96,7 +96,7 @@ test('it caches the installation token', function () {
 
 test('it throws when the private key is invalid', function () {
     $provider = new GithubAppTokenProvider(
-        appId: '12345',
+        clientId: '12345',
         installationId: '67890',
         privateKey: 'not-a-valid-key',
         cacheStore: 'array',
@@ -111,7 +111,7 @@ test('it throws when the response does not contain a token', function () {
     ]);
 
     $provider = new GithubAppTokenProvider(
-        appId: '12345',
+        clientId: '12345',
         installationId: '67890',
         privateKey: generateTestPrivateKey(),
         cacheStore: 'array',
