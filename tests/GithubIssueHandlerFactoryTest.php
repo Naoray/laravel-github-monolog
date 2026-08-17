@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Http;
 use Monolog\Level;
 use Monolog\Logger;
+use Naoray\LaravelGithubMonolog\Auth\GithubAppTokenProvider;
 use Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler;
 use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
 use Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory;
@@ -217,9 +218,12 @@ test('it creates a handler using github app credentials instead of a token', fun
 
     expect($handler)->toBeInstanceOf(Handler::class);
 
-    $token = (new ReflectionProperty($handler, 'token'))->getValue($handler);
+    $tokenProvider = (new ReflectionProperty($handler, 'token'))->getValue($handler);
 
-    expect($token)->toBe('installation-token');
+    expect($tokenProvider)
+        ->toBeInstanceOf(GithubAppTokenProvider::class)
+        ->and($tokenProvider->getToken())
+        ->toBe('installation-token');
 });
 
 test('github_app config takes precedence over token when both are present', function () {
@@ -239,9 +243,12 @@ test('github_app config takes precedence over token when both are present', func
     ]);
 
     $handler = getWrappedHandler($logger->getHandlers()[0]);
-    $token = (new ReflectionProperty($handler, 'token'))->getValue($handler);
+    $tokenProvider = (new ReflectionProperty($handler, 'token'))->getValue($handler);
 
-    expect($token)->toBe('installation-token');
+    expect($tokenProvider)
+        ->toBeInstanceOf(GithubAppTokenProvider::class)
+        ->and($tokenProvider->getToken())
+        ->toBe('installation-token');
 });
 
 test('it throws when github_app config is incomplete and no token is set', function () {
@@ -273,9 +280,12 @@ test('it reads the github app private key from a file path', function () {
         ]);
 
         $handler = getWrappedHandler($logger->getHandlers()[0]);
-        $token = (new ReflectionProperty($handler, 'token'))->getValue($handler);
+        $tokenProvider = (new ReflectionProperty($handler, 'token'))->getValue($handler);
 
-        expect($token)->toBe('installation-token');
+        expect($tokenProvider)
+            ->toBeInstanceOf(GithubAppTokenProvider::class)
+            ->and($tokenProvider->getToken())
+            ->toBe('installation-token');
     } finally {
         unlink($path);
     }

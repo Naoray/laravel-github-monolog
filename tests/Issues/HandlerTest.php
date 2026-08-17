@@ -4,9 +4,11 @@ namespace Tests\Issues;
 
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Monolog\Level;
 use Monolog\LogRecord;
+use Naoray\LaravelGithubMonolog\Auth\GithubAppTokenProvider;
 use Naoray\LaravelGithubMonolog\Issues\Formatters\IssueFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Handler;
 
@@ -35,6 +37,18 @@ function createRecord(): LogRecord
         context: [],
         extra: ['github_issue_signature' => 'test-signature']
     );
+}
+
+function generateHandlerTestPrivateKey(): string
+{
+    $resource = openssl_pkey_new([
+        'private_key_bits' => 2048,
+        'private_key_type' => OPENSSL_KEYTYPE_RSA,
+    ]);
+
+    openssl_pkey_export($resource, $privateKey);
+
+    return $privateKey;
 }
 
 beforeEach(function () {
@@ -151,4 +165,58 @@ test('it creates fallback issue when 4xx error occurs', function () {
             && str_contains($request->data()['body'], $errorMessage)
             && in_array('monolog-integration-error', $request->data()['labels']);
     });
+});
+
+test('it refreshes github app authentication between writes after the cached token expires', function () {
+    $authenticatedRequests = [];
+    $installationTokenRequests = 0;
+
+    Http::fake(function (Request $request) use (&$authenticatedRequests, &$installationTokenRequests) {
+        if (str($request->url())->endsWith('/app/installations/67890/access_tokens')) {
+            $installationTokenRequests++;
+
+            return Http::response(['token' => "installation-token-{$installationTokenRequests}"]);
+        }
+
+        $authenticatedRequests[] = $request->header('Authorization')[0];
+
+        if (str($request->url())->contains('/search/issues')) {
+            return Http::response(['items' => []]);
+        }
+
+        return Http::response(['number' => 1]);
+    });
+
+    $handler = new Handler(
+        repo: 'test/repo',
+        token: new GithubAppTokenProvider(
+            clientId: '12345',
+            installationId: '67890',
+            privateKey: generateHandlerTestPrivateKey(),
+            cacheStore: 'array',
+        ),
+        level: Level::Debug,
+    );
+    $handler->setFormatter(app()->make(IssueFormatter::class));
+    $record = createRecord();
+
+    Carbon::setTestNow(Carbon::now());
+
+    try {
+        $handler->handle($record);
+        Carbon::setTestNow(Carbon::now()->addMinutes(51));
+        $handler->handle($record);
+    } finally {
+        Carbon::setTestNow();
+    }
+
+    expect($installationTokenRequests)
+        ->toBe(2)
+        ->and($authenticatedRequests)
+        ->toBe([
+            'Bearer installation-token-1',
+            'Bearer installation-token-1',
+            'Bearer installation-token-2',
+            'Bearer installation-token-2',
+        ]);
 });

@@ -61,7 +61,7 @@ class GithubIssueHandlerFactory
     {
         $handler = new Handler(
             repo: $config['repo'],
-            token: $this->resolveTokenProvider($config)->getToken(),
+            token: $this->resolveTokenProvider($config),
             labels: Arr::get($config, 'labels', []),
             level: Arr::get($config, 'level', Level::Error),
             bubble: Arr::get($config, 'bubble', true)
