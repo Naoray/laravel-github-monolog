@@ -2,6 +2,18 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.10.0 - 2026-08-17
+
+### What's Changed
+
+* Add GitHub Apps authentication as an alternative to personal access tokens by @AquaroTorres in https://github.com/Naoray/laravel-github-monolog/pull/59
+
+### New Contributors
+
+* @AquaroTorres made their first contribution in https://github.com/Naoray/laravel-github-monolog/pull/59
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.9.1...v3.10.0
+
 ## v3.9.1 - 2026-06-20
 
 ### What's Changed
