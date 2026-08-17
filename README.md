@@ -10,8 +10,9 @@ Automatically create GitHub issues from your Laravel exceptions & logs. Perfect 
 ## Requirements
 
 - PHP ^8.3
-- Laravel ^11.37|^12.0
+- Laravel ^11.37|^12.0|^13.0
 - Monolog ^3.6
+- PHP OpenSSL extension (required for GitHub App authentication; PAT authentication does not use it)
 
 ## Features
 
