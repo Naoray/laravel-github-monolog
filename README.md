@@ -10,8 +10,9 @@ Automatically create GitHub issues from your Laravel exceptions & logs. Perfect 
 ## Requirements
 
 - PHP ^8.3
-- Laravel ^11.37|^12.0
+- Laravel ^11.37|^12.0|^13.0
 - Monolog ^3.6
+- PHP OpenSSL extension (required for GitHub App authentication; PAT authentication does not use it)
 
 ## Features
 
@@ -88,6 +89,49 @@ To obtain a Personal Access Token:
 5. Add it to your `.env` file as `GITHUB_TOKEN`
 
 > **Note**: The token requires the `repo` scope to create issues in both public and private repositories.
+
+### Authenticating with a GitHub App Instead
+
+As an alternative to a personal access token, you can authenticate as a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/about-apps/about-creating-github-apps) installation. The package exchanges your app credentials for a short-lived installation access token automatically, and caches it until shortly before it expires.
+
+```php
+'github' => [
+    'driver' => 'custom',
+    'via' => \Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory::class,
+    'repo' => env('GITHUB_REPO'),
+
+    'github_app' => [
+        'client_id' => env('GITHUB_APP_CLIENT_ID'),
+        'installation_id' => env('GITHUB_APP_INSTALLATION_ID'),
+        'private_key' => env('GITHUB_APP_PRIVATE_KEY'),
+        // or, alternatively, a path to the .pem file:
+        // 'private_key_path' => env('GITHUB_APP_PRIVATE_KEY_PATH'),
+    ],
+
+    'level' => env('LOG_LEVEL', 'error'),
+    'labels' => ['bug'],
+],
+```
+
+```
+GITHUB_REPO=username/repository
+GITHUB_APP_CLIENT_ID=Iv23liXXXXXXXXXXXXXX
+GITHUB_APP_INSTALLATION_ID=987654
+GITHUB_APP_PRIVATE_KEY="base64-encoded-contents-of-your-private-key.pem"
+```
+
+To set this up:
+
+1. [Create a GitHub App](https://github.com/settings/apps/new) (or use an existing one) with the "Issues" repository permission set to "Read and write".
+2. On the app's "General" settings page, copy the **Client ID** (shown near the top, e.g. `Iv23li...`) into `GITHUB_APP_CLIENT_ID`. This has replaced the numeric App ID as GitHub's recommended identifier for generating installation tokens (the App ID still works too, if you'd rather use that).
+3. Install the app on the account/repository you want to log issues to.
+4. Get the **installation ID**: it isn't shown on the app's settings page — you'll find it by opening the app's installation management page and reading the ID from the URL:
+   - Personal account: `https://github.com/settings/installations` → click the app → URL becomes `https://github.com/settings/installations/<installation_id>`.
+   - Organization-owned: `https://github.com/organizations/<org>/settings/installations` → click the app → URL becomes `https://github.com/organizations/<org>/settings/installations/<installation_id>`.
+5. Generate a private key for the app and download the `.pem` file.
+6. Provide the PEM contents via `GITHUB_APP_PRIVATE_KEY` (base64-encode it with `base64 -w0 your-key.pem` first — this avoids issues with the multi-line format in `.env` files, and the package auto-detects and decodes it) or point `private_key_path` at the file on disk.
+
+If both `token` and `github_app` are configured, `github_app` takes precedence.
 
 ## Usage
 

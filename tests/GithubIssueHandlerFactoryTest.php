@@ -1,12 +1,26 @@
 <?php
 
+use Illuminate\Support\Facades\Http;
 use Monolog\Level;
 use Monolog\Logger;
+use Naoray\LaravelGithubMonolog\Auth\GithubAppTokenProvider;
 use Naoray\LaravelGithubMonolog\Deduplication\DeduplicationHandler;
 use Naoray\LaravelGithubMonolog\Deduplication\DefaultSignatureGenerator;
 use Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory;
 use Naoray\LaravelGithubMonolog\Issues\Formatters\IssueFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Handler;
+
+function generateFactoryTestPrivateKey(): string
+{
+    $resource = openssl_pkey_new([
+        'private_key_bits' => 2048,
+        'private_key_type' => OPENSSL_KEYTYPE_RSA,
+    ]);
+
+    openssl_pkey_export($resource, $privateKey);
+
+    return $privateKey;
+}
 
 function getWrappedHandler(DeduplicationHandler $handler): Handler
 {
@@ -181,4 +195,98 @@ test('it throws exception for invalid deduplication time', function () {
             'time' => 'invalid',
         ],
     ]))->toThrow(InvalidArgumentException::class, 'Deduplication time must be a positive integer');
+});
+
+test('it creates a handler using github app credentials instead of a token', function () {
+    Http::preventStrayRequests();
+    Http::fake([
+        'api.github.com/app/installations/*/access_tokens' => Http::response(['token' => 'installation-token']),
+    ]);
+
+    $logger = ($this->factory)([
+        'repo' => 'test/repo',
+        'github_app' => [
+            'client_id' => '12345',
+            'installation_id' => '67890',
+            'private_key' => generateFactoryTestPrivateKey(),
+        ],
+    ]);
+
+    /** @var DeduplicationHandler $deduplicationHandler */
+    $deduplicationHandler = $logger->getHandlers()[0];
+    $handler = getWrappedHandler($deduplicationHandler);
+
+    expect($handler)->toBeInstanceOf(Handler::class);
+
+    $tokenProvider = (new ReflectionProperty($handler, 'token'))->getValue($handler);
+
+    expect($tokenProvider)
+        ->toBeInstanceOf(GithubAppTokenProvider::class)
+        ->and($tokenProvider->getToken())
+        ->toBe('installation-token');
+});
+
+test('github_app config takes precedence over token when both are present', function () {
+    Http::preventStrayRequests();
+    Http::fake([
+        'api.github.com/app/installations/*/access_tokens' => Http::response(['token' => 'installation-token']),
+    ]);
+
+    $logger = ($this->factory)([
+        'repo' => 'test/repo',
+        'token' => 'test-token',
+        'github_app' => [
+            'client_id' => '12345',
+            'installation_id' => '67890',
+            'private_key' => generateFactoryTestPrivateKey(),
+        ],
+    ]);
+
+    $handler = getWrappedHandler($logger->getHandlers()[0]);
+    $tokenProvider = (new ReflectionProperty($handler, 'token'))->getValue($handler);
+
+    expect($tokenProvider)
+        ->toBeInstanceOf(GithubAppTokenProvider::class)
+        ->and($tokenProvider->getToken())
+        ->toBe('installation-token');
+});
+
+test('it throws when github_app config is incomplete and no token is set', function () {
+    expect(fn () => ($this->factory)([
+        'repo' => 'test/repo',
+        'github_app' => [
+            'client_id' => '12345',
+        ],
+    ]))->toThrow(InvalidArgumentException::class);
+});
+
+test('it reads the github app private key from a file path', function () {
+    Http::preventStrayRequests();
+    Http::fake([
+        'api.github.com/app/installations/*/access_tokens' => Http::response(['token' => 'installation-token']),
+    ]);
+
+    $path = tempnam(sys_get_temp_dir(), 'gh-app-key');
+    file_put_contents($path, generateFactoryTestPrivateKey());
+
+    try {
+        $logger = ($this->factory)([
+            'repo' => 'test/repo',
+            'github_app' => [
+                'client_id' => '12345',
+                'installation_id' => '67890',
+                'private_key_path' => $path,
+            ],
+        ]);
+
+        $handler = getWrappedHandler($logger->getHandlers()[0]);
+        $tokenProvider = (new ReflectionProperty($handler, 'token'))->getValue($handler);
+
+        expect($tokenProvider)
+            ->toBeInstanceOf(GithubAppTokenProvider::class)
+            ->and($tokenProvider->getToken())
+            ->toBe('installation-token');
+    } finally {
+        unlink($path);
+    }
 });
