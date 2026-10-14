@@ -26,3 +26,15 @@ function createLogRecord(
         extra: array_merge($extra, ['github_issue_signature' => $signature]),
     );
 }
+
+function generateTestPrivateKey(): string
+{
+    $resource = openssl_pkey_new([
+        'private_key_bits' => 2048,
+        'private_key_type' => OPENSSL_KEYTYPE_RSA,
+    ]);
+
+    openssl_pkey_export($resource, $privateKey);
+
+    return $privateKey;
+}

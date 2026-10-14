@@ -39,18 +39,6 @@ function createRecord(): LogRecord
     );
 }
 
-function generateHandlerTestPrivateKey(): string
-{
-    $resource = openssl_pkey_new([
-        'private_key_bits' => 2048,
-        'private_key_type' => OPENSSL_KEYTYPE_RSA,
-    ]);
-
-    openssl_pkey_export($resource, $privateKey);
-
-    return $privateKey;
-}
-
 beforeEach(function () {
     Http::preventStrayRequests();
 });
@@ -192,7 +180,7 @@ test('it refreshes github app authentication between writes after the cached tok
         token: new GithubAppTokenProvider(
             clientId: '12345',
             installationId: '67890',
-            privateKey: generateHandlerTestPrivateKey(),
+            privateKey: generateTestPrivateKey(),
             cacheStore: 'array',
         ),
         level: Level::Debug,

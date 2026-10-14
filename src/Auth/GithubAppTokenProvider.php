@@ -67,8 +67,10 @@ class GithubAppTokenProvider implements TokenProviderInterface
         $header = $this->base64UrlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT'], JSON_THROW_ON_ERROR));
         $payload = $this->base64UrlEncode(json_encode([
             // Allow for a bit of clock drift between us and GitHub's servers.
+            // GitHub rejects an exp more than 10 minutes ahead, so stay a
+            // minute under that in case our clock runs fast.
             'iat' => $now - 60,
-            'exp' => $now + 600,
+            'exp' => $now + 540,
             'iss' => $this->clientId,
         ], JSON_THROW_ON_ERROR));
 
