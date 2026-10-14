@@ -72,6 +72,9 @@ class GithubMonologServiceProvider extends ServiceProvider
                 'livewire',
                 'livewire_originating_page',
                 'inertia',
+                // Describes the failing worker attempt, so a job dispatched
+                // afterwards must not be signed as that job.
+                'job',
             ];
 
             // Tracing collectors store most of their payloads as hidden
