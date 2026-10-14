@@ -21,7 +21,7 @@ class IssueFormatter implements FormatterInterface
         return new Formatted(
             title: $this->templateRenderer->renderTitle($record),
             body: $this->templateRenderer->render($this->templateRenderer->getIssueStub(), $record, $record->extra['github_issue_signature']),
-            comment: $this->templateRenderer->render($this->templateRenderer->getCommentStub(), $record, null),
+            comment: $this->templateRenderer->render($this->templateRenderer->getCommentStub(), $record, $record->extra['github_issue_signature']),
         );
     }
 

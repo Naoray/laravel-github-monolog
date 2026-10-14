@@ -373,6 +373,9 @@ class CustomSignatureGenerator implements SignatureGeneratorInterface
 }
 ```
 
+> [!NOTE]
+> Since v3.11, errors thrown inside queued jobs are grouped by job class and queue instead of by the route that dispatched the job. With the default generator, v3.11.1 and later also look up the issue v3.10 would have used, so recurring job errors keep commenting on their existing issues after upgrading. This lookup will be removed in the next major version.
+
 ## Testing
 
 ```bash

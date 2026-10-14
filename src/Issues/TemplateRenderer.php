@@ -114,7 +114,7 @@ class TemplateRenderer
             '{livewire}' => $this->structuredDataFormatter->format($record->context['livewire'] ?? null),
             '{inertia}' => $this->structuredDataFormatter->format($record->context['inertia'] ?? null),
             '{context}' => $this->contextFormatter->format($record->context),
-            '{extra}' => $this->extraFormatter->format(Arr::except($record->extra, ['github_issue_signature', 'github_occurrence_count'])),
+            '{extra}' => $this->extraFormatter->format(Arr::except($record->extra, ['github_issue_signature', 'github_issue_legacy_signature', 'github_occurrence_count'])),
         ];
     }
 

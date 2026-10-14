@@ -7,6 +7,7 @@ use Monolog\Handler\BufferHandler;
 use Monolog\Handler\HandlerInterface;
 use Monolog\Level;
 use Monolog\LogRecord;
+use Throwable;
 
 class DeduplicationHandler extends BufferHandler
 {
@@ -63,11 +64,35 @@ class DeduplicationHandler extends BufferHandler
 
                 $this->cache->add($signature);
 
-                return $record;
+                $legacySignature = $this->legacySignature($record);
+
+                return $legacySignature === null
+                    ? $record
+                    : $record->with(extra: ['github_issue_legacy_signature' => $legacySignature] + $record->extra);
             })
             ->filter()
             ->pipe(fn (Collection $records) => $this->handler->handleBatch($records->toArray()));
 
         $this->clear();
+    }
+
+    /**
+     * The v3.10 signature of a record v3.11 signs differently, so the handler
+     * can find issues opened before upgrading. Remove in v4.
+     */
+    private function legacySignature(LogRecord $record): ?string
+    {
+        // A custom generator, including a subclass, never produced the
+        // default v3.10 signatures.
+        if ($this->signatureGenerator::class !== DefaultSignatureGenerator::class) {
+            return null;
+        }
+
+        try {
+            return (new LegacySignatureGenerator)->generate($record);
+        } catch (Throwable) {
+            // Without it, the record opens a new issue as before.
+            return null;
+        }
     }
 }

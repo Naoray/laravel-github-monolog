@@ -153,3 +153,53 @@ test('occurrence count is not added when tracking is disabled', function () {
     expect($records)->toHaveCount(1);
     expect($records[0]->extra)->not->toHaveKey('github_occurrence_count');
 });
+
+test('a job error that v3.11 signs differently carries its v3.10 signature', function () {
+    $handler = new DeduplicationHandler(
+        handler: $this->testHandler,
+        signatureGenerator: new DefaultSignatureGenerator,
+        store: 'array',
+    );
+
+    $handler->handle(createLogRecord('Job failed', [
+        'route' => ['name' => 'orders.store'],
+        'job' => ['class' => 'App\\Jobs\\SendEmail'],
+    ]));
+    $handler->flush();
+
+    $extra = $this->testHandler->getRecords()[0]->extra;
+    expect($extra['github_issue_legacy_signature'])
+        ->toBeString()
+        ->not->toBe($extra['github_issue_signature']);
+});
+
+test('records whose signature did not change carry no legacy signature', function () {
+    $handler = new DeduplicationHandler(
+        handler: $this->testHandler,
+        signatureGenerator: new DefaultSignatureGenerator,
+        store: 'array',
+    );
+
+    $handler->handle(createLogRecord('Job failed', ['job' => ['class' => 'App\\Jobs\\SendEmail']]));
+    $handler->handle(createLogRecord('Request failed', ['route' => ['name' => 'orders.store']]));
+    $handler->flush();
+
+    expect($this->testHandler->getRecords())->toHaveCount(2)
+        ->each(fn ($record) => $record->extra->not->toHaveKey('github_issue_legacy_signature'));
+});
+
+test('custom signature generators get no legacy signature', function () {
+    $handler = new DeduplicationHandler(
+        handler: $this->testHandler,
+        signatureGenerator: new class extends DefaultSignatureGenerator {},
+        store: 'array',
+    );
+
+    $handler->handle(createLogRecord('Job failed', [
+        'route' => ['name' => 'orders.store'],
+        'job' => ['class' => 'App\\Jobs\\SendEmail'],
+    ]));
+    $handler->flush();
+
+    expect($this->testHandler->getRecords()[0]->extra)->not->toHaveKey('github_issue_legacy_signature');
+});
