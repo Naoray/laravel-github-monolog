@@ -133,12 +133,11 @@ test('a failing flush never throws, clears the buffer, and leaves a trace', func
 
     try {
         Event::until(new Looping('redis', 'default'));
+
+        expect((fn () => $this->bufferSize)->call($handler))->toBe(0)
+            ->and(file_get_contents($errorLog))->toContain('failed GitHub flush: RuntimeException: GitHub is down');
     } finally {
         ini_set('error_log', $previousErrorLog);
+        unlink($errorLog);
     }
-
-    expect((fn () => $this->bufferSize)->call($handler))->toBe(0)
-        ->and(file_get_contents($errorLog))->toContain('failed GitHub flush: RuntimeException: GitHub is down');
-
-    unlink($errorLog);
 });

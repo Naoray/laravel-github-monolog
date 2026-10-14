@@ -3,6 +3,7 @@
 namespace Naoray\LaravelGithubMonolog\Deduplication;
 
 use Illuminate\Log\LogManager;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -52,7 +53,8 @@ class BufferFlusher
             error_log(sprintf(
                 'laravel-github-monolog: dropped buffered records after a failed GitHub flush: %s: %s',
                 $e::class,
-                $e->getMessage(),
+                // A failed request's message includes part of GitHub's response body.
+                Str::limit($e->getMessage(), 500),
             ));
 
             $handler->clear();
