@@ -2,6 +2,26 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.11.0 - 2026-10-14
+
+### Added
+
+- Buffered GitHub handlers are now flushed in long-lived processes: before each queue worker loop (after the previous job's exception is reported, and while the worker is idle), before a timed-out worker is killed, and after each Octane request. Previously a job error could wait for unrelated later errors, or be lost when the worker was killed. A failed flush writes one line to PHP's `error_log` and never interrupts the worker. ([#62](https://github.com/Naoray/laravel-github-monolog/pull/62))
+
+### Changed
+
+- **Errors thrown inside queued jobs are now grouped by job class and queue instead of by the route of the request that dispatched the job.** Previously one job failure opened a separate issue for every dispatching route. Existing job issues get new signatures, so the first occurrence after upgrading opens a new issue. ([#63](https://github.com/Naoray/laravel-github-monolog/pull/63))
+- The failing job's context is no longer copied into jobs dispatched afterwards. ([#63](https://github.com/Naoray/laravel-github-monolog/pull/63))
+- The GitHub App JWT now expires 9 minutes ahead instead of exactly at GitHub's 10-minute limit, so a slightly fast server clock is no longer rejected. ([#64](https://github.com/Naoray/laravel-github-monolog/pull/64))
+- The README clarifies that `ext-openssl` is required for every install, and shows the macOS `base64` command for encoding the GitHub App private key. ([#64](https://github.com/Naoray/laravel-github-monolog/pull/64))
+- Bump `actions/checkout` from 6 to 7. ([#58](https://github.com/Naoray/laravel-github-monolog/pull/58))
+
+### Fixed
+
+- Exceptions with an empty stack trace, such as compile-time fatals like a missing trait, no longer crash signature generation during flush. Their GitHub issue is now created. By @1stevengrant. ([#61](https://github.com/Naoray/laravel-github-monolog/pull/61))
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.10.0...v3.11.0
+
 ## v3.10.0 - 2026-08-17
 
 ### What's Changed
