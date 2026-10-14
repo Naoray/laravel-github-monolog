@@ -225,6 +225,7 @@ Buffer logs to reduce GitHub API calls. Customize the buffer size and overflow b
 When buffering is active:
 - Logs are collected in memory until flushed
 - Buffer is automatically flushed on application shutdown
+- In long-lived processes, the buffer is also flushed after each queue job, while a queue worker is idle, before a timed-out worker is killed, and after each Octane request. While a worker is paused or the app is in maintenance mode, records wait until the worker resumes or stops
 - When limit is reached:
   - With `flush_on_overflow = true`: All records are flushed
   - With `flush_on_overflow = false`: Only the oldest record is removed
