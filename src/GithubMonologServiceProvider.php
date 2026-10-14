@@ -2,9 +2,12 @@
 
 namespace Naoray\LaravelGithubMonolog;
 
+use Illuminate\Queue\Events\Looping;
+use Illuminate\Queue\Events\WorkerStopping;
 use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Naoray\LaravelGithubMonolog\Deduplication\BufferFlusher;
 use Naoray\LaravelGithubMonolog\Tracing\EventHandler;
 
 class GithubMonologServiceProvider extends ServiceProvider
@@ -22,11 +25,35 @@ class GithubMonologServiceProvider extends ServiceProvider
             Event::subscribe(EventHandler::class);
         }
 
+        $this->registerBufferFlushing();
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../resources/views' => resource_path('views/vendor/github-monolog'),
             ], 'github-monolog-views');
         }
+    }
+
+    /**
+     * Flush buffered GitHub handlers in long-lived processes, which otherwise
+     * hold records until overflow or shutdown.
+     *
+     * Looping fires before each worker iteration, so it runs after the previous
+     * job's exception was reported (JobAttempted fires before that) and keeps
+     * firing while the worker is idle. WorkerStopping fires right before a
+     * timed-out worker is killed with SIGKILL, which skips shutdown handlers.
+     */
+    protected function registerBufferFlushing(): void
+    {
+        // Looping is dispatched with until(): returning false would pause the
+        // worker, so the listener must not return anything.
+        $flush = function (): void {
+            (new BufferFlusher($this->app->make('log')))->flush();
+        };
+
+        Event::listen(Looping::class, $flush);
+        Event::listen(WorkerStopping::class, $flush);
+        Event::listen('Laravel\Octane\Events\RequestTerminated', $flush);
     }
 
     /**
