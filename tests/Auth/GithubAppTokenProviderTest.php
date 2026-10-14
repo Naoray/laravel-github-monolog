@@ -62,7 +62,9 @@ test('it signs the JWT used to request the installation token', function () {
 
         return $verified === 1
             && $decodedPayload['iss'] === '12345'
-            && $decodedPayload['exp'] <= time() + 540;
+            && $decodedPayload['exp'] <= time() + 540
+            && $decodedPayload['exp'] > time() + 480
+            && $decodedPayload['iat'] <= time();
     });
 });
 
