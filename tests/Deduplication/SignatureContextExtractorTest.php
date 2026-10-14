@@ -167,15 +167,18 @@ test('excludes level from Other context when exception is present', function () 
     expect($context['data'])->not->toHaveKey('level');
 });
 
-test('prioritizes HTTP over Job', function () {
+test('prioritizes Job over a route inherited from the dispatching request', function () {
     $record = createLogRecord('Test', [
-        'request' => ['method' => 'GET'],
-        'job' => ['class' => 'App\\Jobs\\ProcessOrder'],
+        'route' => ['name' => 'login.store', 'uri' => 'login'],
+        'request' => ['method' => 'POST'],
+        'job' => ['class' => 'App\\Jobs\\ProcessOrder', 'queue' => 'default'],
     ]);
 
     $context = $this->extractor->extract($record);
 
-    expect($context['kind'])->toBe(SignatureContextKind::Http->value);
+    expect($context['kind'])->toBe(SignatureContextKind::Job->value);
+    expect($context['data'])->toHaveKey('job', 'App\\Jobs\\ProcessOrder');
+    expect($context['data'])->not->toHaveKey('route');
 });
 
 test('prioritizes Job over Command', function () {

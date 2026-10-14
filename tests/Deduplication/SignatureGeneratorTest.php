@@ -542,3 +542,20 @@ test('generates signature for an exception with an empty trace', function () {
     // Same exception still produces the same signature
     expect($this->generator->generate(createLogRecord('Other message', exception: $exception)))->toBe($signature);
 });
+
+test('a job error gets the same signature whichever route dispatched the job', function () {
+    // Jobs inherit the dispatching request's route through Laravel's context.
+    $exception = new RuntimeException('Lock timeout');
+    $job = ['class' => 'App\\Jobs\\WarmAnalyticsPayloads', 'queue' => 'statistics-rollups'];
+
+    $fromLogin = createLogRecord('Lock timeout', [
+        'route' => ['name' => 'login.store', 'uri' => 'login'],
+        'job' => $job,
+    ], exception: $exception);
+    $fromImpersonation = createLogRecord('Lock timeout', [
+        'route' => ['name' => 'nova.api.start-nova-impersonation', 'uri' => 'nova-api/impersonate'],
+        'job' => $job,
+    ], exception: $exception);
+
+    expect($this->generator->generate($fromImpersonation))->toBe($this->generator->generate($fromLogin));
+});

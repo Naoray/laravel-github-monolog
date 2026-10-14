@@ -28,18 +28,21 @@ class SignatureContextExtractor
      */
     private function detectKind(LogRecord $record): SignatureContextKind
     {
-        // 1. HTTP if any of these exist
+        // 1. JOB if context.job.class exists. It is only set inside a worker,
+        // while a job inherits the route of the request that dispatched it
+        // through Laravel's context, so checking HTTP first would sign one job
+        // failure differently for every dispatching route.
+        if (data_get($record->context, 'job.class') !== null) {
+            return SignatureContextKind::Job;
+        }
+
+        // 2. HTTP if any of these exist
         $routeData = data_get($record->context, 'request.route') ?? data_get($record->context, 'route');
         $hasMethod = data_get($record->context, 'request.method') !== null
             || data_get($record->context, 'http.method') !== null;
 
         if (($routeData !== null && (is_array($routeData) || $routeData !== '')) || $hasMethod) {
             return SignatureContextKind::Http;
-        }
-
-        // 2. JOB if context.job.class exists
-        if (data_get($record->context, 'job.class') !== null) {
-            return SignatureContextKind::Job;
         }
 
         // 3. COMMAND if context.command.name exists
