@@ -2,6 +2,15 @@
 
 All notable changes to `laravel-github-monolog` will be documented in this file.
 
+## v3.11.1 - 2026-10-14
+
+### Fixed
+
+- **Recurring job errors no longer open a duplicate issue after upgrading to v3.11.** v3.11.0 groups errors thrown inside queued jobs by job class and queue instead of by the dispatching route, so the first occurrence of each job error opened a new issue. With the default signature generator, the handler now also searches once for the issue v3.10 would have used and comments there. v3.10 opened one issue per dispatching route; the issue for the route of the first occurrence after upgrading is continued, and the others can be closed. This lookup will be removed in the next major version. ([#65](https://github.com/Naoray/laravel-github-monolog/pull/65))
+- Comments on existing issues now include the error's signature, so later occurrences match the issue directly. If you published the comment stub, keep its `<!-- Signature: {signature} -->` line. ([#65](https://github.com/Naoray/laravel-github-monolog/pull/65))
+
+**Full Changelog**: https://github.com/Naoray/laravel-github-monolog/compare/v3.11.0...v3.11.1
+
 ## v3.11.0 - 2026-10-14
 
 ### Added
