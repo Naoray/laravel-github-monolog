@@ -5,18 +5,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Naoray\LaravelGithubMonolog\Auth\GithubAppTokenProvider;
 
-function generateTestPrivateKey(): string
-{
-    $resource = openssl_pkey_new([
-        'private_key_bits' => 2048,
-        'private_key_type' => OPENSSL_KEYTYPE_RSA,
-    ]);
-
-    openssl_pkey_export($resource, $privateKey);
-
-    return $privateKey;
-}
-
 beforeEach(function () {
     Http::preventStrayRequests();
     Cache::store('array')->flush();
@@ -72,7 +60,11 @@ test('it signs the JWT used to request the installation token', function () {
             OPENSSL_ALGO_SHA256
         );
 
-        return $verified === 1 && $decodedPayload['iss'] === '12345';
+        return $verified === 1
+            && $decodedPayload['iss'] === '12345'
+            && $decodedPayload['exp'] <= time() + 540
+            && $decodedPayload['exp'] > time() + 480
+            && $decodedPayload['iat'] <= time();
     });
 });
 

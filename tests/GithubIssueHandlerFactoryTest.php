@@ -10,18 +10,6 @@ use Naoray\LaravelGithubMonolog\GithubIssueHandlerFactory;
 use Naoray\LaravelGithubMonolog\Issues\Formatters\IssueFormatter;
 use Naoray\LaravelGithubMonolog\Issues\Handler;
 
-function generateFactoryTestPrivateKey(): string
-{
-    $resource = openssl_pkey_new([
-        'private_key_bits' => 2048,
-        'private_key_type' => OPENSSL_KEYTYPE_RSA,
-    ]);
-
-    openssl_pkey_export($resource, $privateKey);
-
-    return $privateKey;
-}
-
 function getWrappedHandler(DeduplicationHandler $handler): Handler
 {
     $reflection = new ReflectionProperty($handler, 'handler');
@@ -208,7 +196,7 @@ test('it creates a handler using github app credentials instead of a token', fun
         'github_app' => [
             'client_id' => '12345',
             'installation_id' => '67890',
-            'private_key' => generateFactoryTestPrivateKey(),
+            'private_key' => generateTestPrivateKey(),
         ],
     ]);
 
@@ -238,7 +226,7 @@ test('github_app config takes precedence over token when both are present', func
         'github_app' => [
             'client_id' => '12345',
             'installation_id' => '67890',
-            'private_key' => generateFactoryTestPrivateKey(),
+            'private_key' => generateTestPrivateKey(),
         ],
     ]);
 
@@ -267,7 +255,7 @@ test('it reads the github app private key from a file path', function () {
     ]);
 
     $path = tempnam(sys_get_temp_dir(), 'gh-app-key');
-    file_put_contents($path, generateFactoryTestPrivateKey());
+    file_put_contents($path, generateTestPrivateKey());
 
     try {
         $logger = ($this->factory)([
@@ -289,4 +277,30 @@ test('it reads the github app private key from a file path', function () {
     } finally {
         unlink($path);
     }
+});
+
+test('it decodes a base64-encoded github app private key', function () {
+    Http::preventStrayRequests();
+    Http::fake([
+        'api.github.com/app/installations/*/access_tokens' => Http::response(['token' => 'installation-token']),
+    ]);
+
+    $privateKey = generateTestPrivateKey();
+
+    $logger = ($this->factory)([
+        'repo' => 'test/repo',
+        'github_app' => [
+            'client_id' => '12345',
+            'installation_id' => '67890',
+            'private_key' => base64_encode($privateKey),
+        ],
+    ]);
+
+    $handler = getWrappedHandler($logger->getHandlers()[0]);
+    $tokenProvider = (new ReflectionProperty($handler, 'token'))->getValue($handler);
+
+    expect((new ReflectionProperty($tokenProvider, 'privateKey'))->getValue($tokenProvider))
+        ->toBe($privateKey)
+        ->and($tokenProvider->getToken())
+        ->toBe('installation-token');
 });

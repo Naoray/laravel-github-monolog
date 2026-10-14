@@ -12,7 +12,7 @@ Automatically create GitHub issues from your Laravel exceptions & logs. Perfect 
 - PHP ^8.3
 - Laravel ^11.37|^12.0|^13.0
 - Monolog ^3.6
-- PHP OpenSSL extension (required for GitHub App authentication; PAT authentication does not use it)
+- PHP OpenSSL extension (`ext-openssl`): Composer requires it for every install, though only GitHub App authentication uses it
 
 ## Features
 
@@ -129,7 +129,7 @@ To set this up:
    - Personal account: `https://github.com/settings/installations` → click the app → URL becomes `https://github.com/settings/installations/<installation_id>`.
    - Organization-owned: `https://github.com/organizations/<org>/settings/installations` → click the app → URL becomes `https://github.com/organizations/<org>/settings/installations/<installation_id>`.
 5. Generate a private key for the app and download the `.pem` file.
-6. Provide the PEM contents via `GITHUB_APP_PRIVATE_KEY` (base64-encode it with `base64 -w0 your-key.pem` first — this avoids issues with the multi-line format in `.env` files, and the package auto-detects and decodes it) or point `private_key_path` at the file on disk.
+6. Provide the PEM contents via `GITHUB_APP_PRIVATE_KEY` (base64-encode it first to avoid issues with the multi-line format in `.env` files; the package auto-detects and decodes it. Use `base64 -w0 your-key.pem` on Linux or `base64 -i your-key.pem` on macOS, which both print a single line) or point `private_key_path` at the file on disk.
 
 If both `token` and `github_app` are configured, `github_app` takes precedence.
 
