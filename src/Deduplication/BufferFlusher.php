@@ -44,10 +44,17 @@ class BufferFlusher
     {
         try {
             $handler->flush();
-        } catch (Throwable) {
+        } catch (Throwable $e) {
             // Never let error reporting break the worker loop. The failed
             // records are already marked as seen in the deduplication cache,
-            // so retrying them later would drop them anyway.
+            // so retrying them later would drop them anyway. Logging through
+            // Laravel could route back into this handler, so use error_log.
+            error_log(sprintf(
+                'laravel-github-monolog: dropped buffered records after a failed GitHub flush: %s: %s',
+                $e::class,
+                $e->getMessage(),
+            ));
+
             $handler->clear();
         }
     }

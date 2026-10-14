@@ -57,6 +57,11 @@ beforeEach(function () {
     ]);
 });
 
+afterEach(function () {
+    // Otherwise BufferHandler's shutdown hook flushes leftovers against a torn-down app.
+    BufferedGithubTestChannel::$handler?->clear();
+});
+
 test('a buffered record is not sent until something flushes it', function () {
     Log::channel('github-buffered')->error('Job failed');
 
@@ -112,8 +117,10 @@ test('an octane request termination flushes buffered records', function () {
     expect(BufferedGithubTestChannel::$inner->getRecords())->toHaveCount(1);
 });
 
-test('a failing flush never throws and clears the buffer', function () {
-    BufferedGithubTestChannel::$inner = new TestHandler;
+test('a failing flush never throws, clears the buffer, and leaves a trace', function () {
+    $errorLog = tempnam(sys_get_temp_dir(), 'github-monolog');
+    $previousErrorLog = ini_set('error_log', $errorLog);
+
     $handler = new DeduplicationHandler(
         handler: new ThrowingTestHandler,
         signatureGenerator: new DefaultSignatureGenerator,
@@ -124,8 +131,14 @@ test('a failing flush never throws and clears the buffer', function () {
 
     Log::channel('github-throwing')->error('Job failed');
 
-    Event::until(new Looping('redis', 'default'));
+    try {
+        Event::until(new Looping('redis', 'default'));
+    } finally {
+        ini_set('error_log', $previousErrorLog);
+    }
 
-    // A second flush would throw again if the record were still buffered.
-    expect(fn () => $handler->flush())->not->toThrow(RuntimeException::class);
+    expect((fn () => $this->bufferSize)->call($handler))->toBe(0)
+        ->and(file_get_contents($errorLog))->toContain('failed GitHub flush: RuntimeException: GitHub is down');
+
+    unlink($errorLog);
 });
