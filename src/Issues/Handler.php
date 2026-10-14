@@ -103,16 +103,19 @@ class Handler extends AbstractProcessingHandler
     private function findLegacyIssue(PendingRequest $client, string $legacySignature): ?array
     {
         try {
-            // v3.10 opened one issue per dispatching route, so several may
-            // match. Continue the most recently updated one.
-            return $client
+            // The legacy signature includes the dispatching route, so it
+            // matches that route's issue. Prefer the most recently updated
+            // one in case duplicates exist.
+            $issue = $client
                 ->get('/search/issues', [
                     'q' => $this->signatureQuery($legacySignature),
                     'sort' => 'updated',
                     'order' => 'desc',
                 ])
                 ->throw()
-                ->json('items.0', null);
+                ->json('items.0');
+
+            return is_array($issue) ? $issue : null;
         } catch (RequestException|ConnectionException) {
             // Opening a new issue is what happened before this lookup existed.
             return null;
