@@ -54,3 +54,11 @@ it('keeps unrelated hidden context untouched', function () {
 
     expect($hidden)->toHaveKey('keep_me');
 });
+
+it('does not carry the failing job context into jobs dispatched afterwards', function () {
+    Context::add('job', ['class' => 'App\\Jobs\\ParentJob', 'queue' => 'default']);
+
+    $dehydrated = Context::dehydrate();
+
+    expect($dehydrated['data'] ?? [])->not->toHaveKey('job');
+});
