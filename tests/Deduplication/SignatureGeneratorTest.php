@@ -526,3 +526,19 @@ test('groups errors from same vendor class with different methods', function () 
     expect($signature2)->toBe($signature1);
     expect($signature3)->toBe($signature1);
 });
+
+test('generates signature for an exception with an empty trace', function () {
+    // Compile-time fatals such as a missing trait or class reach the logger as a
+    // FatalError with no stack frames at all, so there is no culprit to pick.
+    $exception = new Error('Trait "NotificationChannels\WebPush\HasPushSubscriptions" not found');
+    $traceProperty = (new ReflectionClass($exception))->getProperty('trace');
+    $traceProperty->setValue($exception, []);
+
+    $record = createLogRecord('Test message', exception: $exception);
+
+    $signature = $this->generator->generate($record);
+    expect($signature)->toBeString();
+
+    // Same exception still produces the same signature
+    expect($this->generator->generate(createLogRecord('Other message', exception: $exception)))->toBe($signature);
+});

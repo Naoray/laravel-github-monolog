@@ -99,7 +99,7 @@ class DefaultSignatureGenerator implements SignatureGeneratorInterface
                     fn (array $frame) => $this->frameSignature($frame),
                     $allFrames
                 ),
-                'culprit' => $allFrames[0] ? $this->frameSignature($allFrames[0]) : null,
+                'culprit' => $allFrames === [] ? null : $this->frameSignature($allFrames[0]),
             ],
             'variant' => [
                 'msg_tpl' => $this->messageTemplate->template($exception->getMessage()),
