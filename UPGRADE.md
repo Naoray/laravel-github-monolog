@@ -1,5 +1,15 @@
 # Upgrade Guide
 
+## Upgrading from 3.10 to 3.11
+
+Errors thrown inside queued jobs are now grouped by job class and queue instead of by the route of the request that dispatched the job, so they get new signatures.
+
+Upgrade straight to 3.11.1 or later. It finds the issue a job error had before upgrading and comments on it instead of opening a duplicate. This only applies to the default signature generator and will be removed in the next major version.
+
+v3.10 opened one issue per route that dispatched a job. The issue for the route of the first occurrence after upgrading is continued and receives all later occurrences of that job error. The other per-route issues stop receiving them, so you can close them.
+
+If you published the comment stub, keep its `<!-- Signature: {signature} -->` line. Without it, later occurrences can't match the continued issue directly and repeat the lookup.
+
 ## Upgrading from 2.x to 3.0
 
 ### Breaking Changes

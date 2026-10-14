@@ -208,3 +208,90 @@ test('it refreshes github app authentication between writes after the cached tok
             'Bearer installation-token-2',
         ]);
 });
+
+function createLegacyRecord(): LogRecord
+{
+    return new LogRecord(
+        datetime: new \DateTimeImmutable,
+        channel: 'test',
+        level: Level::Error,
+        message: 'Test message',
+        context: [],
+        extra: ['github_issue_signature' => 'new-signature', 'github_issue_legacy_signature' => 'legacy-signature'],
+    );
+}
+
+function searchesFor(string $signature): \Closure
+{
+    return fn (Request $request) => str($request->url())->contains('/search/issues')
+        && str_contains($request->data()['q'] ?? '', "\"Signature: {$signature}\"");
+}
+
+test('it comments on the most recently updated pre-3.11 issue with the new signature', function () {
+    Http::fake(function (Request $request) {
+        return match (true) {
+            searchesFor('new-signature')($request) => Http::response(['items' => []]),
+            searchesFor('legacy-signature')($request) => Http::response(['items' => [['number' => 7], ['number' => 3]]]),
+            default => Http::response(['id' => 1]),
+        };
+    });
+
+    createHandler()->handle(createLegacyRecord());
+
+    Http::assertSent(fn (Request $request) => searchesFor('legacy-signature')($request)
+        && $request->data()['sort'] === 'updated'
+        && $request->data()['order'] === 'desc');
+    Http::assertSent(fn (Request $request) => str($request->url())->endsWith('/issues/7/comments')
+        && str_contains($request->data()['body'], '<!-- Signature: new-signature -->'));
+    Http::assertNotSent(fn (Request $request) => str($request->url())->endsWith('/repos/test/repo/issues'));
+});
+
+test('it does not search for the legacy signature when the new one matches', function () {
+    Http::fake([
+        'github.com/search/issues*' => Http::response(['items' => [['number' => 1]]]),
+        'github.com/repos/test/repo/issues/1/comments' => Http::response(['id' => 1]),
+    ]);
+
+    createHandler()->handle(createLegacyRecord());
+
+    Http::assertNotSent(searchesFor('legacy-signature'));
+});
+
+test('it opens a new issue when no pre-3.11 issue matches', function () {
+    Http::fake([
+        'github.com/search/issues*' => Http::response(['items' => []]),
+        'github.com/repos/test/repo/issues' => Http::response(['number' => 1]),
+    ]);
+
+    createHandler()->handle(createLegacyRecord());
+
+    Http::assertSent(searchesFor('legacy-signature'));
+    Http::assertSent(fn (Request $request) => str($request->url())->endsWith('/repos/test/repo/issues')
+        && str_contains($request->data()['body'], '<!-- Signature: new-signature -->'));
+});
+
+test('it opens a new issue when the legacy search fails', function (int $status) {
+    Http::fake(function (Request $request) use ($status) {
+        return match (true) {
+            searchesFor('new-signature')($request) => Http::response(['items' => []]),
+            searchesFor('legacy-signature')($request) => Http::response(['message' => 'Failed'], $status),
+            default => Http::response(['number' => 1]),
+        };
+    });
+
+    createHandler()->handle(createLegacyRecord());
+
+    Http::assertSent(fn (Request $request) => str($request->url())->endsWith('/repos/test/repo/issues')
+        && ! str_contains($request->data()['title'], '[GitHub Monolog Error]'));
+})->with([403, 500]);
+
+test('records without a legacy signature search only once', function () {
+    Http::fake([
+        'github.com/search/issues*' => Http::response(['items' => []]),
+        'github.com/repos/test/repo/issues' => Http::response(['number' => 1]),
+    ]);
+
+    createHandler()->handle(createRecord());
+
+    Http::assertSentCount(2);
+});

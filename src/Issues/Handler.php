@@ -2,6 +2,7 @@
 
 namespace Naoray\LaravelGithubMonolog\Issues;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
@@ -79,12 +80,51 @@ class Handler extends AbstractProcessingHandler
             throw new \RuntimeException('Record is missing github_issue_signature in extra data. Make sure the DeduplicationHandler is configured correctly.');
         }
 
-        return $client
+        $issue = $client
             ->get('/search/issues', [
-                'q' => "repo:{$this->repo} is:issue is:open label:".self::DEFAULT_LABEL." \"Signature: {$record->extra['github_issue_signature']}\"",
+                'q' => $this->signatureQuery($record->extra['github_issue_signature']),
             ])
             ->throw()
             ->json('items.0', null);
+
+        if ($issue === null && isset($record->extra['github_issue_legacy_signature'])) {
+            return $this->findLegacyIssue($client, $record->extra['github_issue_legacy_signature']);
+        }
+
+        return $issue;
+    }
+
+    /**
+     * Find an issue opened before v3.11 signed job errors by job. Remove in v4.
+     *
+     * The comment carries the new signature, so later occurrences match it
+     * directly and this search runs at most once per issue.
+     */
+    private function findLegacyIssue(PendingRequest $client, string $legacySignature): ?array
+    {
+        try {
+            // The legacy signature includes the dispatching route, so it
+            // matches that route's issue. Prefer the most recently updated
+            // one in case duplicates exist.
+            $issue = $client
+                ->get('/search/issues', [
+                    'q' => $this->signatureQuery($legacySignature),
+                    'sort' => 'updated',
+                    'order' => 'desc',
+                ])
+                ->throw()
+                ->json('items.0');
+
+            return is_array($issue) ? $issue : null;
+        } catch (RequestException|ConnectionException) {
+            // Opening a new issue is what happened before this lookup existed.
+            return null;
+        }
+    }
+
+    private function signatureQuery(string $signature): string
+    {
+        return "repo:{$this->repo} is:issue is:open label:".self::DEFAULT_LABEL." \"Signature: {$signature}\"";
     }
 
     /**

@@ -26,7 +26,7 @@ class SignatureContextExtractor
     /**
      * Detect the execution context kind based on priority
      */
-    private function detectKind(LogRecord $record): SignatureContextKind
+    protected function detectKind(LogRecord $record): SignatureContextKind
     {
         // 1. JOB if context.job.class exists. It is only set inside a worker,
         // while a job inherits the route of the request that dispatched it
@@ -37,11 +37,7 @@ class SignatureContextExtractor
         }
 
         // 2. HTTP if any of these exist
-        $routeData = data_get($record->context, 'request.route') ?? data_get($record->context, 'route');
-        $hasMethod = data_get($record->context, 'request.method') !== null
-            || data_get($record->context, 'http.method') !== null;
-
-        if (($routeData !== null && (is_array($routeData) || $routeData !== '')) || $hasMethod) {
+        if ($this->hasHttpContext($record)) {
             return SignatureContextKind::Http;
         }
 
@@ -52,6 +48,15 @@ class SignatureContextExtractor
 
         // 4. OTHER (fallback)
         return SignatureContextKind::Other;
+    }
+
+    protected function hasHttpContext(LogRecord $record): bool
+    {
+        $routeData = data_get($record->context, 'request.route') ?? data_get($record->context, 'route');
+        $hasMethod = data_get($record->context, 'request.method') !== null
+            || data_get($record->context, 'http.method') !== null;
+
+        return ($routeData !== null && (is_array($routeData) || $routeData !== '')) || $hasMethod;
     }
 
     /**
